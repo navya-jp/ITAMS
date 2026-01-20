@@ -1,23 +1,82 @@
+using Microsoft.EntityFrameworkCore;
+using ITAMS.Data;
+using ITAMS.Data.Repositories;
+using ITAMS.Domain.Interfaces;
+using ITAMS.Services;
+using Serilog;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("logs/itams-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
+builder.Host.UseSerilog();
+
+// Add services to the container
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Add Entity Framework
+builder.Services.AddDbContext<ITAMSDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ?? 
+        "Server=(localdb)\\mssqllocaldb;Database=ITAMS;Trusted_Connection=true;MultipleActiveResultSets=true"));
+
+// Add repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+
+// Add services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<ILocationService, LocationService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+
+// Add HTTP context accessor for audit logging
+builder.Services.AddHttpContextAccessor();
+
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles(); // Enable static files
+app.UseCors("AllowAll");
 app.UseAuthorization();
 
+// Add default route that redirects to Super Admin console
+app.MapGet("/", () => Results.Redirect("/superadmin.html"));
+
 app.MapControllers();
+
+// Ensure database is created
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ITAMSDbContext>();
+    context.Database.EnsureCreated();
+}
 
 app.Run();
