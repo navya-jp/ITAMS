@@ -1,0 +1,34 @@
+﻿# Build outputs
+bin/
+obj/
+publish/
+
+# Visual Studio & editors
+.vs/
+.vscode/
+*.suo
+*.user
+*.userprefs
+*.ide
+
+# Rider
+.idea/
+
+# NuGet / packages
+packages/
+*.nupkg
+*.snupkg
+.nuget/
+
+# Logs / temp
+*.log
+*.tmp
+
+# Secrets / local settings
+appsettings.Development.json
+secrets.json
+.env
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
