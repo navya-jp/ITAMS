@@ -67,16 +67,16 @@ app.UseStaticFiles(); // Enable static files
 app.UseCors("AllowAll");
 app.UseAuthorization();
 
-// Add default route that redirects to Super Admin console
-app.MapGet("/", () => Results.Redirect("/superadmin.html"));
+// Add default route that redirects to Angular frontend
+app.MapGet("/", () => Results.Redirect("http://localhost:4200"));
 
 app.MapControllers();
 
-// Ensure database is created
+// Ensure database is migrated
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ITAMSDbContext>();
-    context.Database.EnsureCreated();
+    context.Database.Migrate();
 }
 
 app.Run();

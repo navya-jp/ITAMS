@@ -1,0 +1,259 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Location Management</h2>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+          <i class="fas fa-plus me-2"></i>Add Location
+        </button>
+      </div>
+
+      <!-- Success/Error Messages -->
+      <div *ngIf="success" class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ success }}
+        <button type="button" class="btn-close" (click)="clearMessages()"></button>
+      </div>
+      <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ error }}
+        <button type="button" class="btn-close" (click)="clearMessages()"></button>
+      </div>
+
+      <!-- Filter -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-4">
+              <label class="form-label">Filter by Project</label>
+              <select class="form-select" [(ngModel)]="selectedProjectFilter">
+                <option value="0">All Projects</option>
+                <option *ngFor="let project of projects" [value]="project.id">{{ project.name }}</option>
+              </select>
+            </div>
+            <div class="col-md-8">
+              <div class="d-flex justify-content-end align-items-end h-100">
+                <div class="text-muted">
+                  Showing {{ getFilteredLocations().length }} of {{ locations.length }} locations
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Locations Table -->
+      <div class="card">
+        <div class="card-body">
+          <div *ngIf="loading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+
+          <div *ngIf="!loading" class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Location Name</th>
+                  <th>Project</th>
+                  <th>Region</th>
+                  <th>State</th>
+                  <th>Plaza</th>
+                  <th>Office</th>
+                  <th>Assets</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let location of getFilteredLocations()">
+                  <td>
+                    <strong>{{ location.name }}</strong>
+                    <div *ngIf="location.address" class="text-muted small">
+                      {{ location.address }}
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-primary">{{ getProjectName(location.projectId) }}</span>
+                  </td>
+                  <td>{{ location.region }}</td>
+                  <td>{{ location.state }}</td>
+                  <td>{{ location.plaza || '-' }}</td>
+                  <td>
+                    <div *ngIf="location.office">{{ location.office }}</div>
+                    <div *ngIf="location.lane" class="text-muted small">Lane: {{ location.lane }}</div>
+                    <div *ngIf="!location.office && !location.lane">-</div>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">{{ location.assetCount }}</span>
+                  </td>
+                  <td>
+                    <span class="badge" 
+                          [class]="location.isActive ? 'bg-success' : 'bg-secondary'">
+                      {{ location.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                </tr>
+                <tr *ngIf="getFilteredLocations().length === 0">
+                  <td colspan="8" class="text-center py-4 text-muted">
+                    <div *ngIf="selectedProjectFilter === 0">
+                      No locations found. <a href="#" (click)="openCreateModal()">Create your first location</a>
+                    </div>
+                    <div *ngIf="selectedProjectFilter > 0">
+                      No locations found for the selected project.
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Location Modal -->
+<div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Create New Location</h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Location Name *</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" [(ngModel)]="createForm.name" name="name" required>
+                  <button type="button" class="btn btn-outline-secondary" (click)="generateLocationName()" title="Auto-generate name">
+                    <i class="fas fa-magic"></i>
+                  </button>
+                </div>
+                <div class="form-text">2-100 characters or auto-generate from project and location</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Project *</label>
+                <select class="form-select" [(ngModel)]="createForm.projectId" name="projectId" (change)="generateLocationName()" required>
+                  <option value="0">Select a project</option>
+                  <option *ngFor="let project of projects" [value]="project.id">{{ project.name }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Region *</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" [(ngModel)]="createForm.region" name="region" (input)="generateLocationName()" required>
+                  <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Select region">
+                      <i class="fas fa-globe"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" style="max-height: 200px; overflow-y: auto;">
+                      <li *ngFor="let region of regions">
+                        <a class="dropdown-item" href="#" (click)="selectRegion(region); generateLocationName()">{{ region }}</a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="form-text">Enter region or select from dropdown</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">State *</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" [(ngModel)]="createForm.state" name="state" (input)="generateLocationName()" required>
+                  <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Select state">
+                      <i class="fas fa-map-marker-alt"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" style="max-height: 200px; overflow-y: auto;">
+                      <li *ngFor="let state of states">
+                        <a class="dropdown-item" href="#" (click)="selectState(state); generateLocationName()">{{ state }}</a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="form-text">Enter state or select from dropdown</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Plaza</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" [(ngModel)]="createForm.plaza" name="plaza">
+                  <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Select plaza type">
+                      <i class="fas fa-building"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li *ngFor="let plaza of plazas">
+                        <a class="dropdown-item" href="#" (click)="selectPlaza(plaza)">{{ plaza }}</a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="form-text">Enter plaza or select type</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Lane</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.lane" name="lane">
+                <div class="form-text">Optional lane information</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Office</label>
+            <div class="input-group">
+              <input type="text" class="form-control" [(ngModel)]="createForm.office" name="office">
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Select office type">
+                  <i class="fas fa-briefcase"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li *ngFor="let office of officeTypes">
+                    <a class="dropdown-item" href="#" (click)="selectOffice(office)">{{ office }}</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="form-text">Enter office or select type</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Address</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="createForm.address" name="address"></textarea>
+            <div class="form-text">Full address (optional, up to 500 characters)</div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button type="button" class="btn btn-primary" 
+                [disabled]="!isFormValid() || loading" 
+                (click)="createLocation()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          Create Location
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div *ngIf="showCreateModal" 
+     class="modal-backdrop fade show" 
+     (click)="closeModals()"></div>

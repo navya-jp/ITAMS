@@ -1,0 +1,316 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">User Management</h2>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+          <i class="fas fa-plus me-2"></i>Add User
+        </button>
+      </div>
+
+      <!-- Success/Error Messages -->
+      <div *ngIf="success" class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ success }}
+        <button type="button" class="btn-close" (click)="clearMessages()"></button>
+      </div>
+      <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ error }}
+        <button type="button" class="btn-close" (click)="clearMessages()"></button>
+      </div>
+
+      <!-- Users Table -->
+      <div class="card">
+        <div class="card-body">
+          <div *ngIf="loading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+
+          <div *ngIf="!loading" class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let user of users">
+                  <td>
+                    <strong>{{ user.username }}</strong>
+                  </td>
+                  <td>{{ user.firstName }} {{ user.lastName }}</td>
+                  <td>{{ user.email }}</td>
+                  <td>
+                    <span class="badge bg-info">{{ user.roleName }}</span>
+                  </td>
+                  <td>
+                    <span class="badge" 
+                          [class]="user.isActive ? 'bg-success' : 'bg-secondary'">
+                      {{ user.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                    <span *ngIf="user.isLocked" class="badge bg-danger ms-1">Locked</span>
+                    <span *ngIf="user.mustChangePassword" class="badge bg-warning ms-1">Must Change Password</span>
+                  </td>
+                  <td>{{ user.createdAt | date:'short' }}</td>
+                  <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button class="btn btn-outline-primary" (click)="openEditModal(user)" title="Edit">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button *ngIf="!user.isLocked" class="btn btn-outline-warning" (click)="lockUser(user)" title="Lock">
+                        <i class="fas fa-lock"></i>
+                      </button>
+                      <button *ngIf="user.isLocked" class="btn btn-outline-success" (click)="unlockUser(user)" title="Unlock">
+                        <i class="fas fa-unlock"></i>
+                      </button>
+                      <button class="btn btn-outline-info" (click)="resetPassword(user)" title="Reset Password">
+                        <i class="fas fa-key"></i>
+                      </button>
+                      <button *ngIf="user.isActive" class="btn btn-outline-secondary" (click)="deactivateUser(user)" title="Deactivate">
+                        <i class="fas fa-user-slash"></i>
+                      </button>
+                      <button *ngIf="!user.isActive" class="btn btn-outline-success" (click)="activateUser(user)" title="Activate">
+                        <i class="fas fa-user-check"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="users.length === 0">
+                  <td colspan="7" class="text-center py-4 text-muted">
+                    No users found. <a href="#" (click)="openCreateModal()">Create your first user</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Create New User</h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <!-- Name Fields (No dropdowns needed) -->
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">First Name *</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.firstName" 
+                       name="firstName" (input)="generateUsername()" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Last Name *</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.lastName" 
+                       name="lastName" (input)="generateUsername()" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Auto-generated Username -->
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Username * <small class="text-muted">(Auto-generated)</small></label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.username" name="username" required readonly>
+                <div class="form-text">Generated from first and last name</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Email *</label>
+                <div class="input-group">
+                  <input type="email" class="form-control" 
+                         [class.is-invalid]="createForm.email && !validateEmail(createForm.email)"
+                         [class.is-valid]="createForm.email && validateEmail(createForm.email)"
+                         [(ngModel)]="createForm.email" name="email" required>
+                  <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Quick email domains">
+                      <i class="fas fa-at"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li *ngFor="let domain of emailDomains">
+                        <a class="dropdown-item" href="#" (click)="completeEmail(domain)">
+                          {{ createForm.username }}{{ domain }}
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="form-text">Enter email or select domain from dropdown</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Role Selection -->
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Role *</label>
+                <select class="form-select" [(ngModel)]="createForm.roleId" name="roleId" required>
+                  <option value="0">Select a role</option>
+                  <option *ngFor="let role of roles" [value]="role.id">
+                    {{ role.name }} - {{ role.description }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <div class="form-check mt-4">
+                  <input class="form-check-input" type="checkbox" [(ngModel)]="createForm.mustChangePassword" name="mustChangePassword">
+                  <label class="form-check-label">Must change password on first login</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password with Requirements -->
+          <div class="mb-3">
+            <label class="form-label">Password *</label>
+            <input type="password" class="form-control" 
+                   [class.password-invalid]="createForm.password && !isPasswordValid()"
+                   [class.password-valid]="createForm.password && isPasswordValid()"
+                   [(ngModel)]="createForm.password" 
+                   name="password" 
+                   (input)="validatePassword()" 
+                   required>
+            
+            <div class="password-requirements mt-2">
+              <div class="requirement">
+                <i class="fas" [class.fa-check]="passwordRequirements.minLength" 
+                   [class.fa-times]="!passwordRequirements.minLength"
+                   [class.text-success]="passwordRequirements.minLength"
+                   [class.text-danger]="!passwordRequirements.minLength"></i>
+                At least 8 characters
+              </div>
+              <div class="requirement">
+                <i class="fas" [class.fa-check]="passwordRequirements.hasUppercase" 
+                   [class.fa-times]="!passwordRequirements.hasUppercase"
+                   [class.text-success]="passwordRequirements.hasUppercase"
+                   [class.text-danger]="!passwordRequirements.hasUppercase"></i>
+                One uppercase letter
+              </div>
+              <div class="requirement">
+                <i class="fas" [class.fa-check]="passwordRequirements.hasLowercase" 
+                   [class.fa-times]="!passwordRequirements.hasLowercase"
+                   [class.text-success]="passwordRequirements.hasLowercase"
+                   [class.text-danger]="!passwordRequirements.hasLowercase"></i>
+                One lowercase letter
+              </div>
+              <div class="requirement">
+                <i class="fas" [class.fa-check]="passwordRequirements.hasNumber" 
+                   [class.fa-times]="!passwordRequirements.hasNumber"
+                   [class.text-success]="passwordRequirements.hasNumber"
+                   [class.text-danger]="!passwordRequirements.hasNumber"></i>
+                One number
+              </div>
+              <div class="requirement">
+                <i class="fas" [class.fa-check]="passwordRequirements.hasSpecial" 
+                   [class.fa-times]="!passwordRequirements.hasSpecial"
+                   [class.text-success]="passwordRequirements.hasSpecial"
+                   [class.text-danger]="!passwordRequirements.hasSpecial"></i>
+                One special character (@$!%*?&)
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button type="button" class="btn btn-primary" 
+                [disabled]="!isFormValid() || loading" 
+                (click)="createUser()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          Create User
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit User</h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body">
+        <form *ngIf="selectedUser">
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-control" [value]="selectedUser.username" readonly>
+            <div class="form-text">Username cannot be changed</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" [(ngModel)]="editForm.email" name="email">
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">First Name</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.firstName" name="firstName">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Last Name</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.lastName" name="lastName">
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Role</label>
+            <select class="form-select" [(ngModel)]="editForm.roleId" name="roleId">
+              <option *ngFor="let role of roles" [value]="role.id">
+                {{ role.name }} - {{ role.description }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="editForm.isActive" name="isActive">
+              <label class="form-check-label">Active</label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button type="button" class="btn btn-primary" [disabled]="loading" (click)="updateUser()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          Update User
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div *ngIf="showCreateModal || showEditModal" 
+     class="modal-backdrop fade show" 
+     (click)="closeModals()"></div>

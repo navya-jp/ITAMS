@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using ITAMS.Domain.Entities;
 using ITAMS.Domain.Interfaces;
+using ITAMS.Data;
+using System.ComponentModel.DataAnnotations;
 
 namespace ITAMS.Controllers;
 
@@ -14,6 +16,7 @@ public class SuperAdminController : ControllerBase
     private readonly IPermissionService _permissionService;
     private readonly IRoleRepository _roleRepository;
     private readonly IAuditService _auditService;
+    private readonly ITAMSDbContext _context;
 
     public SuperAdminController(
         IUserService userService,
@@ -21,7 +24,8 @@ public class SuperAdminController : ControllerBase
         ILocationService locationService,
         IPermissionService permissionService,
         IRoleRepository roleRepository,
-        IAuditService auditService)
+        IAuditService auditService,
+        ITAMSDbContext context)
     {
         _userService = userService;
         _projectService = projectService;
@@ -29,6 +33,7 @@ public class SuperAdminController : ControllerBase
         _permissionService = permissionService;
         _roleRepository = roleRepository;
         _auditService = auditService;
+        _context = context;
     }
 
     #region Users
@@ -280,12 +285,21 @@ public class SuperAdminController : ControllerBase
     #region Roles
 
     [HttpGet("roles")]
-    public async Task<ActionResult<IEnumerable<Role>>> GetAllRoles()
+    public async Task<ActionResult<IEnumerable<object>>> GetAllRoles()
     {
         try
         {
             var roles = await _roleRepository.GetAllAsync();
-            return Ok(roles);
+            var roleData = roles.Select(r => new
+            {
+                r.Id,
+                r.Name,
+                r.Description,
+                r.IsSystemRole,
+                r.IsActive,
+                r.CreatedAt
+            });
+            return Ok(roleData);
         }
         catch (Exception ex)
         {
@@ -294,7 +308,7 @@ public class SuperAdminController : ControllerBase
     }
 
     [HttpGet("roles/{id}")]
-    public async Task<ActionResult<Role>> GetRole(int id)
+    public async Task<ActionResult<object>> GetRole(int id)
     {
         try
         {
@@ -304,11 +318,148 @@ public class SuperAdminController : ControllerBase
                 return NotFound(new { message = "Role not found" });
             }
 
-            return Ok(role);
+            var roleData = new
+            {
+                role.Id,
+                role.Name,
+                role.Description,
+                role.IsSystemRole,
+                role.IsActive,
+                role.CreatedAt
+            };
+
+            return Ok(roleData);
         }
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "An error occurred while retrieving the role", error = ex.Message });
+        }
+    }
+
+    [HttpPost("roles")]
+    public async Task<ActionResult<object>> CreateRole([FromBody] CreateRoleDto createRoleDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var role = new Role
+            {
+                Name = createRoleDto.Name,
+                Description = createRoleDto.Description,
+                IsSystemRole = createRoleDto.IsSystemRole,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Roles.Add(role);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync("ROLE_CREATED", "Role", role.Id.ToString(), 1, "superadmin");
+
+            var roleData = new
+            {
+                role.Id,
+                role.Name,
+                role.Description,
+                role.IsSystemRole,
+                role.IsActive,
+                role.CreatedAt
+            };
+
+            return CreatedAtAction(nameof(GetRole), new { id = role.Id }, roleData);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while creating the role", error = ex.Message });
+        }
+    }
+
+    [HttpPut("roles/{id}")]
+    public async Task<ActionResult<object>> UpdateRole(int id, [FromBody] UpdateRoleDto updateRoleDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var role = await _roleRepository.GetByIdAsync(id);
+            if (role == null)
+            {
+                return NotFound(new { message = "Role not found" });
+            }
+
+            if (role.IsSystemRole && !updateRoleDto.IsActive.GetValueOrDefault(true))
+            {
+                return BadRequest(new { message = "System roles cannot be deactivated" });
+            }
+
+            role.Name = updateRoleDto.Name ?? role.Name;
+            role.Description = updateRoleDto.Description ?? role.Description;
+            role.IsActive = updateRoleDto.IsActive ?? role.IsActive;
+
+            _context.Roles.Update(role);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync("ROLE_UPDATED", "Role", role.Id.ToString(), 1, "superadmin");
+
+            var roleData = new
+            {
+                role.Id,
+                role.Name,
+                role.Description,
+                role.IsSystemRole,
+                role.IsActive,
+                role.CreatedAt
+            };
+
+            return Ok(roleData);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while updating the role", error = ex.Message });
+        }
+    }
+
+    [HttpGet("roles/{roleId}/permissions")]
+    public async Task<ActionResult<IEnumerable<Permission>>> GetRolePermissions(int roleId)
+    {
+        try
+        {
+            var permissions = await _permissionService.GetRolePermissionsAsync(roleId);
+            return Ok(permissions);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving role permissions", error = ex.Message });
+        }
+    }
+
+    [HttpPut("roles/{roleId}/permissions")]
+    public async Task<ActionResult> UpdateRolePermissions(int roleId, [FromBody] UpdateRolePermissionsDto updateDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            await _permissionService.UpdateRolePermissionsAsync(roleId, updateDto.PermissionIds);
+            return Ok(new { message = "Role permissions updated successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while updating role permissions", error = ex.Message });
         }
     }
 
@@ -406,6 +557,35 @@ public class SuperAdminController : ControllerBase
     #endregion
 
     #region Locations
+
+    [HttpGet("locations")]
+    public async Task<ActionResult<IEnumerable<LocationSummaryDto>>> GetAllLocations()
+    {
+        try
+        {
+            var locations = await _locationService.GetAllLocationsAsync();
+            var locationDtos = locations.Select(l => new LocationSummaryDto
+            {
+                Id = l.Id,
+                Name = l.Name,
+                Region = l.Region,
+                State = l.State,
+                Plaza = l.Plaza,
+                Lane = l.Lane,
+                Office = l.Office,
+                Address = l.Address,
+                IsActive = l.IsActive,
+                ProjectId = l.ProjectId,
+                AssetCount = l.Assets.Count
+            });
+
+            return Ok(locationDtos);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving locations", error = ex.Message });
+        }
+    }
 
     [HttpGet("projects/{projectId}/locations")]
     public async Task<ActionResult<IEnumerable<LocationSummaryDto>>> GetProjectLocations(int projectId)
@@ -644,13 +824,81 @@ public class UserDto
 
 public class CreateUserDto
 {
+    [Required(ErrorMessage = "Username is required")]
+    [StringLength(100, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 100 characters")]
+    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Username can only contain letters, numbers, and underscores")]
     public string Username { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "Email is required")]
+    [EmailAddress(ErrorMessage = "Invalid email format")]
+    [StringLength(255, ErrorMessage = "Email cannot exceed 255 characters")]
     public string Email { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "First name is required")]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "First name must be between 1 and 100 characters")]
     public string FirstName { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "Last name is required")]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "Last name must be between 1 and 100 characters")]
     public string LastName { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "Role is required")]
+    [Range(1, int.MaxValue, ErrorMessage = "Please select a valid role")]
     public int RoleId { get; set; }
+    
+    [Required(ErrorMessage = "Password is required")]
+    [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters long")]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]", 
+        ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")]
     public string Password { get; set; } = string.Empty;
+    
     public bool MustChangePassword { get; set; } = true;
+}
+
+public class CreateProjectDto
+{
+    [Required(ErrorMessage = "Project name is required")]
+    [StringLength(100, MinimumLength = 2, ErrorMessage = "Project name must be between 2 and 100 characters")]
+    public string Name { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "Project code is required")]
+    [StringLength(50, MinimumLength = 2, ErrorMessage = "Project code must be between 2 and 50 characters")]
+    [RegularExpression(@"^[A-Z0-9_-]+$", ErrorMessage = "Project code can only contain uppercase letters, numbers, hyphens, and underscores")]
+    public string Code { get; set; } = string.Empty;
+    
+    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    public string? Description { get; set; }
+}
+
+public class CreateLocationDto
+{
+    [Required(ErrorMessage = "Location name is required")]
+    [StringLength(100, MinimumLength = 2, ErrorMessage = "Location name must be between 2 and 100 characters")]
+    public string Name { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "Project is required")]
+    [Range(1, int.MaxValue, ErrorMessage = "Please select a valid project")]
+    public int ProjectId { get; set; }
+    
+    [Required(ErrorMessage = "Region is required")]
+    [StringLength(100, MinimumLength = 2, ErrorMessage = "Region must be between 2 and 100 characters")]
+    public string Region { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "State is required")]
+    [StringLength(100, MinimumLength = 2, ErrorMessage = "State must be between 2 and 100 characters")]
+    public string State { get; set; } = string.Empty;
+    
+    [StringLength(100, ErrorMessage = "Plaza cannot exceed 100 characters")]
+    public string? Plaza { get; set; }
+    
+    [StringLength(100, ErrorMessage = "Lane cannot exceed 100 characters")]
+    public string? Lane { get; set; }
+    
+    [StringLength(100, ErrorMessage = "Office cannot exceed 100 characters")]
+    public string? Office { get; set; }
+    
+    [StringLength(500, ErrorMessage = "Address cannot exceed 500 characters")]
+    public string? Address { get; set; }
 }
 
 public class UpdateUserDto
@@ -687,6 +935,65 @@ public class LocationSummaryDto
     public bool IsActive { get; set; }
     public int ProjectId { get; set; }
     public int AssetCount { get; set; }
+}
+
+public class AssignUserProjectDto
+{
+    public int[] PermissionIds { get; set; } = Array.Empty<int>();
+    public int AssignedBy { get; set; }
+}
+
+public class UpdateProjectDto
+{
+    public string? Name { get; set; }
+    public string? Description { get; set; }
+    public string? Code { get; set; }
+    public bool? IsActive { get; set; }
+}
+
+public class LocationDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Region { get; set; } = string.Empty;
+    public string State { get; set; } = string.Empty;
+    public string? Plaza { get; set; }
+    public string? Lane { get; set; }
+    public string? Office { get; set; }
+    public string? Address { get; set; }
+    public bool IsActive { get; set; }
+    public int ProjectId { get; set; }
+    public string ProjectName { get; set; } = string.Empty;
+    public int AssetCount { get; set; }
+}
+
+public class CreateRoleDto
+{
+    [Required(ErrorMessage = "Role name is required")]
+    [StringLength(100, MinimumLength = 2, ErrorMessage = "Role name must be between 2 and 100 characters")]
+    public string Name { get; set; } = string.Empty;
+    
+    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    public string? Description { get; set; }
+    
+    public bool IsSystemRole { get; set; } = false;
+}
+
+public class UpdateRoleDto
+{
+    [StringLength(100, MinimumLength = 2, ErrorMessage = "Role name must be between 2 and 100 characters")]
+    public string? Name { get; set; }
+    
+    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    public string? Description { get; set; }
+    
+    public bool? IsActive { get; set; }
+}
+
+public class UpdateRolePermissionsDto
+{
+    [Required]
+    public int[] PermissionIds { get; set; } = Array.Empty<int>();
 }
 
 public class ResetPasswordDto

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITAMS Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .success { color: green; }
+        .error { color: red; }
+        .loading { color: blue; }
+        button { padding: 10px 20px; margin: 10px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>ITAMS Integration Test</h1>
+    
+    <h2>Backend API Tests</h2>
+    <button onclick="testUsers()">Test Users API</button>
+    <button onclick="testProjects()">Test Projects API</button>
+    <button onclick="testLocations()">Test Locations API</button>
+    <button onclick="testRoles()">Test Roles API</button>
+    
+    <div id="results"></div>
+
+    <h2>ITAMS Application</h2>
+    <p><strong>Angular Frontend:</strong> <a href="http://localhost:4200" target="_blank">http://localhost:4200</a></p>
+    <p><strong>Backend API:</strong> <a href="http://localhost:5066/swagger" target="_blank">http://localhost:5066/swagger</a> (API Documentation)</p>
+    
+    <p><em>Note: The main application is the Angular frontend. The backend serves only the API.</em></p>
+
+    <script>
+        const API_BASE = 'http://localhost:5066/api/superadmin';
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+        }
+
+        async function testAPI(endpoint, name) {
+            log(`Testing ${name}...`, 'loading');
+            try {
+                const response = await fetch(`${API_BASE}/${endpoint}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ ${name} API working! Found ${Array.isArray(data) ? data.length : 1} items`, 'success');
+                    log(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
+                } else {
+                    log(`❌ ${name} API failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ ${name} API error: ${error.message}`, 'error');
+            }
+        }
+
+        function testUsers() { testAPI('users', 'Users'); }
+        function testProjects() { testAPI('projects', 'Projects'); }
+        function testLocations() { testAPI('locations', 'Locations'); }
+        function testRoles() { testAPI('roles', 'Roles'); }
+
+        // Auto-test on load
+        window.onload = function() {
+            log('🚀 Starting integration tests...');
+            setTimeout(() => testRoles(), 500);
+            setTimeout(() => testUsers(), 1000);
+            setTimeout(() => testProjects(), 1500);
+            setTimeout(() => testLocations(), 2000);
+        };
+    </script>
+</body>
+</html>

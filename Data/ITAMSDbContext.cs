@@ -197,6 +197,9 @@ public class ITAMSDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(100);
                 
+            entity.Property(e => e.ProcurementCost)
+                .HasPrecision(18, 2);
+                
             entity.Property(e => e.UsageCategory)
                 .IsRequired()
                 .HasConversion<int>();
@@ -254,12 +257,15 @@ public class ITAMSDbContext : DbContext
 
     private void SeedData(ModelBuilder modelBuilder)
     {
+        // Use static date for seed data
+        var seedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        
         // Create default roles
-        var superAdminRole = new Role { Id = 1, Name = "Super Admin", Description = "Full system access", IsSystemRole = true, CreatedAt = DateTime.UtcNow };
-        var adminRole = new Role { Id = 2, Name = "Admin", Description = "Project administration access", IsSystemRole = true, CreatedAt = DateTime.UtcNow };
-        var itStaffRole = new Role { Id = 3, Name = "IT Staff", Description = "Asset management access", IsSystemRole = true, CreatedAt = DateTime.UtcNow };
-        var readOnlyRole = new Role { Id = 4, Name = "Read Only User", Description = "View-only access", IsSystemRole = true, CreatedAt = DateTime.UtcNow };
-        var auditorRole = new Role { Id = 5, Name = "Auditor", Description = "Audit and reporting access", IsSystemRole = true, CreatedAt = DateTime.UtcNow };
+        var superAdminRole = new Role { Id = 1, Name = "Super Admin", Description = "Full system access", IsSystemRole = true, CreatedAt = seedDate };
+        var adminRole = new Role { Id = 2, Name = "Admin", Description = "Project administration access", IsSystemRole = true, CreatedAt = seedDate };
+        var itStaffRole = new Role { Id = 3, Name = "IT Staff", Description = "Asset management access", IsSystemRole = true, CreatedAt = seedDate };
+        var readOnlyRole = new Role { Id = 4, Name = "Read Only User", Description = "View-only access", IsSystemRole = true, CreatedAt = seedDate };
+        var auditorRole = new Role { Id = 5, Name = "Auditor", Description = "Audit and reporting access", IsSystemRole = true, CreatedAt = seedDate };
 
         modelBuilder.Entity<Role>().HasData(superAdminRole, adminRole, itStaffRole, readOnlyRole, auditorRole);
 
@@ -313,7 +319,7 @@ public class ITAMSDbContext : DbContext
             RoleId = 1, // Super Admin
             PermissionId = p.Id,
             IsGranted = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = seedDate
         }).ToArray();
 
         modelBuilder.Entity<RolePermission>().HasData(superAdminPermissions);
@@ -328,10 +334,11 @@ public class ITAMSDbContext : DbContext
             LastName = "Admin",
             RoleId = 1, // Super Admin role
             IsActive = true,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = seedDate,
             MustChangePassword = true,
             // Default password: "Admin@123" - should be changed on first login
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123")
+            // Using a static hash for seed data consistency
+            PasswordHash = "$2a$11$8K1p/a0dL2LkqvMA87LzO.Mh5vllpKmdxX6NYb2UV8mWLxYX4H1Ka" // Admin@123
         };
 
         modelBuilder.Entity<User>().HasData(superAdmin);

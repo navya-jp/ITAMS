@@ -1,0 +1,47 @@
+.password-requirements {
+  font-size: 0.875rem;
+  
+  .requirement {
+    display: flex;
+    align-items: center;
+    margin: 0.25rem 0;
+    
+    i {
+      margin-right: 0.5rem;
+      width: 16px;
+    }
+  }
+}
+
+.password-invalid {
+  background-color: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+}
+
+.password-valid {
+  background-color: #f0fdf4 !important;
+  border-color: #86efac !important;
+}
+
+.btn-group-sm .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.table th {
+  font-weight: 600;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.badge {
+  font-size: 0.75rem;
+}
+
+.modal {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.alert {
+  border-radius: 8px;
+}
