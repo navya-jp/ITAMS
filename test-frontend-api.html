@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Frontend API</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Test Frontend API</h1>
+    
+    <div>
+        <h2>Test Create User</h2>
+        <button id="testCreateUser">Test Create User</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        $('#testCreateUser').click(function() {
+            console.log('Testing create user...');
+            
+            const userData = {
+                username: 'test.frontend',
+                email: 'test.frontend@company.com',
+                firstName: 'Test',
+                lastName: 'Frontend',
+                roleId: 2,
+                password: 'TestPass123!',
+                mustChangePassword: true
+            };
+            
+            console.log('Sending data:', userData);
+            
+            $.ajax({
+                url: 'http://localhost:5066/api/users',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(userData),
+                success: function(response) {
+                    console.log('Success:', response);
+                    $('#result').html('<div style="color: green;">Success: ' + JSON.stringify(response, null, 2) + '</div>');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', xhr.responseText);
+                    $('#result').html('<div style="color: red;">Error: ' + xhr.responseText + '</div>');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

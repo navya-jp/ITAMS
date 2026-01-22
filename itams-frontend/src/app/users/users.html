@@ -105,6 +105,7 @@
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
       <div class="modal-body">
+
         <form>
           <!-- Name Fields (No dropdowns needed) -->
           <div class="row">
@@ -165,7 +166,7 @@
               <div class="mb-3">
                 <label class="form-label">Role *</label>
                 <select class="form-select" [(ngModel)]="createForm.roleId" name="roleId" required>
-                  <option value="0">Select a role</option>
+                  <option [value]="0">Select a role</option>
                   <option *ngFor="let role of roles" [value]="role.id">
                     {{ role.name }} - {{ role.description }}
                   </option>
@@ -235,9 +236,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-        <button type="button" class="btn btn-primary" 
-                [disabled]="!isFormValid() || loading" 
-                (click)="createUser()">
+        <button type="button" class="btn btn-primary" (click)="onCreateUserClick()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
           Create User
         </button>
@@ -312,5 +311,4 @@
 
 <!-- Modal Backdrop -->
 <div *ngIf="showCreateModal || showEditModal" 
-     class="modal-backdrop fade show" 
-     (click)="closeModals()"></div>
+     class="modal-backdrop fade show"></div>

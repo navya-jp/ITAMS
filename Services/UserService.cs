@@ -118,7 +118,8 @@ public class UserService : IUserService
         var createdUser = await _userRepository.CreateAsync(user);
         await _auditService.LogAsync("USER_CREATED", "User", createdUser.Id.ToString(), createdUser.Id, createdUser.Username);
         
-        return createdUser;
+        // Reload user with Role navigation property
+        return await _userRepository.GetByIdAsync(createdUser.Id) ?? createdUser;
     }
 
     public async Task<User> UpdateUserAsync(int id, UpdateUserRequest request)
@@ -180,7 +181,8 @@ public class UserService : IUserService
         var newValues = $"Email: {user.Email}, FirstName: {user.FirstName}, LastName: {user.LastName}, RoleId: {user.RoleId}, IsActive: {user.IsActive}";
         await _auditService.LogAsync("USER_UPDATED", "User", user.Id.ToString(), user.Id, user.Username, oldValues, newValues);
         
-        return updatedUser;
+        // Reload user with Role navigation property
+        return await _userRepository.GetByIdAsync(updatedUser.Id) ?? updatedUser;
     }
 
     public async Task DeleteUserAsync(int id)

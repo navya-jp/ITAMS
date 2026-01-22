@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Api, User, CreateUser, Role } from '../services/api';
+import { Api, User, CreateUser, UpdateUser, Role, ApiResponse } from '../services/api';
 
 @Component({
   selector: 'app-users',
@@ -32,7 +32,13 @@ export class Users implements OnInit {
     mustChangePassword: true
   };
 
-  editForm: Partial<User> = {};
+  editForm: UpdateUser = {
+    email: '',
+    firstName: '',
+    lastName: '',
+    roleId: 0,
+    isActive: true
+  };
 
   // Password validation
   passwordRequirements = {
@@ -56,8 +62,12 @@ export class Users implements OnInit {
   loadUsers() {
     this.loading = true;
     this.api.getUsers().subscribe({
-      next: (users) => {
-        this.users = users;
+      next: (response: ApiResponse<User[]>) => {
+        if (response.success && response.data) {
+          this.users = response.data;
+        } else {
+          this.error = response.message || 'Failed to load users';
+        }
         this.loading = false;
       },
       error: (error) => {
@@ -163,24 +173,51 @@ export class Users implements OnInit {
     };
   }
 
-  createUser() {
-    if (!this.isFormValid()) {
-      this.error = 'Please fill all required fields correctly';
+  onCreateUserClick() {
+    // Simple validation check
+    if (!this.createForm.firstName || !this.createForm.lastName) {
+      this.error = 'Please enter first and last name';
       return;
     }
+    
+    if (!this.createForm.email || !this.createForm.password) {
+      this.error = 'Please enter email and password';
+      return;
+    }
+    
+    if (this.createForm.roleId === 0) {
+      this.error = 'Please select a role';
+      return;
+    }
+    
+    // Convert roleId to number (HTML forms return strings)
+    this.createForm.roleId = Number(this.createForm.roleId);
+    
+    this.createUser();
+  }
 
+  createUser() {
     this.loading = true;
+    this.error = '';
+    
     this.api.createUser(this.createForm).subscribe({
-      next: (user) => {
-        this.users.push(user);
-        this.success = 'User created successfully';
+      next: (response: ApiResponse<User>) => {
+        if (response.success && response.data) {
+          this.users.push(response.data);
+          this.success = response.message || 'User created successfully';
+          this.closeModals();
+        } else {
+          this.error = response.message || 'Failed to create user';
+        }
         this.loading = false;
-        this.closeModals();
       },
       error: (error) => {
-        this.error = error.error?.message || 'Failed to create user';
+        if (error.error?.validationErrors) {
+          this.error = Object.values(error.error.validationErrors).flat().join(', ');
+        } else {
+          this.error = error.error?.message || 'Failed to create user';
+        }
         this.loading = false;
-        console.error('Error creating user:', error);
       }
     });
   }
@@ -190,17 +227,26 @@ export class Users implements OnInit {
 
     this.loading = true;
     this.api.updateUser(this.selectedUser.id, this.editForm).subscribe({
-      next: (updatedUser) => {
-        const index = this.users.findIndex(u => u.id === this.selectedUser!.id);
-        if (index !== -1) {
-          this.users[index] = updatedUser;
+      next: (response: ApiResponse<User>) => {
+        if (response.success && response.data) {
+          const index = this.users.findIndex(u => u.id === this.selectedUser!.id);
+          if (index !== -1) {
+            this.users[index] = response.data;
+          }
+          this.success = response.message || 'User updated successfully';
+          this.loading = false;
+          this.closeModals();
+        } else {
+          this.error = response.message || 'Failed to update user';
+          this.loading = false;
         }
-        this.success = 'User updated successfully';
-        this.loading = false;
-        this.closeModals();
       },
       error: (error) => {
-        this.error = error.error?.message || 'Failed to update user';
+        if (error.error?.validationErrors) {
+          this.error = Object.values(error.error.validationErrors).flat().join(', ');
+        } else {
+          this.error = error.error?.message || 'Failed to update user';
+        }
         this.loading = false;
         console.error('Error updating user:', error);
       }
@@ -211,14 +257,19 @@ export class Users implements OnInit {
   deactivateUser(user: User) {
     if (confirm(`Are you sure you want to deactivate user ${user.username}?`)) {
       this.loading = true;
-      this.api.updateUser(user.id, { isActive: false }).subscribe({
-        next: (updatedUser) => {
-          const index = this.users.findIndex(u => u.id === user.id);
-          if (index !== -1) {
-            this.users[index] = updatedUser;
+      this.api.deactivateUser(user.id).subscribe({
+        next: (response: ApiResponse<any>) => {
+          if (response.success) {
+            const index = this.users.findIndex(u => u.id === user.id);
+            if (index !== -1) {
+              this.users[index].isActive = false;
+            }
+            this.success = response.message || 'User deactivated successfully';
+            this.loading = false;
+          } else {
+            this.error = response.message || 'Failed to deactivate user';
+            this.loading = false;
           }
-          this.success = 'User deactivated successfully';
-          this.loading = false;
         },
         error: (error) => {
           this.error = error.error?.message || 'Failed to deactivate user';
@@ -232,14 +283,19 @@ export class Users implements OnInit {
   // Activate user
   activateUser(user: User) {
     this.loading = true;
-    this.api.updateUser(user.id, { isActive: true }).subscribe({
-      next: (updatedUser) => {
-        const index = this.users.findIndex(u => u.id === user.id);
-        if (index !== -1) {
-          this.users[index] = updatedUser;
+    this.api.activateUser(user.id).subscribe({
+      next: (response: ApiResponse<any>) => {
+        if (response.success) {
+          const index = this.users.findIndex(u => u.id === user.id);
+          if (index !== -1) {
+            this.users[index].isActive = true;
+          }
+          this.success = response.message || 'User activated successfully';
+          this.loading = false;
+        } else {
+          this.error = response.message || 'Failed to activate user';
+          this.loading = false;
         }
-        this.success = 'User activated successfully';
-        this.loading = false;
       },
       error: (error) => {
         this.error = error.error?.message || 'Failed to activate user';
@@ -250,44 +306,76 @@ export class Users implements OnInit {
   }
 
   lockUser(user: User) {
-    this.api.lockUser(user.id).subscribe({
-      next: () => {
-        user.isLocked = true;
-        this.success = 'User locked successfully';
-      },
-      error: (error) => {
-        this.error = error.error?.message || 'Failed to lock user';
-        console.error('Error locking user:', error);
-      }
-    });
+    if (confirm(`Are you sure you want to lock user ${user.username}?`)) {
+      this.loading = true;
+      this.api.lockUser(user.id).subscribe({
+        next: (response: ApiResponse<any>) => {
+          if (response.success) {
+            const index = this.users.findIndex(u => u.id === user.id);
+            if (index !== -1) {
+              this.users[index].isLocked = true;
+            }
+            this.success = response.message || 'User locked successfully';
+            this.loading = false;
+          } else {
+            this.error = response.message || 'Failed to lock user';
+            this.loading = false;
+          }
+        },
+        error: (error) => {
+          this.error = error.error?.message || 'Failed to lock user';
+          this.loading = false;
+          console.error('Error locking user:', error);
+        }
+      });
+    }
   }
 
   unlockUser(user: User) {
+    this.loading = true;
     this.api.unlockUser(user.id).subscribe({
-      next: () => {
-        user.isLocked = false;
-        this.success = 'User unlocked successfully';
+      next: (response: ApiResponse<any>) => {
+        if (response.success) {
+          const index = this.users.findIndex(u => u.id === user.id);
+          if (index !== -1) {
+            this.users[index].isLocked = false;
+          }
+          this.success = response.message || 'User unlocked successfully';
+          this.loading = false;
+        } else {
+          this.error = response.message || 'Failed to unlock user';
+          this.loading = false;
+        }
       },
       error: (error) => {
         this.error = error.error?.message || 'Failed to unlock user';
+        this.loading = false;
         console.error('Error unlocking user:', error);
       }
     });
   }
 
   resetPassword(user: User) {
-    const newPassword = prompt('Enter new password:');
-    if (!newPassword) return;
-
-    this.api.resetPassword(user.id, newPassword).subscribe({
-      next: () => {
-        this.success = 'Password reset successfully';
-      },
-      error: (error) => {
-        this.error = error.error?.message || 'Failed to reset password';
-        console.error('Error resetting password:', error);
-      }
-    });
+    const newPassword = prompt('Enter new password for ' + user.username + ':');
+    if (newPassword) {
+      this.loading = true;
+      this.api.resetPassword(user.id, newPassword).subscribe({
+        next: (response: ApiResponse<any>) => {
+          if (response.success) {
+            this.success = response.message || 'Password reset successfully';
+            this.loading = false;
+          } else {
+            this.error = response.message || 'Failed to reset password';
+            this.loading = false;
+          }
+        },
+        error: (error) => {
+          this.error = error.error?.message || 'Failed to reset password';
+          this.loading = false;
+          console.error('Error resetting password:', error);
+        }
+      });
+    }
   }
 
   isFormValid(): boolean {

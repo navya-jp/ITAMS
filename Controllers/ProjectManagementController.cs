@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ITAMS.Domain.Entities;
 using ITAMS.Domain.Interfaces;
+using ITAMS.Models;
 
 namespace ITAMS.Controllers;
 

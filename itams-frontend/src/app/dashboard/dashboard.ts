@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Api } from '../services/api';
+import { Api, ApiResponse, User } from '../services/api';
 
 @Component({
   selector: 'app-dashboard',
@@ -24,9 +24,11 @@ export class Dashboard implements OnInit {
   private loadStats() {
     // Load users stats
     this.api.getUsers().subscribe({
-      next: (users) => {
-        this.totalUsers = users.length;
-        this.activeUsers = users.filter(u => u.isActive && !u.isLocked).length;
+      next: (response: ApiResponse<User[]>) => {
+        if (response.success && response.data) {
+          this.totalUsers = response.data.length;
+          this.activeUsers = response.data.filter((u: User) => u.isActive && !u.isLocked).length;
+        }
       },
       error: (error) => console.error('Error loading users:', error)
     });

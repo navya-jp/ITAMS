@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITAMS User CRUD Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 8px 16px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; white-space: pre-wrap; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 ITAMS User CRUD API Test</h1>
+        <p>Testing the new Users API endpoints at <code>http://localhost:5066/api/users</code></p>
+
+        <!-- Test 1: Get All Users -->
+        <div class="test-section">
+            <h3>📋 Test 1: Get All Users</h3>
+            <button onclick="getAllUsers()">GET /api/users</button>
+            <div id="getAllResult" class="result"></div>
+        </div>
+
+        <!-- Test 2: Get Roles -->
+        <div class="test-section">
+            <h3>👥 Test 2: Get All Roles</h3>
+            <button onclick="getAllRoles()">GET /api/superadmin/roles</button>
+            <div id="getRolesResult" class="result"></div>
+        </div>
+
+        <!-- Test 3: Create User -->
+        <div class="test-section">
+            <h3>➕ Test 3: Create New User</h3>
+            <div>
+                <input type="text" id="username" placeholder="Username" value="john.doe">
+                <input type="email" id="email" placeholder="Email" value="john.doe@company.com">
+                <input type="text" id="firstName" placeholder="First Name" value="John">
+                <input type="text" id="lastName" placeholder="Last Name" value="Doe">
+                <select id="roleId">
+                    <option value="">Select Role</option>
+                    <option value="1">Super Admin</option>
+                    <option value="2">Admin</option>
+                    <option value="3">User</option>
+                </select>
+                <input type="password" id="password" placeholder="Password" value="Test@123456">
+            </div>
+            <button onclick="createUser()">POST /api/users</button>
+            <div id="createResult" class="result"></div>
+        </div>
+
+        <!-- Test 4: Update User -->
+        <div class="test-section">
+            <h3>✏️ Test 4: Update User</h3>
+            <div>
+                <input type="number" id="updateUserId" placeholder="User ID" value="1">
+                <input type="email" id="updateEmail" placeholder="New Email" value="john.updated@company.com">
+                <input type="text" id="updateFirstName" placeholder="New First Name" value="John Updated">
+            </div>
+            <button onclick="updateUser()">PUT /api/users/{id}</button>
+            <div id="updateResult" class="result"></div>
+        </div>
+
+        <!-- Test 5: Deactivate User -->
+        <div class="test-section">
+            <h3>🚫 Test 5: Deactivate User</h3>
+            <div>
+                <input type="number" id="deactivateUserId" placeholder="User ID" value="1">
+            </div>
+            <button onclick="deactivateUser()">PATCH /api/users/{id}/deactivate</button>
+            <div id="deactivateResult" class="result"></div>
+        </div>
+
+        <!-- Test 6: Activate User -->
+        <div class="test-section">
+            <h3>✅ Test 6: Activate User</h3>
+            <div>
+                <input type="number" id="activateUserId" placeholder="User ID" value="1">
+            </div>
+            <button onclick="activateUser()">PATCH /api/users/{id}/activate</button>
+            <div id="activateResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5066/api';
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.json();
+                return { success: response.ok, data, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function getAllUsers() {
+            const result = await makeRequest(`${API_BASE}/users`);
+            displayResult('getAllResult', result);
+        }
+
+        async function getAllRoles() {
+            const result = await makeRequest(`${API_BASE}/superadmin/roles`);
+            displayResult('getRolesResult', result);
+        }
+
+        async function createUser() {
+            const userData = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                roleId: parseInt(document.getElementById('roleId').value),
+                password: document.getElementById('password').value,
+                mustChangePassword: true
+            };
+
+            const result = await makeRequest(`${API_BASE}/users`, {
+                method: 'POST',
+                body: JSON.stringify(userData)
+            });
+            displayResult('createResult', result);
+        }
+
+        async function updateUser() {
+            const userId = document.getElementById('updateUserId').value;
+            const updateData = {
+                email: document.getElementById('updateEmail').value,
+                firstName: document.getElementById('updateFirstName').value
+            };
+
+            const result = await makeRequest(`${API_BASE}/users/${userId}`, {
+                method: 'PUT',
+                body: JSON.stringify(updateData)
+            });
+            displayResult('updateResult', result);
+        }
+
+        async function deactivateUser() {
+            const userId = document.getElementById('deactivateUserId').value;
+            const result = await makeRequest(`${API_BASE}/users/${userId}/deactivate`, {
+                method: 'PATCH'
+            });
+            displayResult('deactivateResult', result);
+        }
+
+        async function activateUser() {
+            const userId = document.getElementById('activateUserId').value;
+            const result = await makeRequest(`${API_BASE}/users/${userId}/activate`, {
+                method: 'PATCH'
+            });
+            displayResult('activateResult', result);
+        }
+
+        function displayResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            element.className = 'result ' + (result.success ? 'success' : 'error');
+            element.textContent = JSON.stringify(result, null, 2);
+        }
+
+        // Load roles on page load
+        window.onload = function() {
+            getAllRoles();
+        };
+    </script>
+</body>
+</html>
