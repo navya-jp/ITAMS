@@ -23,8 +23,7 @@ builder.Services.AddSwaggerGen();
 // Add Entity Framework
 builder.Services.AddDbContext<ITAMSDbContext>(options =>
 {
-    // Use SQL Server Express by default
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    var connectionString = builder.Configuration.GetConnectionString("SharedSqlServer");
     options.UseSqlServer(connectionString);
 });
 
