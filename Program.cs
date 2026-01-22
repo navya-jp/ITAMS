@@ -22,8 +22,11 @@ builder.Services.AddSwaggerGen();
 
 // Add Entity Framework
 builder.Services.AddDbContext<ITAMSDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ?? 
-        "Server=(localdb)\\mssqllocaldb;Database=ITAMS;Trusted_Connection=true;MultipleActiveResultSets=true"));
+{
+    // Use SQL Server Express by default
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseSqlServer(connectionString);
+});
 
 // Add repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
