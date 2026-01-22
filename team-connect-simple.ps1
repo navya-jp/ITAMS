@@ -3,27 +3,44 @@
 
 Write-Host "=== ITAMS Team Database Connection ===" -ForegroundColor Cyan
 Write-Host "Connecting to shared database at 192.168.208.10..." -ForegroundColor Yellow
+Write-Host "WARNING: This will REPLACE your local database connection!" -ForegroundColor Red
 
-# Update appsettings.json to use shared database
+# Update appsettings.json to use shared database ONLY
 $appsettingsPath = "appsettings.json"
 
 if (Test-Path $appsettingsPath) {
     try {
-        # Read current settings
-        $appsettings = Get-Content $appsettingsPath | ConvertFrom-Json
-        
-        # Add/Update SharedSqlServer connection string
-        if (-not $appsettings.ConnectionStrings) {
-            $appsettings | Add-Member -Type NoteProperty -Name "ConnectionStrings" -Value @{}
+        # Create new appsettings with ONLY shared database
+        $newSettings = @{
+            "Logging" = @{
+                "LogLevel" = @{
+                    "Default" = "Information"
+                    "Microsoft.AspNetCore" = "Warning"
+                }
+            }
+            "AllowedHosts" = "*"
+            "ConnectionStrings" = @{
+                "DefaultConnection" = "DISABLED - USING SHARED DATABASE ONLY"
+                "SharedSqlServer" = "Server=192.168.208.10,1433;Database=ITAMS;User Id=itams_user;Password=ITAMS@2024!;TrustServerCertificate=true;MultipleActiveResultSets=true"
+            }
         }
         
-        $appsettings.ConnectionStrings.SharedSqlServer = "Server=192.168.208.10,1433;Database=ITAMS;User Id=itams_user;Password=ITAMS@2024!;TrustServerCertificate=true;MultipleActiveResultSets=true"
-        
         # Save updated settings
-        $appsettings | ConvertTo-Json -Depth 10 | Set-Content $appsettingsPath
+        $newSettings | ConvertTo-Json -Depth 10 | Set-Content $appsettingsPath
         
         Write-Host "✓ Database connection updated successfully!" -ForegroundColor Green
         Write-Host "✓ Now connected to shared database at 192.168.208.10" -ForegroundColor Green
+        Write-Host "✓ You should see all users created by team members" -ForegroundColor Green
+        
+        # Test connectivity
+        Write-Host "`nTesting connection to 192.168.208.10..." -ForegroundColor Yellow
+        $ping = Test-Connection -ComputerName "192.168.208.10" -Count 2 -Quiet
+        if ($ping) {
+            Write-Host "✓ Network connection successful" -ForegroundColor Green
+        } else {
+            Write-Host "✗ Cannot reach 192.168.208.10 - check network/firewall" -ForegroundColor Red
+            return
+        }
         
         # Build and run
         Write-Host "`nBuilding project..." -ForegroundColor Yellow
