@@ -1,0 +1,30 @@
+ITAMS_Shared Database Connection Information
+===========================================
+
+FOR SQL SERVER MANAGEMENT STUDIO:
+
+Server Name: .\SQLEXPRESS
+(or: localhost\SQLEXPRESS)
+
+Authentication: SQL Server Authentication
+Login: itams_user
+Password: ITAMS@2024!
+
+Database: ITAMS_Shared
+
+ALTERNATIVE CONNECTION (Windows Authentication):
+Server Name: .\SQLEXPRESS
+Authentication: Windows Authentication
+Database: ITAMS_Shared
+
+===========================================
+
+TABLES TO CHECK:
+- Users (should have superadmin user)
+- Roles (should have 5 roles)
+- Projects (empty)
+- Locations (empty)
+- Permissions (should have permissions)
+- RolePermissions (role-permission mappings)
+
+===========================================
