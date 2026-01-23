@@ -6,7 +6,7 @@ Write-Host "Server: 192.168.208.10\SQLEXPRESS" -ForegroundColor Yellow
 Write-Host "Database: ITAMS_Shared" -ForegroundColor Yellow
 
 # Update appsettings.json with shared database connection
-$connectionString = "Server=192.168.208.10\SQLEXPRESS;Database=ITAMS_Shared;User Id=itams_user;Password=ITAMS@2024!;TrustServerCertificate=true;MultipleActiveResultSets=true"
+$connectionString = "Server=192.168.208.10,1433;Database=ITAMS_Shared;User Id=itams_user;Password=ITAMS@2024!;TrustServerCertificate=true;MultipleActiveResultSets=true"
 
 $appsettingsContent = @"
 {
