@@ -33,12 +33,12 @@ export interface User {
 }
 
 export interface CreateUser {
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  roleId: number;
-  password: string;
+  username: string;  // 3-100 chars, alphanumeric + underscore/dots only
+  email: string;     // valid email format
+  firstName: string; // 1-100 chars, required
+  lastName: string;  // 1-100 chars, required
+  roleId: number;    // required, > 0
+  password: string;  // 8+ chars, must have uppercase, lowercase, digit, special char (@$!%*?&)
   mustChangePassword: boolean;
 }
 
@@ -70,8 +70,11 @@ export interface Role {
 export interface Project {
   id: number;
   name: string;
+  preferredName?: string;
   description?: string;
   code: string;
+  spvName: string;
+  states: string[];
   isActive: boolean;
   createdAt: string;
   locationCount: number;
@@ -79,30 +82,71 @@ export interface Project {
 }
 
 export interface CreateProject {
-  name: string;
+  name: string; // SPV Name
+  preferredName?: string;
   code: string;
+  spvName: string;
+  states: string[];
   description?: string;
 }
 
 export interface Location {
   id: number;
   name: string;
-  region: string;
-  state: string;
+  type: 'office' | 'plaza';
+  projectId: number;
+  isActive: boolean;
+  assetCount: number;
+  
+  // Office specific
+  district?: string;
+  
+  // Plaza specific
+  plazaCode?: string;
+  governmentCode?: string;
+  chainageNumber?: string;
+  latitude?: number;
+  longitude?: number;
+  numberOfLanes?: number;
+  lanes?: Lane[];
+  internalLocations?: string[];
+  
+  // Backend fields
+  region?: string;
+  state?: string;
   plaza?: string;
   lane?: string;
   office?: string;
   address?: string;
-  isActive: boolean;
-  projectId: number;
-  assetCount: number;
+}
+
+export interface Lane {
+  id: number;
+  laneNumber: number;
+  locationId: number;
+  // Future expandable properties
 }
 
 export interface CreateLocation {
   name: string;
+  type: 'office' | 'plaza';
   projectId: number;
-  region: string;
-  state: string;
+  
+  // Office specific
+  district?: string;
+  
+  // Plaza specific
+  plazaCode?: string;
+  governmentCode?: string;
+  chainageNumber?: string;
+  latitude?: number;
+  longitude?: number;
+  numberOfLanes?: number;
+  internalLocations?: string[];
+  
+  // Backend required fields
+  region?: string;
+  state?: string;
   plaza?: string;
   lane?: string;
   office?: string;
@@ -113,7 +157,7 @@ export interface CreateLocation {
   providedIn: 'root',
 })
 export class Api {
-  private readonly baseUrl = 'http://localhost:5068/api';
+  private readonly baseUrl = 'http://localhost:5066/api';
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'

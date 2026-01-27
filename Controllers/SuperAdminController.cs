@@ -537,6 +537,49 @@ public class SuperAdminController : ControllerBase
         }
     }
 
+    [HttpPut("projects/{id}")]
+    public async Task<ActionResult<ProjectSummaryDto>> UpdateProject(int id, [FromBody] UpdateProjectDto updateProjectDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var request = new UpdateProjectRequest
+            {
+                Name = updateProjectDto.Name,
+                Description = updateProjectDto.Description,
+                IsActive = updateProjectDto.IsActive
+            };
+
+            var project = await _projectService.UpdateProjectAsync(id, request);
+
+            var projectDto = new ProjectSummaryDto
+            {
+                Id = project.Id,
+                Name = project.Name,
+                Description = project.Description,
+                Code = project.Code,
+                IsActive = project.IsActive,
+                CreatedAt = project.CreatedAt,
+                LocationCount = project.Locations.Count,
+                UserCount = project.UserProjects.Count(up => up.IsActive)
+            };
+
+            return Ok(projectDto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while updating the project", error = ex.Message });
+        }
+    }
+
     [HttpDelete("projects/{id}")]
     public async Task<ActionResult> DeleteProject(int id)
     {

@@ -1,159 +1,313 @@
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Project Management</h2>
-        <button class="btn btn-primary" (click)="openCreateModal()">
-          <i class="fas fa-plus me-2"></i>Add Project
-        </button>
-      </div>
+<!-- Projects Main View - No Scroll Design -->
+<div class="projects-container h-100 d-flex flex-column">
+  <!-- Header Section -->
+  <div class="projects-header d-flex justify-content-between align-items-center p-3 border-bottom">
+    <h2 class="mb-0">Project Management</h2>
+    <button class="btn btn-primary" (click)="openCreateModal()">
+      <i class="fas fa-plus me-2"></i>Create Project
+    </button>
+  </div>
 
-      <!-- Success/Error Messages -->
-      <div *ngIf="success" class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ success }}
-        <button type="button" class="btn-close" (click)="clearMessages()"></button>
-      </div>
-      <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ error }}
-        <button type="button" class="btn-close" (click)="clearMessages()"></button>
-      </div>
+  <!-- Messages Section -->
+  <div class="messages-section" *ngIf="success || error">
+    <div *ngIf="success" class="alert alert-success alert-dismissible fade show m-3 mb-0" role="alert">
+      {{ success }}
+      <button type="button" class="btn-close" (click)="clearMessages()"></button>
+    </div>
+    <div *ngIf="error" class="alert alert-danger alert-dismissible fade show m-3 mb-0" role="alert">
+      {{ error }}
+      <button type="button" class="btn-close" (click)="clearMessages()"></button>
+    </div>
+  </div>
 
-      <!-- Projects Grid -->
-      <div *ngIf="loading" class="text-center py-4">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
+  <!-- Projects Content - Scrollable if needed -->
+  <div class="projects-content flex-grow-1 p-3" style="overflow-y: auto;">
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
       </div>
+    </div>
 
-      <div *ngIf="!loading" class="row">
-        <div class="col-md-6 col-lg-4 mb-4" *ngFor="let project of projects">
-          <div class="card h-100">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <h5 class="card-title mb-0">{{ project.name }}</h5>
-                <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-ellipsis-v"></i>
-                  </button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" (click)="openEditModal(project)">
-                      <i class="fas fa-edit me-2"></i>Edit
-                    </a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li *ngIf="project.isActive"><a class="dropdown-item text-warning" href="#" (click)="deactivateProject(project)">
-                      <i class="fas fa-pause me-2"></i>Deactivate
-                    </a></li>
-                    <li *ngIf="!project.isActive"><a class="dropdown-item text-success" href="#" (click)="activateProject(project)">
-                      <i class="fas fa-play me-2"></i>Activate
-                    </a></li>
-                  </ul>
-                </div>
+    <!-- Projects Table -->
+    <div *ngIf="!loading" class="table-responsive">
+      <table class="table table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Project Code</th>
+            <th>SPV Name</th>
+            <th>Preferred Name</th>
+            <th>State</th>
+            <th>Locations</th>
+            <th>Users</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let project of projects">
+            <td>
+              <strong class="text-primary">{{ project.code }}</strong>
+            </td>
+            <td>{{ project.spvName }}</td>
+            <td>{{ project.preferredName || project.name }}</td>
+            <td>
+              <div class="d-flex flex-wrap gap-1">
+                <span *ngFor="let state of project.states" class="badge bg-info">{{ state }}</span>
               </div>
-              
-              <div class="mb-3">
-                <span class="badge bg-primary">{{ project.code }}</span>
-                <span class="badge ms-2" [class]="project.isActive ? 'bg-success' : 'bg-secondary'">
-                  {{ project.isActive ? 'Active' : 'Inactive' }}
-                </span>
+            </td>
+            <td>
+              <span class="badge bg-secondary">{{ project.locationCount }}</span>
+            </td>
+            <td>
+              <span class="badge bg-secondary">{{ project.userCount }}</span>
+            </td>
+            <td>
+              <span class="badge" [class]="project.isActive ? 'bg-success' : 'bg-warning'">
+                {{ project.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm" role="group">
+                <button class="btn btn-outline-primary" (click)="openLocationModal(project)" title="Manage Locations">
+                  <i class="fas fa-map-marker-alt"></i>
+                </button>
+                <button class="btn btn-outline-secondary" (click)="openEditModal(project)" title="Edit Project">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button *ngIf="project.isActive" class="btn btn-outline-warning" (click)="deactivateProject(project)" title="Deactivate">
+                  <i class="fas fa-pause"></i>
+                </button>
+                <button *ngIf="!project.isActive" class="btn btn-outline-success" (click)="activateProject(project)" title="Activate">
+                  <i class="fas fa-play"></i>
+                </button>
               </div>
-
-              <p class="card-text text-muted" *ngIf="project.description">
-                {{ project.description }}
-              </p>
-              <p class="card-text text-muted" *ngIf="!project.description">
-                No description provided
-              </p>
-
-              <div class="row text-center mt-3">
-                <div class="col-6">
-                  <div class="border-end">
-                    <h6 class="mb-0">{{ project.locationCount }}</h6>
-                    <small class="text-muted">Locations</small>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <h6 class="mb-0">{{ project.userCount }}</h6>
-                  <small class="text-muted">Users</small>
-                </div>
-              </div>
-            </div>
-            <div class="card-footer bg-transparent">
-              <small class="text-muted">Created: {{ project.createdAt | date:'short' }}</small>
-            </div>
-          </div>
-        </div>
-
-        <div *ngIf="projects.length === 0" class="col-12">
-          <div class="card">
-            <div class="card-body text-center py-5">
-              <i class="fas fa-project-diagram fa-3x text-muted mb-3"></i>
-              <h5 class="text-muted">No projects found</h5>
-              <p class="text-muted">Get started by creating your first project</p>
-              <button class="btn btn-primary" (click)="openCreateModal()">
-                <i class="fas fa-plus me-2"></i>Create Project
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+            </td>
+          </tr>
+          <tr *ngIf="projects.length === 0">
+            <td colspan="8" class="text-center py-4 text-muted">
+              No projects found. <a href="#" (click)="openCreateModal(); $event.preventDefault()">Create your first project</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
-<!-- Create Project Modal -->
+<!-- Create Project Modal - Tab Based, No Scroll -->
 <div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content h-75">
       <div class="modal-header">
         <h5 class="modal-title">Create New Project</h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
-      <div class="modal-body">
-        <form>
-          <div class="mb-3">
-            <label class="form-label">Project Name *</label>
-            <div class="input-group">
-              <input type="text" class="form-control" [(ngModel)]="createForm.name" name="name" (input)="generateProjectCode()" required>
-              <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Select project type">
-                  <i class="fas fa-list"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <li *ngFor="let type of projectTypes">
-                    <a class="dropdown-item" href="#" (click)="selectProjectType(type)">{{ type }}</a>
-                  </li>
-                </ul>
+
+      <!-- Tab Navigation -->
+      <div class="modal-body p-0 d-flex flex-column">
+        <ul class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" 
+                    [class.active]="currentTab === 1"
+                    [class.disabled]="currentTab < 1"
+                    (click)="goToTab(1)"
+                    type="button">
+              <i class="fas fa-info-circle me-2"></i>Project Details
+              <i *ngIf="isTabValid(1)" class="fas fa-check text-success ms-2"></i>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" 
+                    [class.active]="currentTab === 2"
+                    [class.disabled]="maxTab < 2"
+                    (click)="goToTab(2)"
+                    type="button">
+              <i class="fas fa-map-marker-alt me-2"></i>Location Management
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content flex-grow-1 p-3" style="overflow-y: auto;">
+          <!-- Tab 1: Project Details -->
+          <div class="tab-pane fade" [class.show]="currentTab === 1" [class.active]="currentTab === 1">
+            <form class="h-100 d-flex flex-column">
+              <div class="row g-3 flex-grow-1">
+                <!-- SPV Name -->
+                <div class="col-md-6">
+                  <label class="form-label">SPV Name *</label>
+                  <div class="dropdown w-100">
+                    <input type="text" 
+                           class="form-control" 
+                           [class.is-invalid]="hasValidationError('spvName')"
+                           [(ngModel)]="createForm.spvName" 
+                           name="spvName"
+                           (input)="onSpvInput($event)"
+                           (focus)="toggleSpvDropdown($event)"
+                           placeholder="Type or select SPV name"
+                           autocomplete="off">
+                    <ul class="dropdown-menu w-100" [class.show]="showSpvDropdown" style="max-height: 200px; overflow-y: auto;">
+                      <li *ngFor="let spv of filteredSpvNames">
+                        <a class="dropdown-item" href="#" (click)="selectSpv(spv); $event.preventDefault()">{{ spv }}</a>
+                      </li>
+                      <li *ngIf="filteredSpvNames.length === 0" class="dropdown-item-text text-muted">
+                        No matches found
+                      </li>
+                    </ul>
+                  </div>
+                  <div *ngIf="hasValidationError('spvName')" class="invalid-feedback d-block">
+                    {{ getValidationError('spvName') }}
+                  </div>
+                  <div class="form-text">Type to search or select from list</div>
+                </div>
+
+                <!-- Preferred Name -->
+                <div class="col-md-6">
+                  <label class="form-label">Preferred Name <small class="text-muted">(Optional)</small></label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="createForm.preferredName" 
+                         name="preferredName"
+                         placeholder="Enter preferred project name">
+                </div>
+
+                <!-- States (Max 2) -->
+                <div class="col-12">
+                  <label class="form-label">States * <small class="text-muted">(Select 1-2 states)</small></label>
+                  <div class="dropdown w-100">
+                    <input type="text" 
+                           class="form-control" 
+                           [class.is-invalid]="hasValidationError('states')"
+                           [(ngModel)]="stateSearchTerm" 
+                           name="stateSearch"
+                           (input)="onStateInput($event)"
+                           (focus)="toggleStateDropdown($event)"
+                           placeholder="Type to search and select states"
+                           autocomplete="off">
+                    <ul class="dropdown-menu w-100" [class.show]="showStateDropdown" style="max-height: 200px; overflow-y: auto;">
+                      <li *ngFor="let state of filteredStates">
+                        <a class="dropdown-item d-flex justify-content-between align-items-center" 
+                           href="#" 
+                           (click)="toggleStateSelection(state); $event.preventDefault()"
+                           [class.active]="isStateSelected(state)">
+                          {{ state }}
+                          <i *ngIf="isStateSelected(state)" class="fas fa-check text-success"></i>
+                        </a>
+                      </li>
+                      <li *ngIf="filteredStates.length === 0" class="dropdown-item-text text-muted">
+                        No matches found
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <!-- Selected States Display -->
+                  <div class="mt-2" *ngIf="createForm.states.length > 0">
+                    <span *ngFor="let state of createForm.states" class="badge bg-primary me-2 mb-1">
+                      {{ state }}
+                      <button type="button" class="btn-close btn-close-white ms-2" 
+                              (click)="removeState(state)" 
+                              style="font-size: 0.7em;"></button>
+                    </span>
+                  </div>
+                  
+                  <div *ngIf="hasValidationError('states')" class="invalid-feedback d-block">
+                    {{ getValidationError('states') }}
+                  </div>
+                  <div class="form-text">
+                    Select 1-2 states for this project. Districts will be filtered based on selected states.
+                  </div>
+                </div>
+
+                <!-- Project Code -->
+                <div class="col-md-6">
+                  <label class="form-label">Project Code * <small class="text-muted">(Auto-generated)</small></label>
+                  <input type="text" 
+                         class="form-control text-uppercase" 
+                         [class.is-invalid]="hasValidationError('code')"
+                         [(ngModel)]="createForm.code" 
+                         name="code"
+                         (input)="onProjectCodeChange()"
+                         placeholder="Auto-generated from SPV and State">
+                  <div *ngIf="hasValidationError('code')" class="invalid-feedback">
+                    {{ getValidationError('code') }}
+                  </div>
+                  <div class="form-text">Format: SPV_STATE_XXXX (uppercase, alphanumeric, hyphens, underscores)</div>
+                </div>
+
+                <!-- Description -->
+                <div class="col-12">
+                  <label class="form-label">Description <small class="text-muted">(Optional)</small></label>
+                  <textarea class="form-control" 
+                            rows="3" 
+                            [(ngModel)]="createForm.description" 
+                            name="description"
+                            placeholder="Enter project description (max 500 characters)"
+                            maxlength="500"></textarea>
+                  <div class="form-text">{{ (createForm.description || '').length }}/500 characters</div>
+                </div>
               </div>
-            </div>
-            <div class="form-text">2-100 characters or select from common project types</div>
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label">Project Code * <small class="text-muted">(Auto-generated)</small></label>
-            <input type="text" class="form-control text-uppercase" 
-                   [class.is-invalid]="createForm.code && !validateProjectCode(createForm.code)"
-                   [class.is-valid]="createForm.code && validateProjectCode(createForm.code)"
-                   [(ngModel)]="createForm.code" 
-                   name="code" 
-                   (input)="createForm.code = createForm.code.toUpperCase()"
-                   required>
-            <div class="form-text">Generated from project name, or enter custom code (uppercase, alphanumeric, hyphens, underscores)</div>
+            </form>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label">Description</label>
-            <textarea class="form-control" rows="3" [(ngModel)]="createForm.description" name="description"></textarea>
-            <div class="form-text">Optional, up to 500 characters</div>
+          <!-- Tab 2: Location Management -->
+          <div class="tab-pane fade" [class.show]="currentTab === 2" [class.active]="currentTab === 2">
+            <div class="h-100 d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Location Management</h6>
+                <button class="btn btn-primary btn-sm" (click)="openAddLocationModal()">
+                  <i class="fas fa-plus me-2"></i>Add Location
+                </button>
+              </div>
+              
+              <!-- Locations List -->
+              <div class="flex-grow-1" style="overflow-y: auto;">
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle me-2"></i>
+                  Locations will be managed here. First create the project, then add locations.
+                </div>
+                
+                <!-- Placeholder for locations table -->
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Location Name</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="4" class="text-center text-muted py-3">
+                          No locations added yet
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
+
+      <!-- Modal Footer with Navigation -->
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-        <button type="button" class="btn btn-primary" 
-                [disabled]="!isFormValid() || loading" 
+        <button *ngIf="currentTab > 1" type="button" class="btn btn-outline-primary" (click)="previousTab()">
+          <i class="fas fa-arrow-left me-2"></i>Previous
+        </button>
+        <button *ngIf="currentTab < 2" type="button" class="btn btn-primary" 
+                [disabled]="!isTabValid(currentTab)" 
+                (click)="nextTab()">
+          Next<i class="fas fa-arrow-right ms-2"></i>
+        </button>
+        <button *ngIf="currentTab === 1" type="button" class="btn btn-success" 
+                [disabled]="!isTabValid(1) || loading" 
                 (click)="createProject()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-          Create Project
+          <i *ngIf="!loading" class="fas fa-save me-2"></i>Create Project
         </button>
       </div>
     </div>
@@ -162,7 +316,7 @@
 
 <!-- Edit Project Modal -->
 <div class="modal fade" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" tabindex="-1">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Edit Project</h5>
@@ -177,8 +331,14 @@
           </div>
           
           <div class="mb-3">
-            <label class="form-label">Project Name</label>
-            <input type="text" class="form-control" [(ngModel)]="editForm.name" name="name">
+            <label class="form-label">SPV Name</label>
+            <input type="text" class="form-control" [value]="selectedProject.spvName" readonly>
+            <div class="form-text">SPV name cannot be changed</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Preferred Name</label>
+            <input type="text" class="form-control" [(ngModel)]="editForm.preferredName" name="preferredName">
           </div>
 
           <div class="mb-3">
@@ -198,7 +358,349 @@
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
         <button type="button" class="btn btn-primary" [disabled]="loading" (click)="updateProject()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-          Update Project
+          <i *ngIf="!loading" class="fas fa-save me-2"></i>Update Project
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Location Modal - Multi-tab for Office/Plaza -->
+<div class="modal fade" [class.show]="showAddLocationModal" [style.display]="showAddLocationModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content h-75">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Location</h5>
+        <button type="button" class="btn-close" (click)="closeAddLocationModal()"></button>
+      </div>
+
+      <div class="modal-body p-0 d-flex flex-column">
+        <!-- Location Type Selection -->
+        <div class="p-3 border-bottom">
+          <label class="form-label">Location Type *</label>
+          <div class="btn-group w-100" role="group">
+            <input type="radio" class="btn-check" name="locationType" id="office" value="office" [(ngModel)]="locationForm.type">
+            <label class="btn btn-outline-primary" for="office">
+              <i class="fas fa-building me-2"></i>Office
+            </label>
+            
+            <input type="radio" class="btn-check" name="locationType" id="plaza" value="plaza" [(ngModel)]="locationForm.type">
+            <label class="btn btn-outline-primary" for="plaza">
+              <i class="fas fa-road me-2"></i>Plaza
+            </label>
+          </div>
+        </div>
+
+        <!-- Office Form -->
+        <div *ngIf="locationForm.type === 'office'" class="flex-grow-1 p-3">
+          <h6 class="mb-3">Office Details</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Office Name *</label>
+              <div class="dropdown w-100">
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="locationForm.name" 
+                       name="officeName"
+                       (input)="onOfficeNameInput($event)"
+                       (focus)="showOfficeDropdown = true"
+                       placeholder="Type or select office name"
+                       autocomplete="off">
+                <ul class="dropdown-menu w-100" [class.show]="showOfficeDropdown" style="max-height: 200px; overflow-y: auto;">
+                  <li *ngFor="let office of filteredOfficeNames">
+                    <a class="dropdown-item" href="#" (click)="selectOfficeName(office); $event.preventDefault()">{{ office }}</a>
+                  </li>
+                </ul>
+              </div>
+              <div class="form-text">Type to search or select from predefined offices</div>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">District *</label>
+              <div class="dropdown w-100">
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="locationForm.district" 
+                       name="district"
+                       (input)="onDistrictInput($event)"
+                       (focus)="showDistrictDropdown = true"
+                       placeholder="Type or select district"
+                       autocomplete="off">
+                <ul class="dropdown-menu w-100" [class.show]="showDistrictDropdown" style="max-height: 200px; overflow-y: auto;">
+                  <li *ngFor="let district of filteredDistricts">
+                    <a class="dropdown-item" href="#" (click)="selectDistrict(district); $event.preventDefault()">{{ district }}</a>
+                  </li>
+                </ul>
+              </div>
+              <div class="form-text">Districts filtered by selected states</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plaza Form with Tabs -->
+        <div *ngIf="locationForm.type === 'plaza'" class="flex-grow-1 d-flex flex-column">
+          <!-- Plaza Sub-tabs -->
+          <ul class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" 
+                      [class.active]="plazaTab === 1"
+                      (click)="plazaTab = 1"
+                      type="button">
+                <i class="fas fa-info-circle me-2"></i>Basic Details
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" 
+                      [class.active]="plazaTab === 2"
+                      (click)="plazaTab = 2"
+                      type="button">
+                <i class="fas fa-road me-2"></i>Lane Config
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" 
+                      [class.active]="plazaTab === 3"
+                      (click)="plazaTab = 3"
+                      type="button">
+                <i class="fas fa-map-marker-alt me-2"></i>Internal Locations
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" 
+                      [class.active]="plazaTab === 4"
+                      (click)="plazaTab = 4"
+                      type="button">
+                <i class="fas fa-check me-2"></i>Review
+              </button>
+            </li>
+          </ul>
+
+          <!-- Plaza Tab Content -->
+          <div class="tab-content flex-grow-1 p-3" style="overflow-y: auto;">
+            <!-- Plaza Tab 1: Basic Details -->
+            <div class="tab-pane fade" [class.show]="plazaTab === 1" [class.active]="plazaTab === 1">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Plaza Name *</label>
+                  <div class="dropdown w-100">
+                    <input type="text" 
+                           class="form-control" 
+                           [(ngModel)]="locationForm.name" 
+                           name="plazaName"
+                           (input)="onPlazaNameInput($event)"
+                           (focus)="showPlazaDropdown = true"
+                           placeholder="Type or select plaza name"
+                           autocomplete="off">
+                    <ul class="dropdown-menu w-100" [class.show]="showPlazaDropdown" style="max-height: 200px; overflow-y: auto;">
+                      <li *ngFor="let plaza of filteredPlazaNames">
+                        <a class="dropdown-item" href="#" (click)="selectPlazaName(plaza); $event.preventDefault()">{{ plaza }}</a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label">Plaza Code *</label>
+                  <input type="text" 
+                         class="form-control text-uppercase" 
+                         [(ngModel)]="locationForm.plazaCode" 
+                         name="plazaCode"
+                         (input)="onPlazaCodeChange()"
+                         placeholder="Auto-generated or custom">
+                  <div class="form-text">Auto-generated from plaza name</div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Government Code *</label>
+                  <div class="dropdown w-100">
+                    <input type="text" 
+                           class="form-control text-uppercase" 
+                           [(ngModel)]="locationForm.governmentCode" 
+                           name="governmentCode"
+                           (input)="onGovCodeInput($event)"
+                           (focus)="showGovCodeDropdown = true"
+                           placeholder="Type or select government code"
+                           autocomplete="off">
+                    <ul class="dropdown-menu w-100" [class.show]="showGovCodeDropdown" style="max-height: 200px; overflow-y: auto;">
+                      <li *ngFor="let code of filteredGovCodes">
+                        <a class="dropdown-item" href="#" (click)="selectGovCode(code); $event.preventDefault()">{{ code }}</a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Chainage Number *</label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="locationForm.chainageNumber" 
+                         name="chainageNumber"
+                         (input)="onChainageInput($event)"
+                         placeholder="000.000"
+                         maxlength="7">
+                  <div class="form-text">Format: 000.000 (6 digits, auto-formatted)</div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Latitude *</label>
+                  <input type="number" 
+                         class="form-control" 
+                         [(ngModel)]="locationForm.latitude" 
+                         name="latitude"
+                         min="6.0" 
+                         max="37.6" 
+                         step="0.000001"
+                         placeholder="6.0 to 37.6">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Longitude *</label>
+                  <input type="number" 
+                         class="form-control" 
+                         [(ngModel)]="locationForm.longitude" 
+                         name="longitude"
+                         min="68.0" 
+                         max="97.25" 
+                         step="0.000001"
+                         placeholder="68.0 to 97.25">
+                </div>
+              </div>
+            </div>
+
+            <!-- Plaza Tab 2: Lane Configuration -->
+            <div class="tab-pane fade" [class.show]="plazaTab === 2" [class.active]="plazaTab === 2">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Number of Lanes *</label>
+                  <select class="form-select" [(ngModel)]="locationForm.numberOfLanes" name="numberOfLanes" (change)="generateLanes()">
+                    <option value="">Select lanes</option>
+                    <option *ngFor="let num of laneOptions" [value]="num">{{ num }} Lane{{ num > 1 ? 's' : '' }}</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- Lane Tabs -->
+              <div *ngIf="locationForm.numberOfLanes" class="mt-4">
+                <ul class="nav nav-pills nav-fill">
+                  <li class="nav-item" *ngFor="let lane of generatedLanes; let i = index">
+                    <button class="nav-link" 
+                            [class.active]="selectedLane === i"
+                            (click)="selectedLane = i"
+                            type="button">
+                      Lane {{ i + 1 }}
+                    </button>
+                  </li>
+                </ul>
+                
+                <div class="mt-3 p-3 border rounded">
+                  <h6>Lane {{ selectedLane + 1 }} Configuration</h6>
+                  <p class="text-muted">Lane-specific configuration will be added here in future updates.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Plaza Tab 3: Internal Locations -->
+            <div class="tab-pane fade" [class.show]="plazaTab === 3" [class.active]="plazaTab === 3">
+              <label class="form-label">Internal Locations</label>
+              <div class="row g-2">
+                <div class="col-md-4" *ngFor="let location of internalLocationOptions">
+                  <div class="form-check">
+                    <input class="form-check-input" 
+                           type="checkbox" 
+                           [value]="location" 
+                           [checked]="locationForm.internalLocations?.includes(location)"
+                           (change)="toggleInternalLocation(location, $event)"
+                           [id]="getLocationId(location)">
+                    <label class="form-check-label" [for]="getLocationId(location)">
+                      {{ location }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Custom Location Input -->
+              <div class="mt-3">
+                <label class="form-label">Add Custom Location</label>
+                <div class="input-group">
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="customLocation" 
+                         name="customLocation"
+                         placeholder="Enter custom location name">
+                  <button class="btn btn-outline-secondary" 
+                          type="button" 
+                          (click)="addCustomLocation()"
+                          [disabled]="!customLocation || !customLocation.trim()">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Plaza Tab 4: Review -->
+            <div class="tab-pane fade" [class.show]="plazaTab === 4" [class.active]="plazaTab === 4">
+              <h6>Review Plaza Configuration</h6>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <strong>Plaza Name:</strong> {{ locationForm.name || 'Not set' }}
+                </div>
+                <div class="col-md-6">
+                  <strong>Plaza Code:</strong> {{ locationForm.plazaCode || 'Not set' }}
+                </div>
+                <div class="col-md-6">
+                  <strong>Government Code:</strong> {{ locationForm.governmentCode || 'Not set' }}
+                </div>
+                <div class="col-md-6">
+                  <strong>Chainage:</strong> {{ locationForm.chainageNumber || 'Not set' }}
+                </div>
+                <div class="col-md-6">
+                  <strong>Coordinates:</strong> {{ locationForm.latitude || 'Not set' }}, {{ locationForm.longitude || 'Not set' }}
+                </div>
+                <div class="col-md-6">
+                  <strong>Lanes:</strong> {{ locationForm.numberOfLanes || 'Not set' }}
+                </div>
+                <div class="col-12">
+                  <strong>Internal Locations:</strong>
+                  <div class="mt-1">
+                    <span *ngFor="let loc of locationForm.internalLocations; let last = last" class="badge bg-secondary me-1">
+                      {{ loc }}
+                    </span>
+                    <span *ngIf="!locationForm.internalLocations?.length" class="text-muted">None selected</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeAddLocationModal()">Cancel</button>
+        
+        <!-- Validation Message -->
+        <div *ngIf="!isLocationFormValid()" class="text-danger me-auto">
+          <small><i class="fas fa-exclamation-triangle me-1"></i>{{ getLocationValidationMessage() }}</small>
+        </div>
+        
+        <button *ngIf="locationForm.type === 'plaza' && plazaTab > 1" 
+                type="button" 
+                class="btn btn-outline-primary" 
+                (click)="plazaTab = plazaTab - 1">
+          <i class="fas fa-arrow-left me-2"></i>Previous
+        </button>
+        <button *ngIf="locationForm.type === 'plaza' && plazaTab < 4" 
+                type="button" 
+                class="btn btn-primary" 
+                (click)="plazaTab = plazaTab + 1">
+          Next<i class="fas fa-arrow-right ms-2"></i>
+        </button>
+        <button type="button" 
+                class="btn btn-success" 
+                [disabled]="!isLocationFormValid() || loading"
+                (click)="saveLocation()"
+                title="{{ !isLocationFormValid() ? getLocationValidationMessage() : 'Save Location' }}">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!loading" class="fas fa-save me-2"></i>Save Location
         </button>
       </div>
     </div>
@@ -206,6 +708,6 @@
 </div>
 
 <!-- Modal Backdrop -->
-<div *ngIf="showCreateModal || showEditModal" 
+<div *ngIf="showCreateModal || showEditModal || showLocationModal || showAddLocationModal" 
      class="modal-backdrop fade show" 
      (click)="closeModals()"></div>
