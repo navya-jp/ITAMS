@@ -179,3 +179,13 @@
   font-size: 0.875em;
   color: #6c757d;
 }
+
+// Modal backdrop - same as user management
+.modal {
+  background-color: rgba(248, 250, 252, 0.95) !important;
+}
+
+.modal-backdrop {
+  background-color: #f8fafc !important;
+  opacity: 0.95 !important;
+}

@@ -13,6 +13,7 @@ import { INDIAN_STATES, SPV_NAMES, DISTRICTS_BY_STATE, PLAZA_NAMES, GOVERNMENT_C
 })
 export class Projects implements OnInit {
   projects: Project[] = [];
+  projectLocations: any[] = [];
   loading = false;
   error = '';
   success = '';
@@ -122,11 +123,24 @@ export class Projects implements OnInit {
     });
   }
 
+  loadProjectLocations(projectId: number) {
+    this.loading = true;
+    this.api.getProjectLocations(projectId).subscribe({
+      next: (locations) => {
+        this.projectLocations = locations;
+        this.loading = false;
+      },
+      error: (error) => {
+        this.error = 'Failed to load project locations';
+        this.loading = false;
+        console.error('Error loading project locations:', error);
+      }
+    });
+  }
+
   // Modal management
   openCreateModal() {
     this.resetCreateForm();
-    this.currentTab = 1;
-    this.maxTab = 1;
     this.showCreateModal = true;
     this.clearMessages();
   }
@@ -147,6 +161,7 @@ export class Projects implements OnInit {
     this.selectedProject = project;
     this.showLocationModal = true;
     this.clearMessages();
+    this.loadProjectLocations(project.id);
   }
 
   closeModals() {
@@ -155,8 +170,7 @@ export class Projects implements OnInit {
     this.showLocationModal = false;
     this.showAddLocationModal = false;
     this.selectedProject = null;
-    this.currentTab = 1;
-    this.maxTab = 1;
+    this.projectLocations = [];
     this.clearMessages();
     this.clearValidationErrors();
   }
@@ -778,8 +792,11 @@ export class Projects implements OnInit {
         this.success = `${this.locationForm.type === 'office' ? 'Office' : 'Plaza'} location created successfully`;
         this.loading = false;
         this.closeAddLocationModal();
-        // Refresh project data
+        // Refresh project data and locations
         this.loadProjects();
+        if (this.selectedProject) {
+          this.loadProjectLocations(this.selectedProject.id);
+        }
       },
       error: (error) => {
         console.error('Location creation error:', error); // Debug log

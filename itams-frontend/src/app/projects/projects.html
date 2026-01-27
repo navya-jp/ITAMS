@@ -107,30 +107,18 @@
       <div class="modal-body p-0 d-flex flex-column">
         <ul class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
           <li class="nav-item" role="presentation">
-            <button class="nav-link" 
-                    [class.active]="currentTab === 1"
-                    [class.disabled]="currentTab < 1"
-                    (click)="goToTab(1)"
+            <button class="nav-link active" 
                     type="button">
               <i class="fas fa-info-circle me-2"></i>Project Details
               <i *ngIf="isTabValid(1)" class="fas fa-check text-success ms-2"></i>
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" 
-                    [class.active]="currentTab === 2"
-                    [class.disabled]="maxTab < 2"
-                    (click)="goToTab(2)"
-                    type="button">
-              <i class="fas fa-map-marker-alt me-2"></i>Location Management
             </button>
           </li>
         </ul>
 
         <!-- Tab Content -->
         <div class="tab-content flex-grow-1 p-3" style="overflow-y: auto;">
-          <!-- Tab 1: Project Details -->
-          <div class="tab-pane fade" [class.show]="currentTab === 1" [class.active]="currentTab === 1">
+          <!-- Project Details -->
+          <div class="tab-pane fade show active">
             <div class="row g-3">
               <!-- SPV Name -->
               <div class="col-md-6">
@@ -241,61 +229,13 @@
             </div>
           </div>
 
-          <!-- Tab 2: Location Management -->
-          <div class="tab-pane fade" [class.show]="currentTab === 2" [class.active]="currentTab === 2">
-            <div class="h-100 d-flex flex-column">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">Location Management</h6>
-                <button class="btn btn-primary btn-sm" (click)="openAddLocationModal()">
-                  <i class="fas fa-plus me-2"></i>Add Location
-                </button>
-              </div>
-              
-              <!-- Locations List -->
-              <div class="flex-grow-1" style="overflow-y: auto;">
-                <div class="alert alert-info">
-                  <i class="fas fa-info-circle me-2"></i>
-                  Locations will be managed here. First create the project, then add locations.
-                </div>
-                
-                <!-- Placeholder for locations table -->
-                <div class="table-responsive">
-                  <table class="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>Location Name</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td colspan="4" class="text-center text-muted py-3">
-                          No locations added yet
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
-      <!-- Modal Footer with Navigation -->
+      <!-- Modal Footer -->
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-        <button *ngIf="currentTab > 1" type="button" class="btn btn-outline-primary" (click)="previousTab()">
-          <i class="fas fa-arrow-left me-2"></i>Previous
-        </button>
-        <button *ngIf="currentTab < 2" type="button" class="btn btn-primary" 
-                [disabled]="!isTabValid(currentTab)" 
-                (click)="nextTab()">
-          Next<i class="fas fa-arrow-right ms-2"></i>
-        </button>
-        <button *ngIf="currentTab === 1" type="button" class="btn btn-success" 
+        <button type="button" class="btn btn-success" 
                 [disabled]="!isTabValid(1) || loading" 
                 (click)="createProject()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
@@ -389,8 +329,44 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- Placeholder for locations - will be populated when backend integration is complete -->
-                <tr>
+                <tr *ngFor="let location of projectLocations">
+                  <td>
+                    <strong>{{ location.name }}</strong>
+                  </td>
+                  <td>
+                    <span class="badge" [class]="location.plaza ? 'bg-info' : 'bg-secondary'">
+                      {{ location.plaza ? 'Plaza' : 'Office' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="small">
+                      <div *ngIf="location.plaza"><strong>Plaza:</strong> {{ location.plaza }}</div>
+                      <div *ngIf="location.office"><strong>Office:</strong> {{ location.office }}</div>
+                      <div *ngIf="location.address"><strong>Address:</strong> {{ location.address }}</div>
+                      <div><strong>Region:</strong> {{ location.region }}</div>
+                      <div><strong>State:</strong> {{ location.state }}</div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-secondary">{{ location.assetCount }}</span>
+                  </td>
+                  <td>
+                    <span class="badge" [class]="location.isActive ? 'bg-success' : 'bg-warning'">
+                      {{ location.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button class="btn btn-outline-secondary" title="Edit Location">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" title="Delete Location">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="projectLocations.length === 0 && !loading">
                   <td colspan="6" class="text-center text-muted py-4">
                     <i class="fas fa-map-marker-alt fa-2x mb-2 d-block"></i>
                     No locations found for this project.
@@ -398,6 +374,13 @@
                     <button class="btn btn-primary btn-sm mt-2" (click)="openAddLocationModal()">
                       <i class="fas fa-plus me-2"></i>Add First Location
                     </button>
+                  </td>
+                </tr>
+                <tr *ngIf="loading">
+                  <td colspan="6" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
                   </td>
                 </tr>
               </tbody>
