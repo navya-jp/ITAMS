@@ -131,122 +131,114 @@
         <div class="tab-content flex-grow-1 p-3" style="overflow-y: auto;">
           <!-- Tab 1: Project Details -->
           <div class="tab-pane fade" [class.show]="currentTab === 1" [class.active]="currentTab === 1">
-            <form class="h-100 d-flex flex-column">
-              <div class="row g-3 flex-grow-1">
-                <!-- SPV Name -->
-                <div class="col-md-6">
-                  <label class="form-label">SPV Name *</label>
-                  <div class="dropdown w-100">
-                    <input type="text" 
-                           class="form-control" 
-                           [class.is-invalid]="hasValidationError('spvName')"
-                           [(ngModel)]="createForm.spvName" 
-                           name="spvName"
-                           (input)="onSpvInput($event)"
-                           (focus)="toggleSpvDropdown($event)"
-                           placeholder="Type or select SPV name"
-                           autocomplete="off">
-                    <ul class="dropdown-menu w-100" [class.show]="showSpvDropdown" style="max-height: 200px; overflow-y: auto;">
-                      <li *ngFor="let spv of filteredSpvNames">
-                        <a class="dropdown-item" href="#" (click)="selectSpv(spv); $event.preventDefault()">{{ spv }}</a>
-                      </li>
-                      <li *ngIf="filteredSpvNames.length === 0" class="dropdown-item-text text-muted">
-                        No matches found
-                      </li>
-                    </ul>
-                  </div>
-                  <div *ngIf="hasValidationError('spvName')" class="invalid-feedback d-block">
-                    {{ getValidationError('spvName') }}
-                  </div>
-                  <div class="form-text">Type to search or select from list</div>
-                </div>
-
-                <!-- Preferred Name -->
-                <div class="col-md-6">
-                  <label class="form-label">Preferred Name <small class="text-muted">(Optional)</small></label>
+            <div class="row g-3">
+              <!-- SPV Name -->
+              <div class="col-md-6">
+                <label class="form-label">SPV Name *</label>
+                <div class="dropdown w-100">
                   <input type="text" 
                          class="form-control" 
-                         [(ngModel)]="createForm.preferredName" 
-                         name="preferredName"
-                         placeholder="Enter preferred project name">
+                         [class.is-invalid]="hasValidationError('spvName')"
+                         [(ngModel)]="createForm.spvName" 
+                         name="spvName"
+                         (input)="onSpvInput($event)"
+                         (focus)="toggleSpvDropdown($event)"
+                         placeholder="Type or select SPV name"
+                         autocomplete="off">
+                  <ul class="dropdown-menu w-100" [class.show]="showSpvDropdown" style="max-height: 200px; overflow-y: auto;">
+                    <li *ngFor="let spv of filteredSpvNames">
+                      <a class="dropdown-item" href="#" (click)="selectSpv(spv); $event.preventDefault()">{{ spv }}</a>
+                    </li>
+                    <li *ngIf="filteredSpvNames.length === 0" class="dropdown-item-text text-muted">
+                      No matches found
+                    </li>
+                  </ul>
                 </div>
-
-                <!-- States (Max 2) -->
-                <div class="col-12">
-                  <label class="form-label">States * <small class="text-muted">(Select 1-2 states)</small></label>
-                  <div class="dropdown w-100">
-                    <input type="text" 
-                           class="form-control" 
-                           [class.is-invalid]="hasValidationError('states')"
-                           [(ngModel)]="stateSearchTerm" 
-                           name="stateSearch"
-                           (input)="onStateInput($event)"
-                           (focus)="toggleStateDropdown($event)"
-                           placeholder="Type to search and select states"
-                           autocomplete="off">
-                    <ul class="dropdown-menu w-100" [class.show]="showStateDropdown" style="max-height: 200px; overflow-y: auto;">
-                      <li *ngFor="let state of filteredStates">
-                        <a class="dropdown-item d-flex justify-content-between align-items-center" 
-                           href="#" 
-                           (click)="toggleStateSelection(state); $event.preventDefault()"
-                           [class.active]="isStateSelected(state)">
-                          {{ state }}
-                          <i *ngIf="isStateSelected(state)" class="fas fa-check text-success"></i>
-                        </a>
-                      </li>
-                      <li *ngIf="filteredStates.length === 0" class="dropdown-item-text text-muted">
-                        No matches found
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <!-- Selected States Display -->
-                  <div class="mt-2" *ngIf="createForm.states.length > 0">
-                    <span *ngFor="let state of createForm.states" class="badge bg-primary me-2 mb-1">
-                      {{ state }}
-                      <button type="button" class="btn-close btn-close-white ms-2" 
-                              (click)="removeState(state)" 
-                              style="font-size: 0.7em;"></button>
-                    </span>
-                  </div>
-                  
-                  <div *ngIf="hasValidationError('states')" class="invalid-feedback d-block">
-                    {{ getValidationError('states') }}
-                  </div>
-                  <div class="form-text">
-                    Select 1-2 states for this project. Districts will be filtered based on selected states.
-                  </div>
-                </div>
-
-                <!-- Project Code -->
-                <div class="col-md-6">
-                  <label class="form-label">Project Code * <small class="text-muted">(Auto-generated)</small></label>
-                  <input type="text" 
-                         class="form-control text-uppercase" 
-                         [class.is-invalid]="hasValidationError('code')"
-                         [(ngModel)]="createForm.code" 
-                         name="code"
-                         (input)="onProjectCodeChange()"
-                         placeholder="Auto-generated from SPV and State">
-                  <div *ngIf="hasValidationError('code')" class="invalid-feedback">
-                    {{ getValidationError('code') }}
-                  </div>
-                  <div class="form-text">Format: SPV_STATE_XXXX (uppercase, alphanumeric, hyphens, underscores)</div>
-                </div>
-
-                <!-- Description -->
-                <div class="col-12">
-                  <label class="form-label">Description <small class="text-muted">(Optional)</small></label>
-                  <textarea class="form-control" 
-                            rows="3" 
-                            [(ngModel)]="createForm.description" 
-                            name="description"
-                            placeholder="Enter project description (max 500 characters)"
-                            maxlength="500"></textarea>
-                  <div class="form-text">{{ (createForm.description || '').length }}/500 characters</div>
+                <div *ngIf="hasValidationError('spvName')" class="invalid-feedback d-block">
+                  {{ getValidationError('spvName') }}
                 </div>
               </div>
-            </form>
+
+              <!-- Preferred Name -->
+              <div class="col-md-6">
+                <label class="form-label">Preferred Name <small class="text-muted">(Optional)</small></label>
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="createForm.preferredName" 
+                       name="preferredName"
+                       placeholder="Enter preferred project name">
+              </div>
+
+              <!-- States -->
+              <div class="col-md-6">
+                <label class="form-label">States *</label>
+                <div class="dropdown w-100">
+                  <input type="text" 
+                         class="form-control" 
+                         [class.is-invalid]="hasValidationError('states')"
+                         [(ngModel)]="stateSearchTerm" 
+                         name="stateSearch"
+                         (input)="onStateInput($event)"
+                         (focus)="toggleStateDropdown($event)"
+                         placeholder="Type to search and select states"
+                         autocomplete="off">
+                  <ul class="dropdown-menu w-100" [class.show]="showStateDropdown" style="max-height: 200px; overflow-y: auto;">
+                    <li *ngFor="let state of filteredStates">
+                      <a class="dropdown-item d-flex justify-content-between align-items-center" 
+                         href="#" 
+                         (click)="toggleStateSelection(state); $event.preventDefault()"
+                         [class.active]="isStateSelected(state)">
+                        {{ state }}
+                        <i *ngIf="isStateSelected(state)" class="fas fa-check text-success"></i>
+                      </a>
+                    </li>
+                    <li *ngIf="filteredStates.length === 0" class="dropdown-item-text text-muted">
+                      No matches found
+                    </li>
+                  </ul>
+                </div>
+                
+                <!-- Selected States Display -->
+                <div class="mt-2" *ngIf="createForm.states.length > 0">
+                  <span *ngFor="let state of createForm.states" class="badge bg-primary me-2 mb-1">
+                    {{ state }}
+                    <button type="button" class="btn-close btn-close-white ms-2" 
+                            (click)="removeState(state)" 
+                            style="font-size: 0.7em;"></button>
+                  </span>
+                </div>
+                
+                <div *ngIf="hasValidationError('states')" class="invalid-feedback d-block">
+                  {{ getValidationError('states') }}
+                </div>
+              </div>
+
+              <!-- Project Code -->
+              <div class="col-md-6">
+                <label class="form-label">Project Code *</label>
+                <input type="text" 
+                       class="form-control text-uppercase" 
+                       [class.is-invalid]="hasValidationError('code')"
+                       [(ngModel)]="createForm.code" 
+                       name="code"
+                       (input)="onProjectCodeChange()"
+                       placeholder="Auto-generated from SPV and State">
+                <div *ngIf="hasValidationError('code')" class="invalid-feedback">
+                  {{ getValidationError('code') }}
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="col-12">
+                <label class="form-label">Description <small class="text-muted">(Optional)</small></label>
+                <textarea class="form-control" 
+                          rows="3" 
+                          [(ngModel)]="createForm.description" 
+                          name="description"
+                          placeholder="Enter project description"
+                          maxlength="500"></textarea>
+              </div>
+            </div>
           </div>
 
           <!-- Tab 2: Location Management -->
@@ -360,6 +352,62 @@
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!loading" class="fas fa-save me-2"></i>Update Project
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Location Management Modal -->
+<div class="modal fade" [class.show]="showLocationModal" [style.display]="showLocationModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content h-75">
+      <div class="modal-header">
+        <h5 class="modal-title">Manage Locations - {{ selectedProject?.name }}</h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+
+      <div class="modal-body p-0 d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+          <h6 class="mb-0">Project Locations</h6>
+          <button class="btn btn-primary btn-sm" (click)="openAddLocationModal()">
+            <i class="fas fa-plus me-2"></i>Add Location
+          </button>
+        </div>
+        
+        <!-- Locations List -->
+        <div class="flex-grow-1 p-3" style="overflow-y: auto;">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Location Name</th>
+                  <th>Type</th>
+                  <th>Details</th>
+                  <th>Assets</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Placeholder for locations - will be populated when backend integration is complete -->
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="fas fa-map-marker-alt fa-2x mb-2 d-block"></i>
+                    No locations found for this project.
+                    <br>
+                    <button class="btn btn-primary btn-sm mt-2" (click)="openAddLocationModal()">
+                      <i class="fas fa-plus me-2"></i>Add First Location
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
       </div>
     </div>
   </div>
@@ -506,8 +554,7 @@
                          [(ngModel)]="locationForm.plazaCode" 
                          name="plazaCode"
                          (input)="onPlazaCodeChange()"
-                         placeholder="Auto-generated or custom">
-                  <div class="form-text">Auto-generated from plaza name</div>
+                         placeholder="Enter plaza code">
                 </div>
 
                 <div class="col-md-6">
@@ -538,7 +585,6 @@
                          (input)="onChainageInput($event)"
                          placeholder="000.000"
                          maxlength="7">
-                  <div class="form-text">Format: 000.000 (6 digits, auto-formatted)</div>
                 </div>
 
                 <div class="col-md-6">

@@ -69,21 +69,40 @@ export class ValidationService {
     const limited = digits.substring(0, 6);
     
     // Format as 000.000
-    if (limited.length <= 3) {
-      return limited.padStart(3, '0');
+    if (limited.length === 0) {
+      return '';
+    } else if (limited.length <= 3) {
+      return limited;
     } else {
       const first = limited.substring(0, 3);
-      const second = limited.substring(3, 6).padEnd(3, '0');
+      const second = limited.substring(3);
       return `${first}.${second}`;
     }
   }
 
   generateProjectCode(spvName: string, states: string[]): string {
-    const spvCode = spvName.split('(')[1]?.split(')')[0] || spvName.substring(0, 4).toUpperCase();
-    const stateCode = states.map(state => state.substring(0, 2).toUpperCase()).join('');
-    const timestamp = Date.now().toString().slice(-4);
+    // Extract abbreviation from SPV name
+    let spvCode = '';
     
-    return `${spvCode}_${stateCode}_${timestamp}`.replace(/\s/g, '');
+    // Check if SPV name starts with an abbreviation (like "NHAI (National...)")
+    if (spvName.includes('(')) {
+      spvCode = spvName.split('(')[0].trim().toUpperCase();
+    } else {
+      // Take first 4 characters of each word
+      spvCode = spvName.split(' ')
+        .map(word => word.charAt(0))
+        .join('')
+        .substring(0, 4)
+        .toUpperCase();
+    }
+    
+    // Create state code from first 2 letters of each state
+    const stateCode = states.map(state => state.substring(0, 2).toUpperCase()).join('');
+    
+    // Use last 2 digits of timestamp for uniqueness
+    const timestamp = Date.now().toString().slice(-2);
+    
+    return `${spvCode}_${stateCode}_${timestamp}`;
   }
 
   generatePlazaCode(plazaName: string, projectCode: string): string {

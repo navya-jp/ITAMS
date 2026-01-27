@@ -157,7 +157,7 @@ export interface CreateLocation {
   providedIn: 'root',
 })
 export class Api {
-  private readonly baseUrl = 'http://localhost:5066/api';
+  private readonly baseUrl = 'http://localhost:5068/api';
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
@@ -261,8 +261,8 @@ export class Api {
     return this.http.get<Location[]>(`${this.baseUrl}/superadmin/locations`);
   }
 
-  createLocation(location: CreateLocation): Observable<Location> {
-    return this.http.post<Location>(`${this.baseUrl}/superadmin/locations`, location, this.httpOptions);
+  createLocation(location: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/superadmin/locations`, location, this.httpOptions);
   }
 
   getProjectLocations(projectId: number): Observable<Location[]> {

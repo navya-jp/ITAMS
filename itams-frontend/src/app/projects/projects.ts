@@ -62,7 +62,16 @@ export class Projects implements OnInit {
     name: '',
     type: 'office',
     projectId: 0,
-    internalLocations: []
+    internalLocations: [],
+    // Plaza specific properties
+    plazaCode: '',
+    governmentCode: '',
+    chainageNumber: '',
+    latitude: undefined,
+    longitude: undefined,
+    numberOfLanes: undefined,
+    // Office specific
+    district: ''
   };
 
   generatedLanes: any[] = [];
@@ -495,7 +504,16 @@ export class Projects implements OnInit {
       name: '',
       type: 'office',
       projectId: this.selectedProject?.id || 0,
-      internalLocations: []
+      internalLocations: [],
+      // Plaza specific properties
+      plazaCode: '',
+      governmentCode: '',
+      chainageNumber: '',
+      latitude: undefined,
+      longitude: undefined,
+      numberOfLanes: undefined,
+      // Office specific
+      district: ''
     };
     this.generatedLanes = [];
     this.selectedLane = 0;
@@ -581,7 +599,6 @@ export class Projects implements OnInit {
     const value = event.target.value;
     this.locationForm.name = value;
     this.filterPlazaNames(value);
-    this.generatePlazaCode();
   }
 
   filterPlazaNames(searchTerm: string) {
@@ -597,16 +614,6 @@ export class Projects implements OnInit {
   selectPlazaName(plaza: string) {
     this.locationForm.plaza = plaza;
     this.showPlazaDropdown = false;
-    this.generatePlazaCode();
-  }
-
-  generatePlazaCode() {
-    if (this.locationForm.name && this.createForm.code) {
-      this.locationForm.plazaCode = this.validationService.generatePlazaCode(
-        this.locationForm.name, 
-        this.createForm.code
-      );
-    }
   }
 
   onPlazaCodeChange() {
@@ -733,33 +740,51 @@ export class Projects implements OnInit {
       return;
     }
 
+    if (!this.selectedProject || !this.selectedProject.id) {
+      this.error = 'No project selected. Please select a project first.';
+      return;
+    }
+
     this.loading = true;
-    this.locationForm.projectId = this.selectedProject?.id || 0;
+    this.locationForm.projectId = this.selectedProject.id;
     
     // Map frontend data to backend format
-    const backendLocation: CreateLocation = {
+    const backendLocation: any = {
       name: this.locationForm.name,
-      type: this.locationForm.type,
       projectId: this.locationForm.projectId,
-      region: this.createForm.states.join(', '), // Use selected states as region
-      state: this.createForm.states[0] || '', // Use first selected state
-      plaza: this.locationForm.type === 'plaza' ? this.locationForm.name : undefined,
-      office: this.locationForm.type === 'office' ? this.locationForm.name : undefined,
-      address: `${this.locationForm.plazaCode || ''} ${this.locationForm.governmentCode || ''} ${this.locationForm.chainageNumber || ''}`.trim() || undefined
+      region: 'India', // Default region
+      state: this.locationForm.type === 'office' ? 'Unknown' : 'Highway', // Default state
     };
+
+    // Add type-specific fields only if they have values
+    if (this.locationForm.type === 'plaza') {
+      backendLocation.plaza = this.locationForm.name;
+      const address = `${this.locationForm.plazaCode || ''} ${this.locationForm.governmentCode || ''} ${this.locationForm.chainageNumber || ''}`.trim();
+      if (address) {
+        backendLocation.address = address;
+      }
+    } else if (this.locationForm.type === 'office') {
+      backendLocation.office = this.locationForm.name;
+      if (this.locationForm.district) {
+        backendLocation.address = this.locationForm.district;
+      }
+    }
+
+    console.log('Sending location data:', JSON.stringify(backendLocation, null, 2)); // Debug log
+    console.log('Selected project:', this.selectedProject); // Debug log
     
     this.api.createLocation(backendLocation).subscribe({
       next: (location) => {
         this.success = `${this.locationForm.type === 'office' ? 'Office' : 'Plaza'} location created successfully`;
         this.loading = false;
         this.closeAddLocationModal();
-        // Refresh project data if needed
+        // Refresh project data
         this.loadProjects();
       },
       error: (error) => {
+        console.error('Location creation error:', error); // Debug log
         this.error = error.error?.message || 'Failed to create location';
         this.loading = false;
-        console.error('Error creating location:', error);
       }
     });
   }
