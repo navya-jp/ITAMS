@@ -39,9 +39,56 @@
 }
 
 .modal {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(248, 250, 252, 0.95) !important;
+}
+
+.modal-backdrop {
+  background-color: #f8fafc !important;
+  opacity: 0.95 !important;
 }
 
 .alert {
   border-radius: 8px;
+}
+
+// Tab styling
+.nav-tabs {
+  border-bottom: 2px solid #e2e8f0;
+  
+  .nav-link {
+    border: none;
+    border-radius: 8px 8px 0 0;
+    color: #64748b;
+    font-weight: 500;
+    padding: 0.75rem 1rem;
+    margin-bottom: -2px;
+    
+    &:hover {
+      border-color: transparent;
+      color: #3b82f6;
+      background-color: #f8fafc;
+    }
+    
+    &.active {
+      color: #3b82f6;
+      background-color: #fff;
+      border-bottom: 2px solid #3b82f6;
+    }
+    
+    i {
+      opacity: 0.7;
+    }
+    
+    &.active i {
+      opacity: 1;
+    }
+  }
+}
+
+.tab-content {
+  padding-top: 1rem;
+}
+
+.tab-pane {
+  min-height: 300px;
 }

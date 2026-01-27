@@ -49,8 +49,12 @@ export class Users implements OnInit {
     hasSpecial: false
   };
 
-  // Automated dropdown options (only for meaningful selections)
-  emailDomains = ['@company.com', '@itams.com', '@organization.com'];
+  // Username validation and availability
+  isUsernameValid = false;
+  usernameAvailable: boolean | null = null;
+  checkingUsername = false;
+  private usernameCheckTimeout: any;
+  private userHasEditedUsername = false; // Track if user manually edited username
 
   constructor(private api: Api) {}
 
@@ -100,6 +104,8 @@ export class Users implements OnInit {
       mustChangePassword: true
     };
     this.resetPasswordRequirements();
+    this.resetUsernameValidation();
+    this.userHasEditedUsername = false; // Reset the flag
     this.showCreateModal = true;
     this.error = '';
     this.success = '';
@@ -127,19 +133,92 @@ export class Users implements OnInit {
     this.success = '';
   }
 
-  // Auto-generate username from first and last name
-  generateUsername() {
+  // Generate username from name (for button click)
+  generateUsernameFromName() {
     if (this.createForm.firstName && this.createForm.lastName) {
       const username = (this.createForm.firstName.toLowerCase() + '.' + this.createForm.lastName.toLowerCase())
         .replace(/[^a-z0-9.]/g, '');
       this.createForm.username = username;
+      this.onUsernameChange();
     }
   }
 
-  // Auto-complete email with domain
-  completeEmail(domain: string) {
+  // Handle name changes - auto-suggest username only if user hasn't manually edited it
+  onNameChange() {
+    if (!this.userHasEditedUsername && this.createForm.firstName && this.createForm.lastName) {
+      const suggestedUsername = (this.createForm.firstName.toLowerCase() + '.' + this.createForm.lastName.toLowerCase())
+        .replace(/[^a-z0-9.]/g, '');
+      this.createForm.username = suggestedUsername;
+      this.onUsernameChange();
+    }
+  }
+
+  // Username validation and availability checking
+  onUsernameChange() {
+    // Mark that user has manually edited the username (unless it's from auto-suggestion)
     if (this.createForm.username) {
-      this.createForm.email = this.createForm.username + domain;
+      // Check if this change is from manual typing (not from name-based auto-suggestion)
+      const expectedUsername = this.createForm.firstName && this.createForm.lastName 
+        ? (this.createForm.firstName.toLowerCase() + '.' + this.createForm.lastName.toLowerCase()).replace(/[^a-z0-9.]/g, '')
+        : '';
+      
+      if (this.createForm.username !== expectedUsername) {
+        this.userHasEditedUsername = true;
+      }
+    }
+
+    this.validateUsername();
+    
+    // Clear previous timeout
+    if (this.usernameCheckTimeout) {
+      clearTimeout(this.usernameCheckTimeout);
+    }
+    
+    // Reset availability status
+    this.usernameAvailable = null;
+    
+    // Only check availability if username is valid
+    if (this.isUsernameValid && this.createForm.username.length >= 3) {
+      // Debounce the availability check
+      this.usernameCheckTimeout = setTimeout(() => {
+        this.checkUsernameAvailability();
+      }, 500);
+    }
+  }
+
+  validateUsername() {
+    const username = this.createForm.username;
+    // Username must be 3-50 characters, alphanumeric, dots, and underscores only
+    const usernameRegex = /^[a-zA-Z0-9._]{3,50}$/;
+    this.isUsernameValid = usernameRegex.test(username);
+  }
+
+  checkUsernameAvailability() {
+    if (!this.isUsernameValid || !this.createForm.username) {
+      return;
+    }
+
+    this.checkingUsername = true;
+    this.api.checkUsernameAvailability(this.createForm.username).subscribe({
+      next: (response: ApiResponse<boolean>) => {
+        this.usernameAvailable = response.success && response.data === true;
+        this.checkingUsername = false;
+      },
+      error: (error) => {
+        console.error('Error checking username availability:', error);
+        this.usernameAvailable = null;
+        this.checkingUsername = false;
+      }
+    });
+  }
+
+  resetUsernameValidation() {
+    this.isUsernameValid = false;
+    this.usernameAvailable = null;
+    this.checkingUsername = false;
+    this.userHasEditedUsername = false;
+    if (this.usernameCheckTimeout) {
+      clearTimeout(this.usernameCheckTimeout);
     }
   }
 
@@ -180,8 +259,23 @@ export class Users implements OnInit {
       return;
     }
     
-    if (!this.createForm.email || !this.createForm.password) {
-      this.error = 'Please enter email and password';
+    if (!this.createForm.username || !this.isUsernameValid) {
+      this.error = 'Please enter a valid username';
+      return;
+    }
+    
+    if (this.usernameAvailable === false) {
+      this.error = 'Username is already taken, please choose another';
+      return;
+    }
+    
+    if (!this.createForm.email || !this.validateEmail(this.createForm.email)) {
+      this.error = 'Please enter a valid email address';
+      return;
+    }
+    
+    if (!this.createForm.password || !this.isPasswordValid()) {
+      this.error = 'Please enter a valid password that meets all requirements';
       return;
     }
     
@@ -380,6 +474,8 @@ export class Users implements OnInit {
 
   isFormValid(): boolean {
     return this.createForm.username.length >= 3 &&
+           this.isUsernameValid &&
+           this.usernameAvailable === true &&
            this.validateEmail(this.createForm.email) &&
            this.createForm.firstName.length > 0 &&
            this.createForm.lastName.length > 0 &&

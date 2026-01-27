@@ -20,7 +20,12 @@
 }
 
 .modal {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(248, 250, 252, 0.95) !important;
+}
+
+.modal-backdrop {
+  background-color: #f8fafc !important;
+  opacity: 0.95 !important;
 }
 
 .alert {

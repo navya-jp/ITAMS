@@ -321,4 +321,15 @@ public class UserService : IUserService
 
         return hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar;
     }
+
+    public async Task<bool> IsUsernameAvailableAsync(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return false;
+        }
+
+        var existingUser = await _userRepository.GetByUsernameAsync(username);
+        return existingUser == null;
+    }
 }

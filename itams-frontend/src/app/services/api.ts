@@ -113,7 +113,7 @@ export interface CreateLocation {
   providedIn: 'root',
 })
 export class Api {
-  private readonly baseUrl = 'http://localhost:5066/api';
+  private readonly baseUrl = 'http://localhost:5068/api';
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
@@ -158,6 +158,10 @@ export class Api {
   resetPassword(id: number, newPassword: string): Observable<ApiResponse<any>> {
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}/users/${id}/reset-password`, 
       { newPassword }, this.httpOptions);
+  }
+
+  checkUsernameAvailability(username: string): Observable<ApiResponse<boolean>> {
+    return this.http.get<ApiResponse<boolean>>(`${this.baseUrl}/users/check-username/${encodeURIComponent(username)}`);
   }
 
   getUsersByRole(roleId: number): Observable<ApiResponse<User[]>> {

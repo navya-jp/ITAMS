@@ -105,22 +105,21 @@
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
       <div class="modal-body">
-
         <form>
-          <!-- Name Fields (No dropdowns needed) -->
+          <!-- Name Fields -->
           <div class="row">
             <div class="col-md-6">
               <div class="mb-3">
                 <label class="form-label">First Name *</label>
                 <input type="text" class="form-control" [(ngModel)]="createForm.firstName" 
-                       name="firstName" (input)="generateUsername()" required>
+                       name="firstName" (input)="onNameChange()" required>
               </div>
             </div>
             <div class="col-md-6">
               <div class="mb-3">
                 <label class="form-label">Last Name *</label>
                 <input type="text" class="form-control" [(ngModel)]="createForm.lastName" 
-                       name="lastName" (input)="generateUsername()" required>
+                       name="lastName" (input)="onNameChange()" required>
               </div>
             </div>
           </div>
@@ -129,33 +128,97 @@
           <div class="row">
             <div class="col-md-6">
               <div class="mb-3">
-                <label class="form-label">Username * <small class="text-muted">(Auto-generated)</small></label>
-                <input type="text" class="form-control" [(ngModel)]="createForm.username" name="username" required readonly>
-                <div class="form-text">Generated from first and last name</div>
+                <label class="form-label">Username *</label>
+                <input type="text" class="form-control" 
+                       [class.is-invalid]="createForm.username && !isUsernameValid"
+                       [class.is-valid]="createForm.username && isUsernameValid && usernameAvailable"
+                       [(ngModel)]="createForm.username" 
+                       name="username" 
+                       (input)="onUsernameChange()"
+                       (blur)="checkUsernameAvailability()"
+                       required>
+                <div class="form-text">
+                  <div *ngIf="!createForm.username">Username will be suggested based on your name</div>
+                  <div *ngIf="createForm.username && checkingUsername" class="text-info">
+                    <i class="fas fa-spinner fa-spin me-1"></i>Checking availability...
+                  </div>
+                  <div *ngIf="createForm.username && !checkingUsername && usernameAvailable === true" class="text-success">
+                    <i class="fas fa-check me-1"></i>Username is available
+                  </div>
+                  <div *ngIf="createForm.username && !checkingUsername && usernameAvailable === false" class="text-danger">
+                    <i class="fas fa-times me-1"></i>Username is already taken
+                  </div>
+                  <div *ngIf="createForm.username && !isUsernameValid" class="text-danger">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Username must be 3-50 characters, alphanumeric and underscores only
+                  </div>
+                </div>
               </div>
             </div>
             <div class="col-md-6">
               <div class="mb-3">
                 <label class="form-label">Email *</label>
-                <div class="input-group">
-                  <input type="email" class="form-control" 
-                         [class.is-invalid]="createForm.email && !validateEmail(createForm.email)"
-                         [class.is-valid]="createForm.email && validateEmail(createForm.email)"
-                         [(ngModel)]="createForm.email" name="email" required>
-                  <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Quick email domains">
-                      <i class="fas fa-at"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                      <li *ngFor="let domain of emailDomains">
-                        <a class="dropdown-item" href="#" (click)="completeEmail(domain)">
-                          {{ createForm.username }}{{ domain }}
-                        </a>
-                      </li>
-                    </ul>
+                <input type="email" class="form-control" 
+                       [class.is-invalid]="createForm.email && !validateEmail(createForm.email)"
+                       [class.is-valid]="createForm.email && validateEmail(createForm.email)"
+                       [(ngModel)]="createForm.email" name="email" required>
+                <div class="form-text">Enter email address</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password Field -->
+          <div class="mb-3">
+            <label class="form-label">Password *</label>
+            <input type="password" class="form-control" 
+                   [class.password-invalid]="createForm.password && !isPasswordValid()"
+                   [class.password-valid]="createForm.password && isPasswordValid()"
+                   [(ngModel)]="createForm.password" 
+                   name="password" 
+                   (input)="validatePassword()" 
+                   required>
+            
+            <!-- Password Requirements - Only show when user starts typing -->
+            <div *ngIf="createForm.password && createForm.password.length > 0" class="password-requirements mt-2">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="requirement mb-1">
+                    <i class="fas" [class.fa-check]="passwordRequirements.minLength" 
+                       [class.fa-times]="!passwordRequirements.minLength"
+                       [class.text-success]="passwordRequirements.minLength"
+                       [class.text-danger]="!passwordRequirements.minLength"></i>
+                    At least 8 characters
+                  </div>
+                  <div class="requirement mb-1">
+                    <i class="fas" [class.fa-check]="passwordRequirements.hasUppercase" 
+                       [class.fa-times]="!passwordRequirements.hasUppercase"
+                       [class.text-success]="passwordRequirements.hasUppercase"
+                       [class.text-danger]="!passwordRequirements.hasUppercase"></i>
+                    One uppercase letter
+                  </div>
+                  <div class="requirement mb-1">
+                    <i class="fas" [class.fa-check]="passwordRequirements.hasLowercase" 
+                       [class.fa-times]="!passwordRequirements.hasLowercase"
+                       [class.text-success]="passwordRequirements.hasLowercase"
+                       [class.text-danger]="!passwordRequirements.hasLowercase"></i>
+                    One lowercase letter
                   </div>
                 </div>
-                <div class="form-text">Enter email or select domain from dropdown</div>
+                <div class="col-md-6">
+                  <div class="requirement mb-1">
+                    <i class="fas" [class.fa-check]="passwordRequirements.hasNumber" 
+                       [class.fa-times]="!passwordRequirements.hasNumber"
+                       [class.text-success]="passwordRequirements.hasNumber"
+                       [class.text-danger]="!passwordRequirements.hasNumber"></i>
+                    One number
+                  </div>
+                  <div class="requirement mb-1">
+                    <i class="fas" [class.fa-check]="passwordRequirements.hasSpecial" 
+                       [class.fa-times]="!passwordRequirements.hasSpecial"
+                       [class.text-success]="passwordRequirements.hasSpecial"
+                       [class.text-danger]="!passwordRequirements.hasSpecial"></i>
+                    One special character (@$!%*?&)
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -179,56 +242,6 @@
                   <input class="form-check-input" type="checkbox" [(ngModel)]="createForm.mustChangePassword" name="mustChangePassword">
                   <label class="form-check-label">Must change password on first login</label>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Password with Requirements -->
-          <div class="mb-3">
-            <label class="form-label">Password *</label>
-            <input type="password" class="form-control" 
-                   [class.password-invalid]="createForm.password && !isPasswordValid()"
-                   [class.password-valid]="createForm.password && isPasswordValid()"
-                   [(ngModel)]="createForm.password" 
-                   name="password" 
-                   (input)="validatePassword()" 
-                   required>
-            
-            <div class="password-requirements mt-2">
-              <div class="requirement">
-                <i class="fas" [class.fa-check]="passwordRequirements.minLength" 
-                   [class.fa-times]="!passwordRequirements.minLength"
-                   [class.text-success]="passwordRequirements.minLength"
-                   [class.text-danger]="!passwordRequirements.minLength"></i>
-                At least 8 characters
-              </div>
-              <div class="requirement">
-                <i class="fas" [class.fa-check]="passwordRequirements.hasUppercase" 
-                   [class.fa-times]="!passwordRequirements.hasUppercase"
-                   [class.text-success]="passwordRequirements.hasUppercase"
-                   [class.text-danger]="!passwordRequirements.hasUppercase"></i>
-                One uppercase letter
-              </div>
-              <div class="requirement">
-                <i class="fas" [class.fa-check]="passwordRequirements.hasLowercase" 
-                   [class.fa-times]="!passwordRequirements.hasLowercase"
-                   [class.text-success]="passwordRequirements.hasLowercase"
-                   [class.text-danger]="!passwordRequirements.hasLowercase"></i>
-                One lowercase letter
-              </div>
-              <div class="requirement">
-                <i class="fas" [class.fa-check]="passwordRequirements.hasNumber" 
-                   [class.fa-times]="!passwordRequirements.hasNumber"
-                   [class.text-success]="passwordRequirements.hasNumber"
-                   [class.text-danger]="!passwordRequirements.hasNumber"></i>
-                One number
-              </div>
-              <div class="requirement">
-                <i class="fas" [class.fa-check]="passwordRequirements.hasSpecial" 
-                   [class.fa-times]="!passwordRequirements.hasSpecial"
-                   [class.text-success]="passwordRequirements.hasSpecial"
-                   [class.text-danger]="!passwordRequirements.hasSpecial"></i>
-                One special character (@$!%*?&)
               </div>
             </div>
           </div>

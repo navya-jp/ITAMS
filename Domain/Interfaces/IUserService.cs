@@ -17,6 +17,7 @@ public interface IUserService
     Task LockUserAsync(int userId);
     Task UnlockUserAsync(int userId);
     Task<bool> ValidatePasswordPolicyAsync(string password);
+    Task<bool> IsUsernameAvailableAsync(string username);
 }
 
 public class CreateUserRequest

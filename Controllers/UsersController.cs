@@ -420,6 +420,43 @@ public class UsersController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Check if username is available
+    /// </summary>
+    [HttpGet("check-username/{username}")]
+    public async Task<ActionResult<ApiResponse<bool>>> CheckUsernameAvailability(string username)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Username cannot be empty"
+                });
+            }
+
+            var isAvailable = await _userService.IsUsernameAvailableAsync(username);
+
+            return Ok(new ApiResponse<bool>
+            {
+                Success = true,
+                Data = isAvailable,
+                Message = isAvailable ? "Username is available" : "Username is already taken"
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "An error occurred while checking username availability",
+                Error = ex.Message
+            });
+        }
+    }
+
     private static UserDto MapToUserDto(User user)
     {
         return new UserDto
