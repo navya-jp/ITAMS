@@ -33,18 +33,12 @@ export class Projects implements OnInit {
   showSpvDropdown = false;
   showStateDropdown = false;
   showLocationStateDropdown = false;
-  showOfficeDropdown = false;
   showDistrictDropdown = false;
-  showPlazaDropdown = false;
-  showGovCodeDropdown = false;
   stateSearchTerm = '';
   filteredSpvNames: string[] = [];
   filteredStates: string[] = [];
   filteredLocationStates: string[] = [];
-  filteredOfficeNames: string[] = [];
   filteredDistricts: string[] = [];
-  filteredPlazaNames: string[] = [];
-  filteredGovCodes: string[] = [];
 
   // Form data
   createForm: CreateProject = {
@@ -82,9 +76,6 @@ export class Projects implements OnInit {
   spvNames = SPV_NAMES;
   indianStates = INDIAN_STATES;
   districtsByState = DISTRICTS_BY_STATE;
-  plazaNames = PLAZA_NAMES;
-  governmentCodes = GOVERNMENT_CODES;
-  officeNames = OFFICE_NAMES;
   internalLocationOptions = INTERNAL_LOCATIONS;
   laneOptions = LANE_OPTIONS;
 
@@ -98,9 +89,6 @@ export class Projects implements OnInit {
     this.filteredSpvNames = [...this.spvNames];
     this.filteredStates = [...this.indianStates];
     this.filteredLocationStates = [...this.indianStates];
-    this.filteredOfficeNames = [...this.officeNames];
-    this.filteredPlazaNames = [...this.plazaNames];
-    this.filteredGovCodes = [...this.governmentCodes];
     this.filteredDistricts = [];
   }
 
@@ -535,25 +523,10 @@ export class Projects implements OnInit {
   }
 
   // Office form methods
+  // Office form methods - simplified
   onOfficeNameInput(event: any) {
     const value = event.target.value;
     this.locationForm.name = value;
-    this.filterOfficeNames(value);
-  }
-
-  filterOfficeNames(searchTerm: string) {
-    if (!searchTerm) {
-      this.filteredOfficeNames = [...this.officeNames];
-    } else {
-      this.filteredOfficeNames = this.officeNames.filter(office => 
-        office.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-  }
-
-  selectOfficeName(office: string) {
-    this.locationForm.office = office;
-    this.showOfficeDropdown = false;
   }
 
   // Location state methods
@@ -612,22 +585,6 @@ export class Projects implements OnInit {
   onPlazaNameInput(event: any) {
     const value = event.target.value;
     this.locationForm.name = value;
-    this.filterPlazaNames(value);
-  }
-
-  filterPlazaNames(searchTerm: string) {
-    if (!searchTerm) {
-      this.filteredPlazaNames = [...this.plazaNames];
-    } else {
-      this.filteredPlazaNames = this.plazaNames.filter(plaza => 
-        plaza.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-  }
-
-  selectPlazaName(plaza: string) {
-    this.locationForm.plaza = plaza;
-    this.showPlazaDropdown = false;
   }
 
   onPlazaCodeChange() {
@@ -639,22 +596,6 @@ export class Projects implements OnInit {
   onGovCodeInput(event: any) {
     const value = event.target.value.toUpperCase();
     this.locationForm.governmentCode = value;
-    this.filterGovCodes(value);
-  }
-
-  filterGovCodes(searchTerm: string) {
-    if (!searchTerm) {
-      this.filteredGovCodes = [...this.governmentCodes];
-    } else {
-      this.filteredGovCodes = this.governmentCodes.filter(code => 
-        code.includes(searchTerm)
-      );
-    }
-  }
-
-  selectGovCode(code: string) {
-    this.locationForm.governmentCode = code;
-    this.showGovCodeDropdown = false;
   }
 
   onChainageInput(event: any) {

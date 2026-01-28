@@ -428,22 +428,13 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label">Office Name *</label>
-              <div class="dropdown w-100">
-                <input type="text" 
-                       class="form-control" 
-                       [(ngModel)]="locationForm.name" 
-                       name="officeName"
-                       (input)="onOfficeNameInput($event)"
-                       (focus)="showOfficeDropdown = true"
-                       placeholder="Type or select office name"
-                       autocomplete="off">
-                <ul class="dropdown-menu w-100" [class.show]="showOfficeDropdown" style="max-height: 200px; overflow-y: auto;">
-                  <li *ngFor="let office of filteredOfficeNames">
-                    <a class="dropdown-item" href="#" (click)="selectOfficeName(office); $event.preventDefault()">{{ office }}</a>
-                  </li>
-                </ul>
-              </div>
-              <div class="form-text">Type to search or select from predefined offices</div>
+              <input type="text" 
+                     class="form-control" 
+                     [(ngModel)]="locationForm.name" 
+                     name="officeName"
+                     placeholder="Enter office name"
+                     autocomplete="off">
+              <div class="form-text">Enter the office name</div>
             </div>
             
             <div class="col-md-6">
@@ -513,21 +504,12 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Plaza Name *</label>
-                  <div class="dropdown w-100">
-                    <input type="text" 
-                           class="form-control" 
-                           [(ngModel)]="locationForm.name" 
-                           name="plazaName"
-                           (input)="onPlazaNameInput($event)"
-                           (focus)="showPlazaDropdown = true"
-                           placeholder="Type or select plaza name"
-                           autocomplete="off">
-                    <ul class="dropdown-menu w-100" [class.show]="showPlazaDropdown" style="max-height: 200px; overflow-y: auto;">
-                      <li *ngFor="let plaza of filteredPlazaNames">
-                        <a class="dropdown-item" href="#" (click)="selectPlazaName(plaza); $event.preventDefault()">{{ plaza }}</a>
-                      </li>
-                    </ul>
-                  </div>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="locationForm.name" 
+                         name="plazaName"
+                         placeholder="Enter plaza name"
+                         autocomplete="off">
                 </div>
                 
                 <div class="col-md-6">
@@ -542,21 +524,13 @@
 
                 <div class="col-md-6">
                   <label class="form-label">Government Code *</label>
-                  <div class="dropdown w-100">
-                    <input type="text" 
-                           class="form-control text-uppercase" 
-                           [(ngModel)]="locationForm.governmentCode" 
-                           name="governmentCode"
-                           (input)="onGovCodeInput($event)"
-                           (focus)="showGovCodeDropdown = true"
-                           placeholder="Type or select government code"
-                           autocomplete="off">
-                    <ul class="dropdown-menu w-100" [class.show]="showGovCodeDropdown" style="max-height: 200px; overflow-y: auto;">
-                      <li *ngFor="let code of filteredGovCodes">
-                        <a class="dropdown-item" href="#" (click)="selectGovCode(code); $event.preventDefault()">{{ code }}</a>
-                      </li>
-                    </ul>
-                  </div>
+                  <input type="text" 
+                         class="form-control text-uppercase" 
+                         [(ngModel)]="locationForm.governmentCode" 
+                         name="governmentCode"
+                         (input)="onGovCodeInput($event)"
+                         placeholder="Enter government code"
+                         autocomplete="off">
                 </div>
 
                 <div class="col-md-6">
