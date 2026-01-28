@@ -1,14 +1,21 @@
-import { Component } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Navigation } from './navigation/navigation';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
+  imports: [CommonModule, Navigation],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {
-  protected title = 'ITAMS';
-  protected pageTitle = 'Dashboard';
+export class App implements OnInit {
+  protected title = 'ITAMS - IT Asset Management System';
+
+  constructor(private authService: AuthService) {}
+
+  ngOnInit() {
+    // Initialize authentication state
+    // The AuthService constructor already handles this
+  }
 }

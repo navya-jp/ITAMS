@@ -4,6 +4,9 @@ using ITAMS.Data.Repositories;
 using ITAMS.Domain.Interfaces;
 using ITAMS.Services;
 using Serilog;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +29,21 @@ builder.Services.AddDbContext<ITAMSDbContext>(options =>
     var connectionString = builder.Configuration.GetConnectionString("SharedSqlServer");
     options.UseSqlServer(connectionString);
 });
+
+// Add JWT Authentication
+var jwtSecretKey = "your-super-secret-key-that-should-be-in-configuration-and-at-least-32-characters-long";
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecretKey)),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 
 // Add repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -67,6 +85,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Enable static files
 app.UseCors("AllowAll");
+
+// Add authentication and authorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Add default route that redirects to Angular frontend

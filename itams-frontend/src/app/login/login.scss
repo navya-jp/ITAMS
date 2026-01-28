@@ -1,0 +1,231 @@
+/* Login Page Styles - Matching Super Admin Design System */
+.login-container {
+  position: relative;
+  background: #fafafa;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 450px;
+  margin: 0 auto;
+
+  .card {
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
+  }
+
+  .card-body {
+    padding: 3rem !important;
+  }
+}
+
+.login-logo {
+  i {
+    color: var(--primary-color);
+  }
+}
+
+/* Form Styling */
+.form-control {
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+
+  &:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    outline: none;
+  }
+
+  &.form-control-lg {
+    padding: 1rem 1.25rem;
+    font-size: 1rem;
+  }
+}
+
+.input-group {
+  .form-control {
+    border-right: 1px solid var(--border-color);
+    
+    &:focus {
+      border-right: 1px solid var(--primary-color);
+    }
+  }
+
+  .btn-outline-secondary {
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+    border: 1px solid var(--border-color);
+    border-left: none;
+    background: white;
+    color: var(--text-secondary);
+    
+    &:hover, &:focus {
+      background: #f9fafb;
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+  }
+}
+
+/* Button Styling */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+  }
+}
+
+.btn-link {
+  color: var(--primary-color);
+  font-weight: 500;
+  text-decoration: none;
+  
+  &:hover {
+    color: #1d4ed8;
+    text-decoration: underline !important;
+  }
+}
+
+/* Alert Styling */
+.alert {
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  
+  &.alert-info {
+    background-color: #f0f9ff;
+    color: #0c4a6e;
+    border-left: 4px solid var(--info-color);
+  }
+  
+  &.alert-danger {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border-left: 4px solid var(--danger-color);
+  }
+  
+  &.alert-warning {
+    background-color: #fffbeb;
+    color: #92400e;
+    border-left: 4px solid var(--warning-color);
+  }
+}
+
+/* Progress Bar for Password Strength */
+.progress {
+  border-radius: 4px;
+  background: #e5e7eb;
+  
+  .progress-bar {
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    
+    &.bg-danger { background-color: var(--danger-color) !important; }
+    &.bg-warning { background-color: var(--warning-color) !important; }
+    &.bg-info { background-color: var(--info-color) !important; }
+    &.bg-success { background-color: var(--success-color) !important; }
+  }
+}
+
+/* Form Labels */
+.form-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  
+  i {
+    color: var(--primary-color);
+  }
+}
+
+/* Invalid Feedback */
+.invalid-feedback {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--danger-color);
+}
+
+/* Security Notice */
+.border-top {
+  border-color: var(--border-color) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 576px) {
+  .login-card {
+    margin: 1rem;
+    max-width: none;
+    
+    .card-body {
+      padding: 2rem !important;
+    }
+  }
+  
+  .login-logo {
+    i {
+      font-size: 2.5rem !important;
+    }
+  }
+}
+
+/* Loading Animation */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Lockout Timer Styling */
+.alert-warning {
+  .fw-bold {
+    font-size: 1.1rem;
+  }
+}
+
+/* Focus States for Accessibility */
+.btn:focus,
+.form-control:focus,
+.btn-close:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Text Colors */
+.text-danger { color: var(--danger-color) !important; }
+.text-warning { color: var(--warning-color) !important; }
+.text-info { color: var(--info-color) !important; }
+.text-success { color: var(--success-color) !important; }

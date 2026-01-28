@@ -157,7 +157,7 @@ export interface CreateLocation {
   providedIn: 'root',
 })
 export class Api {
-  private readonly baseUrl = 'http://localhost:5068/api';
+  private readonly baseUrl = 'http://localhost:5066/api';
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'

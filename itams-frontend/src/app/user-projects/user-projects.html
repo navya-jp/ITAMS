@@ -1,0 +1,252 @@
+<!-- User Projects - No Scroll Design -->
+<div class="user-projects-container h-100 d-flex flex-column">
+  <!-- Header Section -->
+  <div class="projects-header p-4 bg-light border-bottom">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <h2 class="mb-1">
+          <i class="fas fa-folder-open text-primary me-2"></i>My Projects
+        </h2>
+        <p class="text-muted mb-0">Manage and track your assigned projects</p>
+      </div>
+      <div class="col-md-6 text-end">
+        <div class="d-flex justify-content-end align-items-center gap-2">
+          <span class="badge bg-primary fs-6">{{ filteredProjects.length }} Projects</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters and Search -->
+  <div class="filters-section p-4 bg-white border-bottom">
+    <div class="row g-3 align-items-center">
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="fas fa-search"></i>
+          </span>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Search projects..."
+            [(ngModel)]="searchTerm"
+            (input)="onSearch()"
+          />
+        </div>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" [(ngModel)]="statusFilter" (change)="onSearch()">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="in progress">In Progress</option>
+          <option value="planning">Planning</option>
+          <option value="completed">Completed</option>
+          <option value="on hold">On Hold</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" [(ngModel)]="sortBy" (change)="onSearch()">
+          <option value="name">Sort by Name</option>
+          <option value="code">Sort by Code</option>
+          <option value="status">Sort by Status</option>
+          <option value="progress">Sort by Progress</option>
+          <option value="dueDate">Sort by Due Date</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-outline-secondary w-100" (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSearch()">
+          <i [class]="sortOrder === 'asc' ? 'fas fa-sort-alpha-down' : 'fas fa-sort-alpha-up'"></i>
+          {{ sortOrder === 'asc' ? 'A-Z' : 'Z-A' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="error" class="alert alert-danger mx-4 mt-3" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+    <button type="button" class="btn-close" (click)="clearMessages()"></button>
+  </div>
+
+  <div *ngIf="success" class="alert alert-success mx-4 mt-3" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ success }}
+    <button type="button" class="btn-close" (click)="clearMessages()"></button>
+  </div>
+
+  <!-- Projects Content -->
+  <div class="projects-content flex-grow-1 p-4" style="overflow-y: auto;">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3 text-muted">Loading your projects...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && filteredProjects.length === 0" class="text-center py-5">
+      <div class="empty-state">
+        <i class="fas fa-folder-open text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
+        <h4 class="mt-3 text-muted">No Projects Found</h4>
+        <p class="text-muted">
+          <span *ngIf="searchTerm || statusFilter !== 'all'">
+            No projects match your current filters. Try adjusting your search criteria.
+          </span>
+          <span *ngIf="!searchTerm && statusFilter === 'all'">
+            You haven't been assigned to any projects yet.
+          </span>
+        </p>
+        <button *ngIf="searchTerm || statusFilter !== 'all'" class="btn btn-outline-primary" (click)="searchTerm = ''; statusFilter = 'all'; onSearch()">
+          <i class="fas fa-times me-2"></i>Clear Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Projects Grid -->
+    <div *ngIf="!loading && paginatedProjects.length > 0">
+      <div class="row g-4">
+        <div class="col-lg-6 col-xl-4" *ngFor="let project of paginatedProjects">
+          <div class="card project-card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pb-0">
+              <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                  <h5 class="card-title mb-1">{{ project.name }}</h5>
+                  <p class="text-muted small mb-2">
+                    <code class="text-primary">{{ project.code }}</code>
+                  </p>
+                </div>
+                <span class="badge" [class]="getStatusBadgeClass(project.status)">
+                  {{ project.status }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="card-body pt-2">
+              <p class="card-text text-muted small mb-3">{{ project.description }}</p>
+              
+              <!-- Progress Bar -->
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small class="text-muted">Progress</small>
+                  <small class="fw-bold" [class]="'text-' + getProgressColor(project.progress)">
+                    {{ project.progress }}%
+                  </small>
+                </div>
+                <div class="progress" style="height: 8px;">
+                  <div
+                    class="progress-bar"
+                    [class]="'bg-' + getProgressColor(project.progress)"
+                    [style.width.%]="project.progress"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- Project Details -->
+              <div class="project-details">
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <small class="text-muted d-block">My Role</small>
+                    <small class="fw-bold" [class]="getRoleColor(project.role)">
+                      <i class="fas fa-user-tag me-1"></i>{{ project.role }}
+                    </small>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted d-block">Due Date</small>
+                    <small class="fw-bold">
+                      <i class="fas fa-calendar me-1"></i>{{ project.dueDate }}
+                    </small>
+                  </div>
+                </div>
+
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <small class="text-muted d-block">Budget</small>
+                    <small class="fw-bold text-success">
+                      <i class="fas fa-rupee-sign me-1"></i>{{ formatCurrency(project.budget) }}
+                    </small>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted d-block">Spent</small>
+                    <small class="fw-bold text-warning">
+                      <i class="fas fa-chart-line me-1"></i>{{ formatCurrency(project.spent) }}
+                    </small>
+                  </div>
+                </div>
+
+                <!-- Team Members -->
+                <div class="mb-2">
+                  <small class="text-muted d-block mb-1">Team Members</small>
+                  <div class="d-flex flex-wrap gap-1">
+                    <span *ngFor="let member of project.team" class="badge bg-light text-dark">
+                      <i class="fas fa-user me-1"></i>{{ member }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Locations -->
+                <div class="mb-3">
+                  <small class="text-muted d-block mb-1">Locations</small>
+                  <div class="d-flex flex-wrap gap-1">
+                    <span *ngFor="let location of project.locations" class="badge bg-info">
+                      <i class="fas fa-map-marker-alt me-1"></i>{{ location }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer bg-white border-0 pt-0">
+              <div class="d-flex gap-2">
+                <button class="btn btn-primary btn-sm flex-fill" (click)="viewProjectDetails(project)">
+                  <i class="fas fa-eye me-1"></i>View Details
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" title="Project Timeline">
+                  <i class="fas fa-clock"></i>
+                </button>
+                <button class="btn btn-outline-info btn-sm" title="Project Files">
+                  <i class="fas fa-folder"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="totalPages > 1" class="d-flex justify-content-center mt-4">
+        <nav>
+          <ul class="pagination">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <button class="page-link" (click)="onPageChange(currentPage - 1)" [disabled]="currentPage === 1">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+            </li>
+            
+            <li *ngFor="let page of [].constructor(totalPages); let i = index" 
+                class="page-item" 
+                [class.active]="currentPage === i + 1">
+              <button class="page-link" (click)="onPageChange(i + 1)">
+                {{ i + 1 }}
+              </button>
+            </li>
+            
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <button class="page-link" (click)="onPageChange(currentPage + 1)" [disabled]="currentPage === totalPages">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <!-- Results Summary -->
+      <div class="text-center mt-3">
+        <small class="text-muted">
+          Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to 
+          {{ Math.min(currentPage * itemsPerPage, filteredProjects.length) }} of 
+          {{ filteredProjects.length }} projects
+        </small>
+      </div>
+    </div>
+  </div>
+</div>

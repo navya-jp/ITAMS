@@ -1,0 +1,129 @@
+<!-- Navigation Component - Role-based Navigation -->
+<div *ngIf="isAuthenticated" class="d-flex h-100">
+  <!-- Sidebar -->
+  <nav class="sidebar d-flex flex-column">
+    <div class="sidebar-header p-3">
+      <div class="d-flex align-items-center">
+        <div class="logo-icon me-2">
+          <i class="fas fa-server text-primary"></i>
+        </div>
+        <div class="logo-text">
+          <h5 class="mb-0 fw-bold">ITAMS</h5>
+          <small class="text-muted">{{ isSuperAdmin() ? 'Admin Panel' : 'User Portal' }}</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Menu -->
+    <div class="sidebar-menu flex-grow-1 px-3">
+      <ul class="nav flex-column">
+        <li class="nav-item" *ngFor="let item of navigationItems">
+          <a 
+            class="nav-link d-flex align-items-center"
+            [routerLink]="item.path" 
+            routerLinkActive="active"
+            [class.active]="isActiveRoute(item.path)"
+          >
+            <i [class]="item.icon + ' me-3'"></i>
+            <span>{{ item.label }}</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- User Profile Section -->
+    <div class="sidebar-footer p-3 border-top">
+      <div class="user-profile">
+        <div class="d-flex align-items-center mb-2">
+          <div class="user-avatar me-2">
+            <div class="avatar-circle">
+              {{ getUserInitials() }}
+            </div>
+          </div>
+          <div class="user-info flex-grow-1">
+            <div class="user-name">{{ getUserDisplayName() }}</div>
+            <small class="user-role text-muted">{{ getUserRole() }}</small>
+          </div>
+        </div>
+        
+        <!-- Session Info -->
+        <div class="session-info mb-2">
+          <small class="text-muted d-block">
+            <i class="fas fa-clock me-1"></i>Last activity: {{ getLastActivity() }}
+          </small>
+          <small class="text-muted d-block">
+            <i class="fas fa-hourglass-half me-1"></i>Session: {{ getSessionTimeRemaining() }}
+          </small>
+        </div>
+
+        <!-- User Actions -->
+        <div class="user-actions d-flex gap-1">
+          <button 
+            class="btn btn-sm btn-outline-secondary flex-fill"
+            (click)="onChangePassword()"
+            title="Change Password"
+          >
+            <i class="fas fa-key"></i>
+          </button>
+          <button 
+            class="btn btn-sm btn-outline-secondary"
+            (click)="refreshActivity()"
+            title="Refresh Session"
+          >
+            <i class="fas fa-sync-alt"></i>
+          </button>
+          <button 
+            class="btn btn-sm btn-outline-danger"
+            (click)="onLogout()"
+            title="Logout"
+          >
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="main-content flex-grow-1 d-flex flex-column">
+    <!-- Top Header -->
+    <header class="main-header d-flex justify-content-between align-items-center p-3 bg-white border-bottom">
+      <div class="header-left">
+        <h1 class="h3 mb-0 fw-bold text-dark">{{ pageTitle }}</h1>
+        <small class="text-muted">{{ isSuperAdmin() ? 'Administrator Dashboard' : 'User Dashboard' }}</small>
+      </div>
+      
+      <div class="header-right d-flex align-items-center gap-3">
+        <!-- Session Status -->
+        <div class="session-status d-none d-md-block">
+          <span class="badge bg-success">
+            <i class="fas fa-circle me-1"></i>Online
+          </span>
+        </div>
+        
+        <!-- User Info -->
+        <div class="user-header-info d-none d-lg-block text-end">
+          <div class="fw-bold">{{ getUserDisplayName() }}</div>
+          <small class="text-muted">{{ getUserRole() }}</small>
+        </div>
+        
+        <!-- User Avatar -->
+        <div class="user-header-avatar">
+          <div class="avatar-circle bg-primary text-white">
+            {{ getUserInitials() }}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="page-content flex-grow-1">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>
+
+<!-- Login/Unauthenticated State -->
+<div *ngIf="!isAuthenticated" class="h-100">
+  <router-outlet></router-outlet>
+</div>

@@ -1,0 +1,162 @@
+<!-- Login Page - Professional Design -->
+<div class="login-container d-flex align-items-center justify-content-center min-vh-100">
+  <div class="login-card">
+    <div class="card shadow-lg border-0">
+      <div class="card-body p-5">
+        <!-- Logo and Title -->
+        <div class="text-center mb-4">
+          <div class="login-logo mb-3">
+            <i class="fas fa-server text-primary" style="font-size: 3rem;"></i>
+          </div>
+          <h2 class="fw-bold text-dark mb-2">ITAMS</h2>
+          <p class="text-muted">IT Asset Management System</p>
+        </div>
+
+        <!-- Messages -->
+        <div *ngIf="message" class="alert alert-info alert-dismissible fade show" role="alert">
+          <i class="fas fa-info-circle me-2"></i>{{ message }}
+          <button type="button" class="btn-close" (click)="clearMessages()"></button>
+        </div>
+
+        <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+          <button type="button" class="btn-close" (click)="clearMessages()"></button>
+        </div>
+
+        <!-- Lockout Warning -->
+        <div *ngIf="isLocked" class="alert alert-warning" role="alert">
+          <i class="fas fa-lock me-2"></i>
+          <strong>Account Locked</strong>
+          <div class="mt-2">
+            <div *ngIf="lockoutEnd">
+              Time remaining: <strong>{{ getLockoutTimeRemaining() }}</strong>
+            </div>
+            <small class="text-muted">
+              Your account has been temporarily locked due to multiple failed login attempts.
+            </small>
+          </div>
+        </div>
+
+        <!-- Login Form -->
+        <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+          <!-- Username Field -->
+          <div class="mb-3">
+            <label for="username" class="form-label">
+              <i class="fas fa-user me-2"></i>Username
+            </label>
+            <input
+              type="text"
+              class="form-control form-control-lg"
+              id="username"
+              name="username"
+              [(ngModel)]="loginData.username"
+              #username="ngModel"
+              required
+              minlength="3"
+              maxlength="100"
+              [disabled]="loading || isLocked"
+              placeholder="Enter your username"
+              autocomplete="username"
+              (input)="onUsernameChange()"
+            />
+            <div *ngIf="username.invalid && username.touched" class="invalid-feedback d-block">
+              <div *ngIf="username.errors?.['required']">Username is required</div>
+              <div *ngIf="username.errors?.['minlength']">Username must be at least 3 characters</div>
+            </div>
+          </div>
+
+          <!-- Password Field -->
+          <div class="mb-3">
+            <label for="password" class="form-label">
+              <i class="fas fa-lock me-2"></i>{{ getPasswordLabel() }}
+              <i *ngIf="checkingUserStatus" class="fas fa-spinner fa-spin ms-2 text-muted"></i>
+            </label>
+            <div class="input-group">
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                class="form-control form-control-lg"
+                id="password"
+                name="password"
+                [(ngModel)]="loginData.password"
+                #password="ngModel"
+                required
+                [disabled]="loading || isLocked"
+                [placeholder]="getPasswordPlaceholder()"
+                autocomplete="current-password"
+                (input)="onPasswordInput()"
+              />
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="togglePasswordVisibility()"
+                [disabled]="loading || isLocked"
+              >
+                <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+              </button>
+            </div>
+            <div *ngIf="password.invalid && password.touched" class="invalid-feedback d-block">
+              <div *ngIf="password.errors?.['required']">Password is required</div>
+            </div>
+          </div>
+
+          <!-- Login Attempts Warning -->
+          <div *ngIf="attemptCount > 0 && !isLocked" class="alert alert-warning py-2" role="alert">
+            <small>
+              <i class="fas fa-exclamation-triangle me-1"></i>
+              {{ maxAttempts - attemptCount }} attempt(s) remaining before account lockout
+            </small>
+          </div>
+
+          <!-- Login Button -->
+          <div class="d-grid mb-3">
+            <button
+              type="submit"
+              class="btn btn-primary btn-lg"
+              [disabled]="loading || isLocked || loginForm.invalid"
+            >
+              <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+              <i *ngIf="!loading" class="fas fa-sign-in-alt me-2"></i>
+              {{ loading ? (isFirstLoginAttempt ? 'Creating Account...' : 'Signing In...') : (isFirstLoginAttempt ? 'Create Account' : 'Sign In') }}
+            </button>
+          </div>
+
+          <!-- Forgot Password Link -->
+          <div class="text-center">
+            <button
+              type="button"
+              class="btn btn-link text-decoration-none"
+              (click)="onForgotPassword()"
+              [disabled]="loading"
+            >
+              <i class="fas fa-question-circle me-1"></i>
+              Forgot Password?
+            </button>
+            <br>
+            <small class="text-muted">
+              Contact your Super Admin for password reset
+            </small>
+          </div>
+        </form>
+
+        <!-- Security Notice -->
+        <div class="mt-4 pt-3 border-top">
+          <div class="row text-center">
+            <div class="col-12">
+              <small class="text-muted">
+                <i class="fas fa-shield-alt me-1"></i>
+                Secure Login • Session Timeout: {{ authService.settings.sessionTimeoutMinutes }} minutes
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Info -->
+        <div class="text-center mt-3">
+          <small class="text-muted">
+            ITAMS v1.0 • IT Asset Management System
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
