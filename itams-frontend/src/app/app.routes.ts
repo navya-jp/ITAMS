@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { Dashboard } from './dashboard/dashboard';
 import { Users } from './users/users';
 import { Projects } from './projects/projects';
+import { Roles } from './roles/roles';
+import { UserPermissions } from './user-permissions/user-permissions';
 import { Login } from './login/login';
 import { ChangePassword } from './change-password/change-password';
 import { UserDashboard } from './user-dashboard/user-dashboard';
@@ -19,6 +21,8 @@ export const routes: Routes = [
   // Admin routes (Super Admin)
   { path: 'admin/dashboard', component: Dashboard, canActivate: [AdminGuard] },
   { path: 'admin/users', component: Users, canActivate: [AdminGuard] },
+  { path: 'admin/roles', component: Roles, canActivate: [AdminGuard] },
+  { path: 'admin/user-permissions', component: UserPermissions, canActivate: [AdminGuard] },
   { path: 'admin/projects', component: Projects, canActivate: [AdminGuard] },
   { path: 'admin/assets', component: Dashboard, canActivate: [AdminGuard] }, // Placeholder
   { path: 'admin/audit', component: Dashboard, canActivate: [AdminGuard] }, // Placeholder
@@ -31,6 +35,7 @@ export const routes: Routes = [
   // Legacy redirects for backward compatibility
   { path: 'dashboard', redirectTo: '/admin/dashboard', pathMatch: 'full' },
   { path: 'users', redirectTo: '/admin/users', pathMatch: 'full' },
+  { path: 'roles', redirectTo: '/admin/roles', pathMatch: 'full' },
   { path: 'projects', redirectTo: '/admin/projects', pathMatch: 'full' },
   { path: 'assets', redirectTo: '/admin/assets', pathMatch: 'full' },
   { path: 'audit', redirectTo: '/admin/audit', pathMatch: 'full' },

@@ -52,51 +52,132 @@ export class Roles implements OnInit {
   constructor(private api: Api) {}
 
   ngOnInit() {
-    this.loadRoles();
-    this.loadPermissions();
+    this.loadRbacRoles();
+    this.loadRbacPermissions();
   }
 
-  loadRoles() {
+  loadRbacRoles() {
     this.loading = true;
-    this.api.getRoles().subscribe({
+    this.api.getRbacRoles().subscribe({
       next: (roles) => {
-        this.roles = roles.map(role => ({ ...role, permissions: [] }));
+        this.roles = roles.map(role => ({ 
+          id: role.roleId,
+          name: role.roleName,
+          description: role.description,
+          isSystemRole: role.isSystemRole,
+          isActive: role.status === 'ACTIVE',
+          createdAt: role.createdAt,
+          permissions: [] 
+        }));
         this.loadRolePermissions();
       },
       error: (error) => {
-        this.error = 'Failed to load roles';
+        this.error = 'Failed to load RBAC roles';
         this.loading = false;
-        console.error('Error loading roles:', error);
+        console.error('Error loading RBAC roles:', error);
       }
     });
   }
 
-  loadPermissions() {
-    this.api.getAllPermissions().subscribe({
-      next: (permissions) => {
-        this.permissions = permissions;
-        this.groupPermissionsByModule();
+  loadRbacPermissions() {
+    this.api.getRbacPermissionsGrouped().subscribe({
+      next: (groupedPermissions) => {
+        this.permissionGroups = groupedPermissions.map(group => ({
+          module: group.module,
+          permissions: group.permissions.map((p: any) => ({
+            id: p.permissionId,
+            name: this.formatPermissionName(p.permissionCode),
+            code: p.permissionCode,
+            description: p.description,
+            module: p.module,
+            isActive: p.status === 'ACTIVE'
+          }))
+        }));
+        
+        // Flatten permissions for easy access
+        this.permissions = this.permissionGroups.flatMap(group => group.permissions);
       },
       error: (error) => {
-        console.error('Error loading permissions:', error);
+        console.error('Error loading RBAC permissions:', error);
       }
     });
   }
 
   loadRolePermissions() {
-    const rolePromises = this.roles.map(role => 
-      this.api.getRolePermissions(role.id).then(permissions => {
-        role.permissions = permissions;
-      })
-    );
-
-    Promise.all(rolePromises).then(() => {
-      this.loading = false;
-    }).catch(error => {
-      this.error = 'Failed to load role permissions';
-      this.loading = false;
-      console.error('Error loading role permissions:', error);
+    let completedRoles = 0;
+    
+    this.roles.forEach(role => {
+      this.api.getRbacRolePermissions(role.id).subscribe({
+        next: (permissions) => {
+          role.permissions = permissions.map((p: any) => ({
+            id: p.permissionId,
+            name: this.formatPermissionName(p.permissionCode),
+            code: p.permissionCode,
+            description: p.description,
+            module: p.module,
+            isActive: p.status === 'ACTIVE'
+          }));
+          
+          completedRoles++;
+          if (completedRoles === this.roles.length) {
+            this.loading = false;
+          }
+        },
+        error: (error) => {
+          console.error(`Error loading permissions for role ${role.name}:`, error);
+          completedRoles++;
+          if (completedRoles === this.roles.length) {
+            this.loading = false;
+          }
+        }
+      });
     });
+  }
+
+  formatPermissionName(code: string): string {
+    // Convert permission codes like "USER_CREATE" to "Create Users"
+    const parts = code.split('_');
+    if (parts.length >= 2) {
+      const action = parts[parts.length - 1];
+      const resource = parts.slice(0, -1).join(' ');
+      
+      const actionMap: { [key: string]: string } = {
+        'CREATE': 'Create',
+        'VIEW': 'View',
+        'EDIT': 'Edit',
+        'DELETE': 'Delete',
+        'DEACTIVATE': 'Deactivate',
+        'REACTIVATE': 'Reactivate',
+        'TRANSFER': 'Transfer',
+        'APPROVE': 'Approve',
+        'EXPORT': 'Export',
+        'DOWNLOAD': 'Download',
+        'LOG': 'Log',
+        'SCHEDULE': 'Schedule',
+        'ASSIGN': 'Assign',
+        'OVERRIDE': 'Override'
+      };
+      
+      const resourceMap: { [key: string]: string } = {
+        'USER': 'Users',
+        'ASSET': 'Assets',
+        'LIFECYCLE': 'Lifecycle',
+        'REPAIR': 'Repairs',
+        'MAINTENANCE': 'Maintenance',
+        'REPORT': 'Reports',
+        'AUDIT': 'Audit',
+        'FINANCIAL': 'Financial',
+        'ROLE': 'Roles',
+        'PERMISSION': 'Permissions'
+      };
+      
+      const formattedAction = actionMap[action] || action;
+      const formattedResource = resourceMap[resource] || resource.replace('_', ' ');
+      
+      return `${formattedAction} ${formattedResource}`;
+    }
+    
+    return code.replace(/_/g, ' ');
   }
 
   groupPermissionsByModule() {
@@ -206,7 +287,7 @@ export class Roles implements OnInit {
     const permissionIds = Array.from(this.selectedPermissions);
     this.loading = true;
     
-    this.api.updateRolePermissions(this.selectedRole.id, permissionIds).subscribe({
+    this.api.updateRbacRolePermissions(this.selectedRole.id, permissionIds).subscribe({
       next: () => {
         // Update local role permissions
         this.selectedRole!.permissions = this.permissions.filter(p => 

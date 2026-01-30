@@ -157,7 +157,7 @@ export interface CreateLocation {
   providedIn: 'root',
 })
 export class Api {
-  private readonly baseUrl = 'http://localhost:5066/api';
+  private readonly baseUrl = 'http://localhost:5067/api';
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
@@ -212,7 +212,29 @@ export class Api {
     return this.http.get<ApiResponse<User[]>>(`${this.baseUrl}/users/by-role/${roleId}`);
   }
 
-  // Roles - Using SuperAdmin controller
+  // RBAC - Using new RBAC controller endpoints
+  getRbacRoles(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/rbac/roles`);
+  }
+
+  getRbacPermissions(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/rbac/permissions`);
+  }
+
+  getRbacPermissionsGrouped(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/rbac/permissions/grouped`);
+  }
+
+  getRbacRolePermissions(roleId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/rbac/roles/${roleId}/permissions`);
+  }
+
+  updateRbacRolePermissions(roleId: number, permissionIds: number[]): Observable<any> {
+    return this.http.put(`${this.baseUrl}/rbac/roles/${roleId}/permissions`, 
+      { permissionIds }, this.httpOptions);
+  }
+
+  // Legacy roles (keeping for backward compatibility)
   getRoles(): Observable<Role[]> {
     return this.http.get<Role[]>(`${this.baseUrl}/superadmin/roles`);
   }
@@ -230,8 +252,8 @@ export class Api {
     return this.http.get<Permission[]>(`${this.baseUrl}/superadmin/permissions`);
   }
 
-  getRolePermissions(roleId: number): Promise<Permission[]> {
-    return this.http.get<Permission[]>(`${this.baseUrl}/superadmin/roles/${roleId}/permissions`).toPromise() as Promise<Permission[]>;
+  getRolePermissions(roleId: number): Observable<Permission[]> {
+    return this.http.get<Permission[]>(`${this.baseUrl}/superadmin/roles/${roleId}/permissions`);
   }
 
   updateRolePermissions(roleId: number, permissionIds: number[]): Observable<void> {

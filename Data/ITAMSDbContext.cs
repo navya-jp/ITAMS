@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ITAMS.Domain.Entities;
+using ITAMS.Domain.Entities.RBAC;
 
 namespace ITAMS.Data;
 
@@ -19,6 +20,15 @@ public class ITAMSDbContext : DbContext
     public DbSet<UserProjectPermission> UserProjectPermissions { get; set; }
     public DbSet<Asset> Assets { get; set; }
     public DbSet<AuditEntry> AuditEntries { get; set; }
+
+    // RBAC entities - Temporarily disabled due to naming conflicts
+    // public DbSet<RbacRole> RbacRoles { get; set; }
+    // public DbSet<RbacPermission> RbacPermissions { get; set; }
+    // public DbSet<RbacRolePermission> RbacRolePermissions { get; set; }
+    // public DbSet<RbacUserPermission> RbacUserPermissions { get; set; }
+    // public DbSet<RbacUserScope> RbacUserScopes { get; set; }
+    // public DbSet<RbacPermissionAuditLog> RbacPermissionAuditLogs { get; set; }
+    // public DbSet<RbacAccessAuditLog> RbacAccessAuditLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

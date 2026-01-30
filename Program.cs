@@ -67,6 +67,14 @@ builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 
+// Add RBAC services
+builder.Services.AddScoped<ITAMS.Services.RBAC.IPermissionResolver, ITAMS.Services.RBAC.PermissionResolver>();
+builder.Services.AddScoped<ITAMS.Services.RBAC.IRbacAuditService, ITAMS.Services.RBAC.RbacAuditService>();
+builder.Services.AddScoped<ITAMS.Services.RBAC.IRoleManagementService, ITAMS.Services.RBAC.RoleManagementService>();
+
+// Add memory cache for permission caching
+builder.Services.AddMemoryCache();
+
 // Add HTTP context accessor for audit logging
 builder.Services.AddHttpContextAccessor();
 
