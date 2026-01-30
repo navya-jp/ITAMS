@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { Subscription } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -16,6 +16,10 @@ export class Navigation implements OnInit, OnDestroy {
   isAuthenticated = false;
   pageTitle = 'Dashboard';
   currentRoute = '';
+  
+  // Properties for time display to avoid change detection issues
+  lastActivity = 'Active now';
+  sessionTimeRemaining = '30 minutes';
   
   private subscriptions: Subscription[] = [];
 
@@ -36,7 +40,8 @@ export class Navigation implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -60,8 +65,15 @@ export class Navigation implements OnInit, OnDestroy {
       });
     this.subscriptions.push(routeSub);
 
-    // Initial page title update
+    // Update time displays every minute
+    const timeSub = interval(60000).subscribe(() => {
+      this.updateTimeDisplays();
+    });
+    this.subscriptions.push(timeSub);
+
+    // Initial updates
     this.updatePageTitle();
+    this.updateTimeDisplays();
   }
 
   ngOnDestroy() {
@@ -110,7 +122,12 @@ export class Navigation implements OnInit, OnDestroy {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   }
 
-  getLastActivity(): string {
+  private updateTimeDisplays() {
+    this.lastActivity = this.getLastActivityString();
+    this.sessionTimeRemaining = this.getSessionTimeRemainingString();
+  }
+
+  private getLastActivityString(): string {
     const lastActivity = this.authService.getLastActivity();
     const now = Date.now();
     const diffMinutes = Math.floor((now - lastActivity) / 60000);
@@ -120,7 +137,7 @@ export class Navigation implements OnInit, OnDestroy {
     return `${diffMinutes} minutes ago`;
   }
 
-  getSessionTimeRemaining(): string {
+  private getSessionTimeRemainingString(): string {
     const settings = this.authService.settings;
     const lastActivity = this.authService.getLastActivity();
     const sessionTimeout = settings.sessionTimeoutMinutes * 60 * 1000;

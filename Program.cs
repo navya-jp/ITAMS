@@ -26,8 +26,17 @@ builder.Services.AddSwaggerGen();
 // Add Entity Framework
 builder.Services.AddDbContext<ITAMSDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("SharedSqlServer");
-    options.UseSqlServer(connectionString);
+    var connectionString = builder.Configuration.GetConnectionString("SharedSqlServer") 
+                          ?? builder.Configuration.GetConnectionString("DefaultConnection");
+    
+    if (!string.IsNullOrEmpty(connectionString) && connectionString.Contains("Server="))
+    {
+        options.UseSqlServer(connectionString);
+    }
+    else
+    {
+        options.UseSqlite(connectionString ?? "Data Source=ITAMS.db");
+    }
 });
 
 // Add JWT Authentication
@@ -95,11 +104,19 @@ app.MapGet("/", () => Results.Redirect("http://localhost:4200"));
 
 app.MapControllers();
 
-// Ensure database is migrated
+// Ensure database is created (but don't migrate automatically)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ITAMSDbContext>();
-    context.Database.Migrate();
+    try
+    {
+        context.Database.EnsureCreated();
+    }
+    catch (Exception ex)
+    {
+        // Log the error but continue - database might already exist
+        Log.Warning("Database creation/connection issue: {Error}", ex.Message);
+    }
 }
 
 app.Run();

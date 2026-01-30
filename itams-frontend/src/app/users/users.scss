@@ -13,6 +13,49 @@
   }
 }
 
+// Compact password validation for create user form
+.password-validation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  
+  .validation-item {
+    display: flex;
+    align-items: center;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    white-space: nowrap;
+    border: 1px solid #e5e7eb;
+    
+    i {
+      margin-right: 0.25rem;
+      font-size: 0.7rem;
+    }
+    
+    &.valid {
+      color: #059669;
+      background-color: #ecfdf5;
+      border-color: #10b981;
+      
+      i {
+        color: #059669;
+      }
+    }
+    
+    &.invalid {
+      color: #dc2626;
+      background-color: #fef2f2;
+      border-color: #f87171;
+      
+      i {
+        color: #dc2626;
+      }
+    }
+  }
+}
+
 .password-invalid {
   background-color: #fef2f2 !important;
   border-color: #fca5a5 !important;

@@ -109,6 +109,9 @@ export class Users implements OnInit {
     this.showCreateModal = true;
     this.error = '';
     this.success = '';
+    
+    // Initialize password validation to show all requirements as invalid
+    this.validatePassword();
   }
 
   openEditModal(user: User) {
@@ -231,6 +234,7 @@ export class Users implements OnInit {
       hasNumber: /\d/.test(password),
       hasSpecial: /[@$!%*?&]/.test(password)
     };
+    console.log('Password validation:', this.passwordRequirements); // Debug log
   }
 
   isPasswordValid(): boolean {
@@ -254,33 +258,9 @@ export class Users implements OnInit {
 
   onCreateUserClick() {
     // Simple validation check
-    if (!this.createForm.firstName || !this.createForm.lastName) {
-      this.error = 'Please enter first and last name';
-      return;
-    }
-    
-    if (!this.createForm.username || !this.isUsernameValid) {
-      this.error = 'Please enter a valid username';
-      return;
-    }
-    
-    if (this.usernameAvailable === false) {
-      this.error = 'Username is already taken, please choose another';
-      return;
-    }
-    
-    if (!this.createForm.email || !this.validateEmail(this.createForm.email)) {
-      this.error = 'Please enter a valid email address';
-      return;
-    }
-    
-    if (!this.createForm.password || !this.isPasswordValid()) {
-      this.error = 'Please enter a valid password that meets all requirements';
-      return;
-    }
-    
-    if (this.createForm.roleId === 0) {
-      this.error = 'Please select a role';
+    if (!this.createForm.firstName || !this.createForm.lastName || !this.createForm.username || 
+        !this.createForm.email || !this.createForm.password || this.createForm.roleId === 0) {
+      this.error = 'Please fill in all required fields';
       return;
     }
     
@@ -299,17 +279,23 @@ export class Users implements OnInit {
         if (response.success && response.data) {
           this.users.push(response.data);
           this.success = response.message || 'User created successfully';
-          this.closeModals();
+          this.loading = false;
+          this.closeModals(); // Automatically close the modal
         } else {
           this.error = response.message || 'Failed to create user';
+          this.loading = false;
         }
-        this.loading = false;
       },
       error: (error) => {
+        console.error('Create user error:', error);
         if (error.error?.validationErrors) {
           this.error = Object.values(error.error.validationErrors).flat().join(', ');
+        } else if (error.error?.message) {
+          this.error = error.error.message;
+        } else if (error.message) {
+          this.error = error.message;
         } else {
-          this.error = error.error?.message || 'Failed to create user';
+          this.error = 'Failed to create user. Please check all fields and try again.';
         }
         this.loading = false;
       }

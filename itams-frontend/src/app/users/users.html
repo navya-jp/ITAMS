@@ -98,7 +98,7 @@
 
 <!-- Create User Modal -->
 <div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Create New User</h5>
@@ -106,150 +106,95 @@
       </div>
       <div class="modal-body">
         <form>
-          <!-- Name Fields -->
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label class="form-label">First Name *</label>
-                <input type="text" class="form-control" [(ngModel)]="createForm.firstName" 
-                       name="firstName" (input)="onNameChange()" required>
-              </div>
+          <!-- Row 1: First Name and Last Name -->
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label">First Name *</label>
+              <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.firstName" 
+                     name="firstName" placeholder="Enter first name" required>
             </div>
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label class="form-label">Last Name *</label>
-                <input type="text" class="form-control" [(ngModel)]="createForm.lastName" 
-                       name="lastName" (input)="onNameChange()" required>
-              </div>
+            <div class="col-6">
+              <label class="form-label">Last Name *</label>
+              <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.lastName" 
+                     name="lastName" placeholder="Enter last name" required>
             </div>
           </div>
 
-          <!-- Auto-generated Username -->
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label class="form-label">Username *</label>
-                <input type="text" class="form-control" 
-                       [class.is-invalid]="createForm.username && !isUsernameValid"
-                       [class.is-valid]="createForm.username && isUsernameValid && usernameAvailable"
-                       [(ngModel)]="createForm.username" 
-                       name="username" 
-                       (input)="onUsernameChange()"
-                       (blur)="checkUsernameAvailability()"
-                       required>
-                <div class="form-text">
-                  <div *ngIf="!createForm.username">Username will be suggested based on your name</div>
-                  <div *ngIf="createForm.username && checkingUsername" class="text-info">
-                    <i class="fas fa-spinner fa-spin me-1"></i>Checking availability...
-                  </div>
-                  <div *ngIf="createForm.username && !checkingUsername && usernameAvailable === true" class="text-success">
-                    <i class="fas fa-check me-1"></i>Username is available
-                  </div>
-                  <div *ngIf="createForm.username && !checkingUsername && usernameAvailable === false" class="text-danger">
-                    <i class="fas fa-times me-1"></i>Username is already taken
-                  </div>
-                  <div *ngIf="createForm.username && !isUsernameValid" class="text-danger">
-                    <i class="fas fa-exclamation-triangle me-1"></i>Username must be 3-50 characters, alphanumeric and underscores only
-                  </div>
-                </div>
-              </div>
+          <!-- Row 2: Username and Email -->
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label">Username *</label>
+              <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.username" 
+                     name="username" placeholder="Enter username" required>
             </div>
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label class="form-label">Email *</label>
-                <input type="email" class="form-control" 
-                       [class.is-invalid]="createForm.email && !validateEmail(createForm.email)"
-                       [class.is-valid]="createForm.email && validateEmail(createForm.email)"
-                       [(ngModel)]="createForm.email" name="email" required>
-                <div class="form-text">Enter email address</div>
-              </div>
+            <div class="col-6">
+              <label class="form-label">Email *</label>
+              <input type="email" class="form-control form-control-sm" [(ngModel)]="createForm.email" 
+                     name="email" placeholder="Enter email" required>
             </div>
           </div>
 
-          <!-- Password Field -->
-          <div class="mb-3">
-            <label class="form-label">Password *</label>
-            <input type="password" class="form-control" 
-                   [class.password-invalid]="createForm.password && !isPasswordValid()"
-                   [class.password-valid]="createForm.password && isPasswordValid()"
-                   [(ngModel)]="createForm.password" 
-                   name="password" 
-                   (input)="validatePassword()" 
-                   required>
-            
-            <!-- Password Requirements - Only show when user starts typing -->
-            <div *ngIf="createForm.password && createForm.password.length > 0" class="password-requirements mt-2">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="requirement mb-1">
-                    <i class="fas" [class.fa-check]="passwordRequirements.minLength" 
-                       [class.fa-times]="!passwordRequirements.minLength"
-                       [class.text-success]="passwordRequirements.minLength"
-                       [class.text-danger]="!passwordRequirements.minLength"></i>
-                    At least 8 characters
-                  </div>
-                  <div class="requirement mb-1">
-                    <i class="fas" [class.fa-check]="passwordRequirements.hasUppercase" 
-                       [class.fa-times]="!passwordRequirements.hasUppercase"
-                       [class.text-success]="passwordRequirements.hasUppercase"
-                       [class.text-danger]="!passwordRequirements.hasUppercase"></i>
-                    One uppercase letter
-                  </div>
-                  <div class="requirement mb-1">
-                    <i class="fas" [class.fa-check]="passwordRequirements.hasLowercase" 
-                       [class.fa-times]="!passwordRequirements.hasLowercase"
-                       [class.text-success]="passwordRequirements.hasLowercase"
-                       [class.text-danger]="!passwordRequirements.hasLowercase"></i>
-                    One lowercase letter
-                  </div>
+          <!-- Row 3: Password and Role -->
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label">Password *</label>
+              <input type="password" class="form-control form-control-sm" [(ngModel)]="createForm.password" 
+                     name="password" placeholder="Enter password" 
+                     (input)="validatePassword()" required>
+              
+              <!-- Password validation indicators - only show when typing -->
+              <div *ngIf="createForm.password && createForm.password.length > 0" class="password-validation mt-1">
+                <div class="validation-item" [class.valid]="passwordRequirements.minLength" [class.invalid]="!passwordRequirements.minLength">
+                  <i class="fas fa-check" *ngIf="passwordRequirements.minLength"></i>
+                  <i class="fas fa-times" *ngIf="!passwordRequirements.minLength"></i>
+                  8+ chars
                 </div>
-                <div class="col-md-6">
-                  <div class="requirement mb-1">
-                    <i class="fas" [class.fa-check]="passwordRequirements.hasNumber" 
-                       [class.fa-times]="!passwordRequirements.hasNumber"
-                       [class.text-success]="passwordRequirements.hasNumber"
-                       [class.text-danger]="!passwordRequirements.hasNumber"></i>
-                    One number
-                  </div>
-                  <div class="requirement mb-1">
-                    <i class="fas" [class.fa-check]="passwordRequirements.hasSpecial" 
-                       [class.fa-times]="!passwordRequirements.hasSpecial"
-                       [class.text-success]="passwordRequirements.hasSpecial"
-                       [class.text-danger]="!passwordRequirements.hasSpecial"></i>
-                    One special character (@$!%*?&)
-                  </div>
+                <div class="validation-item" [class.valid]="passwordRequirements.hasUppercase" [class.invalid]="!passwordRequirements.hasUppercase">
+                  <i class="fas fa-check" *ngIf="passwordRequirements.hasUppercase"></i>
+                  <i class="fas fa-times" *ngIf="!passwordRequirements.hasUppercase"></i>
+                  Uppercase
+                </div>
+                <div class="validation-item" [class.valid]="passwordRequirements.hasLowercase" [class.invalid]="!passwordRequirements.hasLowercase">
+                  <i class="fas fa-check" *ngIf="passwordRequirements.hasLowercase"></i>
+                  <i class="fas fa-times" *ngIf="!passwordRequirements.hasLowercase"></i>
+                  Lowercase
+                </div>
+                <div class="validation-item" [class.valid]="passwordRequirements.hasNumber" [class.invalid]="!passwordRequirements.hasNumber">
+                  <i class="fas fa-check" *ngIf="passwordRequirements.hasNumber"></i>
+                  <i class="fas fa-times" *ngIf="!passwordRequirements.hasNumber"></i>
+                  Number
+                </div>
+                <div class="validation-item" [class.valid]="passwordRequirements.hasSpecial" [class.invalid]="!passwordRequirements.hasSpecial">
+                  <i class="fas fa-check" *ngIf="passwordRequirements.hasSpecial"></i>
+                  <i class="fas fa-times" *ngIf="!passwordRequirements.hasSpecial"></i>
+                  Special
                 </div>
               </div>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Role *</label>
+              <select class="form-select form-select-sm" [(ngModel)]="createForm.roleId" name="roleId" required>
+                <option [value]="0">Select role</option>
+                <option *ngFor="let role of roles" [value]="role.id">{{ role.name }}</option>
+              </select>
             </div>
           </div>
 
-          <!-- Role Selection -->
+          <!-- Checkbox row -->
           <div class="row">
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label class="form-label">Role *</label>
-                <select class="form-select" [(ngModel)]="createForm.roleId" name="roleId" required>
-                  <option [value]="0">Select a role</option>
-                  <option *ngFor="let role of roles" [value]="role.id">
-                    {{ role.name }} - {{ role.description }}
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="mb-3">
-                <div class="form-check mt-4">
-                  <input class="form-check-input" type="checkbox" [(ngModel)]="createForm.mustChangePassword" name="mustChangePassword">
-                  <label class="form-check-label">Must change password on first login</label>
-                </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="createForm.mustChangePassword" 
+                       name="mustChangePassword" checked>
+                <label class="form-check-label">Must change password on first login</label>
               </div>
             </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-        <button type="button" class="btn btn-primary" (click)="onCreateUserClick()">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="closeModals()">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="onCreateUserClick()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
           Create User
         </button>
