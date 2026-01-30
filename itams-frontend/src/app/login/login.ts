@@ -30,6 +30,17 @@ export class Login implements OnInit {
   isFirstLoginAttempt = false;
   checkingUserStatus = false;
   
+  // Password validation for first-time users
+  passwordValidation = {
+    hasMinLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasDigit: false,
+    hasSpecialChar: false
+  };
+  
+  passwordStrength: 'weak' | 'medium' | 'strong' = 'weak';
+  
   // Timer for lockout countdown
   private lockoutTimer: any;
 
@@ -128,6 +139,12 @@ export class Login implements OnInit {
 
     if (this.loginData.username.length < 3) {
       this.error = 'Username must be at least 3 characters';
+      return false;
+    }
+
+    // For first-time users, validate password strength
+    if (this.isFirstLoginAttempt && !this.isPasswordValid()) {
+      this.error = 'Password must meet all requirements';
       return false;
     }
 
@@ -237,8 +254,49 @@ export class Login implements OnInit {
   }
 
   onPasswordInput() {
-    // No password strength checking during login
-    // Password strength is only for password setup/change
+    if (this.isFirstLoginAttempt) {
+      this.validatePassword();
+    }
+  }
+
+  private validatePassword() {
+    const password = this.loginData.password || '';
+    
+    // Check each requirement
+    this.passwordValidation.hasMinLength = password.length >= 8;
+    this.passwordValidation.hasUpperCase = /[A-Z]/.test(password);
+    this.passwordValidation.hasLowerCase = /[a-z]/.test(password);
+    this.passwordValidation.hasDigit = /\d/.test(password);
+    this.passwordValidation.hasSpecialChar = /[@$!%*?&]/.test(password);
+    
+    // Calculate strength
+    const metRequirements = Object.values(this.passwordValidation).filter(Boolean).length;
+    
+    if (metRequirements < 3) {
+      this.passwordStrength = 'weak';
+    } else if (metRequirements < 5) {
+      this.passwordStrength = 'medium';
+    } else {
+      this.passwordStrength = 'strong';
+    }
+  }
+
+  getPasswordStrengthPercentage(): number {
+    switch (this.passwordStrength) {
+      case 'weak': return 25;
+      case 'medium': return 60;
+      case 'strong': return 100;
+      default: return 0;
+    }
+  }
+
+  isPasswordValid(): boolean {
+    if (!this.isFirstLoginAttempt) {
+      return true; // For existing users, any password input is valid for form submission
+    }
+    
+    // For first-time users, all requirements must be met
+    return Object.values(this.passwordValidation).every(Boolean);
   }
 
   onUsernameChange() {

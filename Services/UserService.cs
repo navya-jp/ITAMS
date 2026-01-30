@@ -33,7 +33,26 @@ public class UserService : IUserService
         }
 
         // Verify password
-        if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+        bool isPasswordValid = false;
+        bool isFirstLogin = user.LastLoginAt == null;
+        
+        if (user.MustChangePassword && isFirstLogin)
+        {
+            // For first-time users, accept any password and set it as their new password
+            isPasswordValid = true;
+            
+            // Hash and store the password they provided as their new password
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            user.MustChangePassword = false; // They've now set their password
+            user.PasswordChangedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            // Normal password verification for users who have logged in before
+            isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+        }
+
+        if (!isPasswordValid)
         {
             // Increment failed login attempts
             user.FailedLoginAttempts++;

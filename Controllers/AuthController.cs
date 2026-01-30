@@ -40,30 +40,15 @@ namespace ITAMS.Controllers
                     });
                 }
 
-                // Get all users to find the matching one
+                // First, get the user to check if it's their first login
                 var users = await _userService.GetAllUsersAsync();
-                _logger.LogInformation("Total users found: {UserCount}", users.Count());
-                
                 var user = users.FirstOrDefault(u => 
                     u.Username.Equals(request.Username, StringComparison.OrdinalIgnoreCase) && 
                     u.IsActive);
 
                 if (user == null)
                 {
-                    // Check if user exists but is inactive
-                    var inactiveUser = users.FirstOrDefault(u => 
-                        u.Username.Equals(request.Username, StringComparison.OrdinalIgnoreCase));
-                    
-                    if (inactiveUser != null)
-                    {
-                        _logger.LogWarning("Login attempt for inactive user: {Username}, IsActive: {IsActive}", 
-                            request.Username, inactiveUser.IsActive);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Login attempt for non-existent user: {Username}", request.Username);
-                    }
-                    
+                    _logger.LogWarning("User not found or inactive: {Username}", request.Username);
                     return Unauthorized(new LoginResponse
                     {
                         Success = false,
@@ -71,24 +56,28 @@ namespace ITAMS.Controllers
                     });
                 }
 
-                // For development: Accept any password for now
-                // TODO: Implement proper password hashing and verification
-                var isValidPassword = true; // Temporary - accept any password for testing
+                // Check if this is the first login BEFORE authentication (which updates LastLoginAt)
+                bool isFirstLogin = user.LastLoginAt == null;
+
+                // Now authenticate the user (this will update LastLoginAt)
+                var authenticatedUser = await _userService.AuthenticateAsync(request.Username, request.Password);
                 
-                // Log the attempt for debugging
-                _logger.LogInformation("Login attempt for user: {Username}, Role: {Role}", user.Username, user.Role?.Name);
-
-                if (!isValidPassword)
+                if (authenticatedUser == null)
                 {
+                    _logger.LogWarning("Authentication failed for user: {Username}", request.Username);
                     return Unauthorized(new LoginResponse
                     {
                         Success = false,
                         Message = "Invalid username or password"
                     });
                 }
+
+                // Log the successful authentication
+                _logger.LogInformation("Login successful for user: {Username}, Role: {Role}, FirstLogin: {IsFirstLogin}", 
+                    authenticatedUser.Username, authenticatedUser.Role?.Name, isFirstLogin);
 
                 // Generate JWT token
-                var token = GenerateJwtToken(user);
+                var token = GenerateJwtToken(authenticatedUser);
 
                 var response = new LoginResponse
                 {
@@ -96,23 +85,21 @@ namespace ITAMS.Controllers
                     Token = token,
                     User = new AuthUserDto
                     {
-                        Id = user.Id,
-                        Username = user.Username,
-                        Email = user.Email,
-                        FirstName = user.FirstName,
-                        LastName = user.LastName,
-                        RoleId = user.RoleId,
-                        RoleName = user.Role?.Name ?? "User",
-                        IsActive = user.IsActive,
-                        MustChangePassword = user.MustChangePassword,
-                        IsFirstLogin = user.LastLoginAt == null,
-                        LastLoginAt = user.LastLoginAt?.ToString("yyyy-MM-dd HH:mm:ss")
+                        Id = authenticatedUser.Id,
+                        Username = authenticatedUser.Username,
+                        Email = authenticatedUser.Email,
+                        FirstName = authenticatedUser.FirstName,
+                        LastName = authenticatedUser.LastName,
+                        RoleId = authenticatedUser.RoleId,
+                        RoleName = authenticatedUser.Role?.Name ?? "User",
+                        IsActive = authenticatedUser.IsActive,
+                        MustChangePassword = authenticatedUser.MustChangePassword,
+                        IsFirstLogin = isFirstLogin, // Use the value we captured before authentication
+                        LastLoginAt = authenticatedUser.LastLoginAt?.ToString("yyyy-MM-dd HH:mm:ss")
                     }
                 };
 
-                // Update last login
-                // TODO: Implement UpdateLastLogin in UserService
-                _logger.LogInformation("User {Username} logged in successfully", user.Username);
+                _logger.LogInformation("User {Username} logged in successfully", authenticatedUser.Username);
 
                 return Ok(response);
             }

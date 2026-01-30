@@ -2,14 +2,11 @@
 <div class="login-container d-flex align-items-center justify-content-center min-vh-100">
   <div class="login-card">
     <div class="card shadow-lg border-0">
-      <div class="card-body p-5">
+      <div class="card-body p-4">
         <!-- Logo and Title -->
-        <div class="text-center mb-4">
-          <div class="login-logo mb-3">
-            <i class="fas fa-server text-primary" style="font-size: 3rem;"></i>
-          </div>
-          <h2 class="fw-bold text-dark mb-2">ITAMS</h2>
-          <p class="text-muted">IT Asset Management System</p>
+        <div class="text-center mb-3">
+          <h2 class="fw-bold text-dark mb-1">ITAMS</h2>
+          <p class="text-muted mb-0">IT Asset Management System</p>
         </div>
 
         <!-- Messages -->
@@ -40,13 +37,13 @@
         <!-- Login Form -->
         <form (ngSubmit)="onLogin()" #loginForm="ngForm">
           <!-- Username Field -->
-          <div class="mb-3">
+          <div class="mb-2">
             <label for="username" class="form-label">
               <i class="fas fa-user me-2"></i>Username
             </label>
             <input
               type="text"
-              class="form-control form-control-lg"
+              class="form-control"
               id="username"
               name="username"
               [(ngModel)]="loginData.username"
@@ -66,7 +63,7 @@
           </div>
 
           <!-- Password Field -->
-          <div class="mb-3">
+          <div class="mb-2">
             <label for="password" class="form-label">
               <i class="fas fa-lock me-2"></i>{{ getPasswordLabel() }}
               <i *ngIf="checkingUserStatus" class="fas fa-spinner fa-spin ms-2 text-muted"></i>
@@ -74,7 +71,7 @@
             <div class="input-group">
               <input
                 [type]="showPassword ? 'text' : 'password'"
-                class="form-control form-control-lg"
+                class="form-control"
                 id="password"
                 name="password"
                 [(ngModel)]="loginData.password"
@@ -97,6 +94,65 @@
             <div *ngIf="password.invalid && password.touched" class="invalid-feedback d-block">
               <div *ngIf="password.errors?.['required']">Password is required</div>
             </div>
+
+            <!-- Password Strength Requirements (only show for first login) -->
+            <div *ngIf="isFirstLoginAttempt && loginData.password" class="mt-2">
+              <small class="text-muted d-block mb-1">Password Requirements:</small>
+              <div class="password-requirements">
+                <div class="requirement" [class.met]="passwordValidation.hasMinLength">
+                  <i [class]="passwordValidation.hasMinLength ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
+                  <small class="ms-1" [class.text-success]="passwordValidation.hasMinLength" [class.text-danger]="!passwordValidation.hasMinLength">
+                    At least 8 characters
+                  </small>
+                </div>
+                <div class="requirement" [class.met]="passwordValidation.hasUpperCase">
+                  <i [class]="passwordValidation.hasUpperCase ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
+                  <small class="ms-1" [class.text-success]="passwordValidation.hasUpperCase" [class.text-danger]="!passwordValidation.hasUpperCase">
+                    One uppercase letter (A-Z)
+                  </small>
+                </div>
+                <div class="requirement" [class.met]="passwordValidation.hasLowerCase">
+                  <i [class]="passwordValidation.hasLowerCase ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
+                  <small class="ms-1" [class.text-success]="passwordValidation.hasLowerCase" [class.text-danger]="!passwordValidation.hasLowerCase">
+                    One lowercase letter (a-z)
+                  </small>
+                </div>
+                <div class="requirement" [class.met]="passwordValidation.hasDigit">
+                  <i [class]="passwordValidation.hasDigit ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
+                  <small class="ms-1" [class.text-success]="passwordValidation.hasDigit" [class.text-danger]="!passwordValidation.hasDigit">
+                    One number (0-9)
+                  </small>
+                </div>
+                <div class="requirement" [class.met]="passwordValidation.hasSpecialChar">
+                  <i [class]="passwordValidation.hasSpecialChar ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
+                  <small class="ms-1" [class.text-success]="passwordValidation.hasSpecialChar" [class.text-danger]="!passwordValidation.hasSpecialChar">
+                    One special character (@$!%*?&)
+                  </small>
+                </div>
+              </div>
+              
+              <!-- Password Strength Indicator -->
+              <div class="mt-1">
+                <div class="d-flex align-items-center">
+                  <small class="text-muted me-2">Strength:</small>
+                  <div class="progress flex-grow-1" style="height: 4px;">
+                    <div 
+                      class="progress-bar" 
+                      [class.bg-danger]="passwordStrength === 'weak'"
+                      [class.bg-warning]="passwordStrength === 'medium'"
+                      [class.bg-success]="passwordStrength === 'strong'"
+                      [style.width.%]="getPasswordStrengthPercentage()"
+                    ></div>
+                  </div>
+                  <small class="ms-2" 
+                    [class.text-danger]="passwordStrength === 'weak'"
+                    [class.text-warning]="passwordStrength === 'medium'"
+                    [class.text-success]="passwordStrength === 'strong'">
+                    {{ passwordStrength | titlecase }}
+                  </small>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Login Attempts Warning -->
@@ -108,11 +164,11 @@
           </div>
 
           <!-- Login Button -->
-          <div class="d-grid mb-3">
+          <div class="d-grid mb-2">
             <button
               type="submit"
-              class="btn btn-primary btn-lg"
-              [disabled]="loading || isLocked || loginForm.invalid"
+              class="btn btn-primary"
+              [disabled]="loading || isLocked || loginForm.invalid || (isFirstLoginAttempt && !isPasswordValid())"
             >
               <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
               <i *ngIf="!loading" class="fas fa-sign-in-alt me-2"></i>
@@ -137,25 +193,6 @@
             </small>
           </div>
         </form>
-
-        <!-- Security Notice -->
-        <div class="mt-4 pt-3 border-top">
-          <div class="row text-center">
-            <div class="col-12">
-              <small class="text-muted">
-                <i class="fas fa-shield-alt me-1"></i>
-                Secure Login • Session Timeout: {{ authService.settings.sessionTimeoutMinutes }} minutes
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <!-- System Info -->
-        <div class="text-center mt-3">
-          <small class="text-muted">
-            ITAMS v1.0 • IT Asset Management System
-          </small>
-        </div>
       </div>
     </div>
   </div>
