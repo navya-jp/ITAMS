@@ -23,7 +23,9 @@ export class Projects implements OnInit {
   showEditModal = false;
   showLocationModal = false;
   showAddLocationModal = false;
+  showEditLocationModal = false;
   selectedProject: Project | null = null;
+  selectedLocation: any = null;
   currentTab = 1;
   maxTab = 1;
   plazaTab = 1;
@@ -69,6 +71,17 @@ export class Projects implements OnInit {
     district: ''
   };
 
+  editLocationForm: any = {
+    name: '',
+    region: '',
+    state: '',
+    plaza: '',
+    lane: '',
+    office: '',
+    address: '',
+    isActive: true
+  };
+
   generatedLanes: any[] = [];
   customLocation = '';
 
@@ -86,7 +99,6 @@ export class Projects implements OnInit {
     private api: Api,
     private validationService: ValidationService
   ) {
-    this.filteredSpvNames = [...this.spvNames];
     this.filteredStates = [...this.indianStates];
     this.filteredLocationStates = [...this.indianStates];
     this.filteredDistricts = [];
@@ -157,7 +169,9 @@ export class Projects implements OnInit {
     this.showEditModal = false;
     this.showLocationModal = false;
     this.showAddLocationModal = false;
+    this.showEditLocationModal = false;
     this.selectedProject = null;
+    this.selectedLocation = null;
     this.projectLocations = [];
     this.clearMessages();
     this.clearValidationErrors();
@@ -225,37 +239,20 @@ export class Projects implements OnInit {
   }
 
   // Dropdown management
-  toggleSpvDropdown(event: Event) {
-    event.stopPropagation();
-    this.showSpvDropdown = !this.showSpvDropdown;
-    this.showStateDropdown = false;
-    
-    if (this.showSpvDropdown) {
-      this.setupClickOutside(() => this.showSpvDropdown = false);
-    }
-  }
-
+  // Dropdown management (only for states now)
   toggleStateDropdown(event: Event) {
     event.stopPropagation();
     this.showStateDropdown = !this.showStateDropdown;
-    this.showSpvDropdown = false;
     
     if (this.showStateDropdown) {
       this.setupClickOutside(() => this.showStateDropdown = false);
     }
   }
 
-  onSpvInput(event: any) {
-    const value = event.target.value;
-    this.createForm.spvName = value;
-    this.filterSpvNames(value);
+  onSpvNameChange() {
+    this.createForm.name = this.createForm.spvName; // Set as default name
     this.generateProjectCode();
     this.clearValidationError('spvName');
-    
-    if (value && !this.showSpvDropdown) {
-      this.showSpvDropdown = true;
-      this.setupClickOutside(() => this.showSpvDropdown = false);
-    }
   }
 
   onStateInput(event: any) {
@@ -267,16 +264,6 @@ export class Projects implements OnInit {
     if (value && !this.showStateDropdown) {
       this.showStateDropdown = true;
       this.setupClickOutside(() => this.showStateDropdown = false);
-    }
-  }
-
-  filterSpvNames(searchTerm: string) {
-    if (!searchTerm) {
-      this.filteredSpvNames = [...this.spvNames];
-    } else {
-      this.filteredSpvNames = this.spvNames.filter(spv => 
-        spv.toLowerCase().includes(searchTerm.toLowerCase())
-      );
     }
   }
 
@@ -326,14 +313,6 @@ export class Projects implements OnInit {
     });
     // Remove duplicates
     this.filteredDistricts = [...new Set(this.filteredDistricts)];
-  }
-
-  selectSpv(spv: string) {
-    this.createForm.spvName = spv;
-    this.createForm.name = spv; // Set as default name
-    this.showSpvDropdown = false;
-    this.generateProjectCode();
-    this.clearValidationError('spvName');
   }
 
   // Auto-generation
@@ -447,7 +426,6 @@ export class Projects implements OnInit {
       description: ''
     };
     this.stateSearchTerm = '';
-    this.filteredSpvNames = [...this.spvNames];
     this.filteredStates = [...this.indianStates];
     this.filteredDistricts = [];
   }
@@ -670,6 +648,38 @@ export class Projects implements OnInit {
     return false;
   }
 
+  // Validate specific plaza tabs
+  isPlazaTab1Valid(): boolean {
+    return !!(
+      this.locationForm.name &&
+      this.locationForm.plazaCode &&
+      this.locationForm.governmentCode &&
+      this.locationForm.chainageNumber &&
+      this.locationForm.latitude !== undefined &&
+      this.locationForm.longitude !== undefined &&
+      this.locationForm.latitude >= -90 &&
+      this.locationForm.latitude <= 90 &&
+      this.locationForm.longitude >= -180 &&
+      this.locationForm.longitude <= 180
+    );
+  }
+
+  isPlazaTab2Valid(): boolean {
+    return !!(this.locationForm.numberOfLanes && this.locationForm.numberOfLanes > 0);
+  }
+
+  isPlazaTab3Valid(): boolean {
+    // Tab 3 (Internal Locations) is optional, always valid
+    return true;
+  }
+
+  canMoveToNextPlazaTab(): boolean {
+    if (this.plazaTab === 1) return this.isPlazaTab1Valid();
+    if (this.plazaTab === 2) return this.isPlazaTab2Valid();
+    if (this.plazaTab === 3) return this.isPlazaTab3Valid();
+    return true;
+  }
+
   getLocationValidationMessage(): string {
     if (!this.locationForm.name) return 'Location name is required';
     if (!this.locationForm.type) return 'Location type is required';
@@ -745,5 +755,80 @@ export class Projects implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  // Location edit and delete methods
+  editLocation(location: any) {
+    this.selectedLocation = location;
+    this.editLocationForm = {
+      name: location.name,
+      region: location.region,
+      state: location.state,
+      plaza: location.plaza || '',
+      lane: location.lane || '',
+      office: location.office || '',
+      address: location.address || '',
+      isActive: location.isActive
+    };
+    this.showEditLocationModal = true;
+    this.clearMessages();
+  }
+
+  closeEditLocationModal() {
+    this.showEditLocationModal = false;
+    this.selectedLocation = null;
+    this.clearMessages();
+  }
+
+  updateLocation() {
+    if (!this.selectedLocation) return;
+
+    if (!this.editLocationForm.name) {
+      this.error = 'Location name is required';
+      return;
+    }
+
+    this.loading = true;
+    this.api.updateLocation(this.selectedLocation.id, this.editLocationForm).subscribe({
+      next: (updatedLocation) => {
+        this.success = 'Location updated successfully';
+        this.loading = false;
+        this.closeEditLocationModal();
+        // Refresh locations list
+        if (this.selectedProject) {
+          this.loadProjectLocations(this.selectedProject.id);
+        }
+        // Refresh projects to update data
+        this.loadProjects();
+      },
+      error: (error) => {
+        this.error = error.error?.message || 'Failed to update location';
+        this.loading = false;
+        console.error('Error updating location:', error);
+      }
+    });
+  }
+
+  deleteLocation(location: any) {
+    if (confirm(`Are you sure you want to delete location "${location.name}"?`)) {
+      this.loading = true;
+      this.api.deleteLocation(location.id).subscribe({
+        next: () => {
+          this.success = 'Location deleted successfully';
+          this.loading = false;
+          // Refresh locations list
+          if (this.selectedProject) {
+            this.loadProjectLocations(this.selectedProject.id);
+          }
+          // Refresh projects to update location count
+          this.loadProjects();
+        },
+        error: (error) => {
+          this.error = error.error?.message || 'Failed to delete location';
+          this.loading = false;
+          console.error('Error deleting location:', error);
+        }
+      });
+    }
   }
 }

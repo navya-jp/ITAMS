@@ -123,25 +123,17 @@
               <!-- SPV Name -->
               <div class="col-md-6">
                 <label class="form-label">SPV Name *</label>
-                <div class="dropdown w-100">
-                  <input type="text" 
-                         class="form-control" 
-                         [class.is-invalid]="hasValidationError('spvName')"
-                         [(ngModel)]="createForm.spvName" 
-                         name="spvName"
-                         (input)="onSpvInput($event)"
-                         (focus)="toggleSpvDropdown($event)"
-                         placeholder="Type or select SPV name"
-                         autocomplete="off">
-                  <ul class="dropdown-menu w-100" [class.show]="showSpvDropdown" style="max-height: 200px; overflow-y: auto;">
-                    <li *ngFor="let spv of filteredSpvNames">
-                      <a class="dropdown-item" href="#" (click)="selectSpv(spv); $event.preventDefault()">{{ spv }}</a>
-                    </li>
-                    <li *ngIf="filteredSpvNames.length === 0" class="dropdown-item-text text-muted">
-                      No matches found
-                    </li>
-                  </ul>
-                </div>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [class.is-invalid]="hasValidationError('spvName')"
+                  [(ngModel)]="createForm.spvName" 
+                  name="spvName"
+                  (input)="onSpvNameChange()"
+                  placeholder="Enter SPV name"
+                  autocomplete="off"
+                  required
+                />
                 <div *ngIf="hasValidationError('spvName')" class="invalid-feedback d-block">
                   {{ getValidationError('spvName') }}
                 </div>
@@ -357,10 +349,10 @@
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
-                      <button class="btn btn-outline-secondary" title="Edit Location">
+                      <button class="btn btn-outline-secondary" (click)="editLocation(location)" title="Edit Location">
                         <i class="fas fa-edit"></i>
                       </button>
-                      <button class="btn btn-outline-danger" title="Delete Location">
+                      <button class="btn btn-outline-danger" (click)="deleteLocation(location)" title="Delete Location">
                         <i class="fas fa-trash"></i>
                       </button>
                     </div>
@@ -550,10 +542,10 @@
                          class="form-control" 
                          [(ngModel)]="locationForm.latitude" 
                          name="latitude"
-                         min="6.0" 
-                         max="37.6" 
+                         min="-90" 
+                         max="90" 
                          step="0.000001"
-                         placeholder="6.0 to 37.6">
+                         placeholder="-90 to 90">
                 </div>
 
                 <div class="col-md-6">
@@ -562,10 +554,10 @@
                          class="form-control" 
                          [(ngModel)]="locationForm.longitude" 
                          name="longitude"
-                         min="68.0" 
-                         max="97.25" 
+                         min="-180" 
+                         max="180" 
                          step="0.000001"
-                         placeholder="68.0 to 97.25">
+                         placeholder="-180 to 180">
                 </div>
               </div>
             </div>
@@ -575,10 +567,16 @@
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">Number of Lanes *</label>
-                  <select class="form-select" [(ngModel)]="locationForm.numberOfLanes" name="numberOfLanes" (change)="generateLanes()">
-                    <option value="">Select lanes</option>
-                    <option *ngFor="let num of laneOptions" [value]="num">{{ num }} Lane{{ num > 1 ? 's' : '' }}</option>
-                  </select>
+                  <input type="number" 
+                         class="form-control" 
+                         [(ngModel)]="locationForm.numberOfLanes" 
+                         name="numberOfLanes"
+                         (input)="generateLanes()"
+                         min="1"
+                         max="20"
+                         step="1"
+                         placeholder="Enter number of lanes">
+                  <div class="form-text">Enter 1-20 lanes</div>
                 </div>
               </div>
               
@@ -694,7 +692,9 @@
         <button *ngIf="locationForm.type === 'plaza' && plazaTab < 4" 
                 type="button" 
                 class="btn btn-primary" 
-                (click)="plazaTab = plazaTab + 1">
+                [disabled]="!canMoveToNextPlazaTab()"
+                (click)="plazaTab = plazaTab + 1"
+                [title]="!canMoveToNextPlazaTab() ? 'Please fill all required fields' : 'Next'">
           Next<i class="fas fa-arrow-right ms-2"></i>
         </button>
         <button type="button" 
@@ -710,7 +710,135 @@
   </div>
 </div>
 
+<!-- Edit Location Modal -->
+<div class="modal fade" [class.show]="showEditLocationModal" [style.display]="showEditLocationModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-edit me-2"></i>Edit Location
+        </h5>
+        <button type="button" class="btn-close" (click)="closeEditLocationModal()"></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Success/Error Messages -->
+        <div *ngIf="success" class="alert alert-success alert-dismissible fade show">
+          {{ success }}
+          <button type="button" class="btn-close" (click)="clearMessages()"></button>
+        </div>
+        <div *ngIf="error" class="alert alert-danger alert-dismissible fade show">
+          {{ error }}
+          <button type="button" class="btn-close" (click)="clearMessages()"></button>
+        </div>
+
+        <form>
+          <div class="mb-3">
+            <label for="editLocationName" class="form-label">Location Name *</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="editLocationName"
+              [(ngModel)]="editLocationForm.name"
+              name="name"
+              required
+            />
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editLocationRegion" class="form-label">Region</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="editLocationRegion"
+                [(ngModel)]="editLocationForm.region"
+                name="region"
+              />
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="editLocationState" class="form-label">State</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="editLocationState"
+                [(ngModel)]="editLocationForm.state"
+                name="state"
+              />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="editLocationPlaza" class="form-label">Plaza</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="editLocationPlaza"
+                [(ngModel)]="editLocationForm.plaza"
+                name="plaza"
+              />
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="editLocationOffice" class="form-label">Office</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="editLocationOffice"
+                [(ngModel)]="editLocationForm.office"
+                name="office"
+              />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="editLocationAddress" class="form-label">Address</label>
+            <textarea 
+              class="form-control" 
+              id="editLocationAddress"
+              [(ngModel)]="editLocationForm.address"
+              name="address"
+              rows="2"
+            ></textarea>
+          </div>
+
+          <div class="form-check mb-3">
+            <input 
+              type="checkbox" 
+              class="form-check-input" 
+              id="editLocationActive"
+              [(ngModel)]="editLocationForm.isActive"
+              name="isActive"
+            />
+            <label class="form-check-label" for="editLocationActive">
+              Active
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeEditLocationModal()">
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-primary" 
+          (click)="updateLocation()"
+          [disabled]="loading || !editLocationForm.name"
+        >
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!loading" class="fas fa-save me-2"></i>
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Backdrop -->
-<div *ngIf="showCreateModal || showEditModal || showLocationModal || showAddLocationModal" 
+<div *ngIf="showCreateModal || showEditModal || showLocationModal || showAddLocationModal || showEditLocationModal" 
      class="modal-backdrop fade show" 
      (click)="closeModals()"></div>

@@ -157,7 +157,7 @@ export interface CreateLocation {
   providedIn: 'root',
 })
 export class Api {
-  private readonly baseUrl = 'http://localhost:5067/api';
+  private readonly baseUrl = 'http://localhost:5066/api';
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
@@ -289,5 +289,13 @@ export class Api {
 
   getProjectLocations(projectId: number): Observable<Location[]> {
     return this.http.get<Location[]>(`${this.baseUrl}/superadmin/projects/${projectId}/locations`);
+  }
+
+  updateLocation(id: number, location: any): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/superadmin/locations/${id}`, location, this.httpOptions);
+  }
+
+  deleteLocation(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/superadmin/locations/${id}`);
   }
 }

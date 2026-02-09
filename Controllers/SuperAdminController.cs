@@ -711,6 +711,75 @@ public class SuperAdminController : ControllerBase
         }
     }
 
+    [HttpPut("locations/{id}")]
+    public async Task<ActionResult<LocationSummaryDto>> UpdateLocation(int id, [FromBody] UpdateLocationDto updateLocationDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var request = new UpdateLocationRequest
+            {
+                Name = updateLocationDto.Name,
+                Region = updateLocationDto.Region,
+                State = updateLocationDto.State,
+                Plaza = updateLocationDto.Plaza,
+                Lane = updateLocationDto.Lane,
+                Office = updateLocationDto.Office,
+                Address = updateLocationDto.Address,
+                IsActive = updateLocationDto.IsActive
+            };
+
+            var location = await _locationService.UpdateLocationAsync(id, request);
+
+            var locationDto = new LocationSummaryDto
+            {
+                Id = location.Id,
+                Name = location.Name,
+                Region = location.Region,
+                State = location.State,
+                Plaza = location.Plaza,
+                Lane = location.Lane,
+                Office = location.Office,
+                Address = location.Address,
+                IsActive = location.IsActive,
+                ProjectId = location.ProjectId,
+                AssetCount = location.Assets.Count
+            };
+
+            return Ok(locationDto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while updating the location", error = ex.Message });
+        }
+    }
+
+    [HttpDelete("locations/{id}")]
+    public async Task<ActionResult> DeleteLocation(int id)
+    {
+        try
+        {
+            await _locationService.DeleteLocationAsync(id);
+            return Ok(new { message = "Location deleted successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while deleting the location", error = ex.Message });
+        }
+    }
+
     #endregion
 
     #region User Project Assignments
