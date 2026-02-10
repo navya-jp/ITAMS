@@ -117,35 +117,67 @@ public class RbacController : ControllerBase
         {
             _logger.LogInformation("Updating permissions for role {RoleId} with {Count} permissions", roleId, request.PermissionIds.Count);
 
-            // First, mark all existing role permissions as REVOKED
-            var updateSql = @"
-                UPDATE RbacRolePermissions 
-                SET Status = 'REVOKED', RevokedAt = GETUTCDATE(), RevokedBy = 1
+            // Get all existing active permissions for this role
+            var existingPermissionsSql = @"
+                SELECT PermissionId 
+                FROM RbacRolePermissions 
                 WHERE RoleId = @p0 AND Status = 'ACTIVE'";
             
-            await _context.Database.ExecuteSqlRawAsync(updateSql, roleId);
-
-            // Then add or reactivate the new permissions
-            foreach (var permissionId in request.PermissionIds)
+            var existingCommand = _context.Database.GetDbConnection().CreateCommand();
+            existingCommand.CommandText = existingPermissionsSql;
+            existingCommand.Parameters.Add(new Microsoft.Data.SqlClient.SqlParameter("@p0", roleId));
+            
+            await _context.Database.OpenConnectionAsync();
+            var reader = await existingCommand.ExecuteReaderAsync();
+            var existingPermissions = new List<int>();
+            while (await reader.ReadAsync())
             {
-                // Check if this role-permission combination already exists
+                existingPermissions.Add(reader.GetInt32(0));
+            }
+            await reader.CloseAsync();
+            await _context.Database.CloseConnectionAsync();
+
+            // Find permissions to revoke (existing but not in new list)
+            var permissionsToRevoke = existingPermissions.Except(request.PermissionIds).ToList();
+            
+            // Find permissions to add (in new list but not existing)
+            var permissionsToAdd = request.PermissionIds.Except(existingPermissions).ToList();
+
+            _logger.LogInformation("Role {RoleId}: Revoking {RevokeCount} permissions, Adding {AddCount} permissions", 
+                roleId, permissionsToRevoke.Count, permissionsToAdd.Count);
+
+            // Revoke permissions that are no longer needed
+            foreach (var permissionId in permissionsToRevoke)
+            {
+                var revokeSql = @"
+                    UPDATE RbacRolePermissions 
+                    SET Status = 'REVOKED', RevokedAt = GETUTCDATE(), RevokedBy = 1
+                    WHERE RoleId = @p0 AND PermissionId = @p1 AND Status = 'ACTIVE'";
+                
+                await _context.Database.ExecuteSqlRawAsync(revokeSql, roleId, permissionId);
+            }
+
+            // Add new permissions
+            foreach (var permissionId in permissionsToAdd)
+            {
+                // Check if this role-permission combination existed before (was revoked)
                 var checkSql = @"
                     SELECT COUNT(*) 
                     FROM RbacRolePermissions 
                     WHERE RoleId = @p0 AND PermissionId = @p1";
                 
-                var existsCommand = _context.Database.GetDbConnection().CreateCommand();
-                existsCommand.CommandText = checkSql;
-                existsCommand.Parameters.Add(new Microsoft.Data.SqlClient.SqlParameter("@p0", roleId));
-                existsCommand.Parameters.Add(new Microsoft.Data.SqlClient.SqlParameter("@p1", permissionId));
+                var checkCommand = _context.Database.GetDbConnection().CreateCommand();
+                checkCommand.CommandText = checkSql;
+                checkCommand.Parameters.Add(new Microsoft.Data.SqlClient.SqlParameter("@p0", roleId));
+                checkCommand.Parameters.Add(new Microsoft.Data.SqlClient.SqlParameter("@p1", permissionId));
                 
                 await _context.Database.OpenConnectionAsync();
-                var count = (int)await existsCommand.ExecuteScalarAsync();
+                var count = (int)await checkCommand.ExecuteScalarAsync();
                 await _context.Database.CloseConnectionAsync();
 
                 if (count > 0)
                 {
-                    // Update existing record to ACTIVE
+                    // Reactivate existing record
                     var reactivateSql = @"
                         UPDATE RbacRolePermissions 
                         SET Status = 'ACTIVE', GrantedAt = GETUTCDATE(), GrantedBy = 1, RevokedAt = NULL, RevokedBy = NULL

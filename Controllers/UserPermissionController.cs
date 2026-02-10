@@ -74,31 +74,9 @@ public class UserPermissionController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Grant a specific permission to a user (override)
-    /// </summary>
-    [HttpPost("{userId}/permissions")]
-    public async Task<IActionResult> GrantUserPermission(int userId, [FromBody] PermissionGrantRequest request)
+    private int GetCurrentUserId()
     {
-        try
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Invalid request data",
-                    ValidationErrors = ModelState.ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
-                    )
-                });
-            }
-
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId == 0)
-            {
-                return Unauthorized(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = 
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out var userId) ? userId : 0;
+    }
+}
