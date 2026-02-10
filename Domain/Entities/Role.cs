@@ -7,6 +7,10 @@ public class Role
     public int Id { get; set; }
     
     [Required]
+    [StringLength(50)]
+    public string RoleId { get; set; } = string.Empty; // Alternate key (ROL00001, ROL00002, etc.)
+    
+    [Required]
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;
     

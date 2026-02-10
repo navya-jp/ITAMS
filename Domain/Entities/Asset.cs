@@ -8,6 +8,10 @@ public class Asset
     
     [Required]
     [StringLength(50)]
+    public string AssetId { get; set; } = string.Empty; // Alternate key (AST00001, AST00002, etc.)
+    
+    [Required]
+    [StringLength(50)]
     public string AssetTag { get; set; } = string.Empty;
     
     public int ProjectId { get; set; }

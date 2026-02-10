@@ -48,6 +48,7 @@ public class SuperAdminController : ControllerBase
             var userDtos = users.Select(u => new UserDto
             {
                 Id = u.Id,
+                UserId = u.UserId,
                 Username = u.Username,
                 Email = u.Email,
                 FirstName = u.FirstName,
@@ -83,6 +84,7 @@ public class SuperAdminController : ControllerBase
             var userDto = new UserDto
             {
                 Id = user.Id,
+                UserId = user.UserId,
                 Username = user.Username,
                 Email = user.Email,
                 FirstName = user.FirstName,
@@ -130,6 +132,7 @@ public class SuperAdminController : ControllerBase
             var userDto = new UserDto
             {
                 Id = user.Id,
+                UserId = user.UserId,
                 Username = user.Username,
                 Email = user.Email,
                 FirstName = user.FirstName,
@@ -179,6 +182,7 @@ public class SuperAdminController : ControllerBase
             var userDto = new UserDto
             {
                 Id = user.Id,
+                UserId = user.UserId,
                 Username = user.Username,
                 Email = user.Email,
                 FirstName = user.FirstName,
@@ -477,6 +481,7 @@ public class SuperAdminController : ControllerBase
             var projectDtos = projects.Select(p => new ProjectSummaryDto
             {
                 Id = p.Id,
+                ProjectId = p.ProjectId,
                 Name = p.Name,
                 PreferredName = p.PreferredName,
                 SpvName = p.SpvName,

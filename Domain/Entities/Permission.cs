@@ -7,6 +7,10 @@ public class Permission
     public int Id { get; set; }
     
     [Required]
+    [StringLength(50)]
+    public string PermissionId { get; set; } = string.Empty; // Alternate key (PER00001, PER00002, etc.)
+    
+    [Required]
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;
     

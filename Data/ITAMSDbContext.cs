@@ -40,6 +40,11 @@ public class ITAMSDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Username).IsUnique();
             entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => e.UserId).IsUnique(); // Add index for alternate key
+            
+            entity.Property(e => e.UserId)
+                .IsRequired()
+                .HasMaxLength(50);
             
             entity.Property(e => e.Username)
                 .IsRequired()
@@ -271,11 +276,11 @@ public class ITAMSDbContext : DbContext
         var seedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         
         // Create default roles
-        var superAdminRole = new Role { Id = 1, Name = "Super Admin", Description = "Full system access", IsSystemRole = true, CreatedAt = seedDate };
-        var adminRole = new Role { Id = 2, Name = "Admin", Description = "Project administration access", IsSystemRole = true, CreatedAt = seedDate };
-        var itStaffRole = new Role { Id = 3, Name = "IT Staff", Description = "Asset management access", IsSystemRole = true, CreatedAt = seedDate };
-        var readOnlyRole = new Role { Id = 4, Name = "Read Only User", Description = "View-only access", IsSystemRole = true, CreatedAt = seedDate };
-        var auditorRole = new Role { Id = 5, Name = "Auditor", Description = "Audit and reporting access", IsSystemRole = true, CreatedAt = seedDate };
+        var superAdminRole = new Role { Id = 1, RoleId = "ROL00001", Name = "Super Admin", Description = "Full system access", IsSystemRole = true, CreatedAt = seedDate };
+        var adminRole = new Role { Id = 2, RoleId = "ROL00002", Name = "Admin", Description = "Project administration access", IsSystemRole = true, CreatedAt = seedDate };
+        var itStaffRole = new Role { Id = 3, RoleId = "ROL00003", Name = "IT Staff", Description = "Asset management access", IsSystemRole = true, CreatedAt = seedDate };
+        var readOnlyRole = new Role { Id = 4, RoleId = "ROL00004", Name = "Read Only User", Description = "View-only access", IsSystemRole = true, CreatedAt = seedDate };
+        var auditorRole = new Role { Id = 5, RoleId = "ROL00005", Name = "Auditor", Description = "Audit and reporting access", IsSystemRole = true, CreatedAt = seedDate };
 
         modelBuilder.Entity<Role>().HasData(superAdminRole, adminRole, itStaffRole, readOnlyRole, auditorRole);
 
@@ -283,41 +288,41 @@ public class ITAMSDbContext : DbContext
         var permissions = new[]
         {
             // User Management
-            new Permission { Id = 1, Name = "View Users", Code = "USERS_VIEW", Module = "Users", Description = "View user list and details" },
-            new Permission { Id = 2, Name = "Create Users", Code = "USERS_CREATE", Module = "Users", Description = "Create new users" },
-            new Permission { Id = 3, Name = "Edit Users", Code = "USERS_EDIT", Module = "Users", Description = "Edit user details" },
-            new Permission { Id = 4, Name = "Delete Users", Code = "USERS_DELETE", Module = "Users", Description = "Delete users" },
-            new Permission { Id = 5, Name = "Manage User Permissions", Code = "USERS_PERMISSIONS", Module = "Users", Description = "Assign permissions to users" },
+            new Permission { Id = 1, PermissionId = "PER00001", Name = "View Users", Code = "USERS_VIEW", Module = "Users", Description = "View user list and details" },
+            new Permission { Id = 2, PermissionId = "PER00002", Name = "Create Users", Code = "USERS_CREATE", Module = "Users", Description = "Create new users" },
+            new Permission { Id = 3, PermissionId = "PER00003", Name = "Edit Users", Code = "USERS_EDIT", Module = "Users", Description = "Edit user details" },
+            new Permission { Id = 4, PermissionId = "PER00004", Name = "Delete Users", Code = "USERS_DELETE", Module = "Users", Description = "Delete users" },
+            new Permission { Id = 5, PermissionId = "PER00005", Name = "Manage User Permissions", Code = "USERS_PERMISSIONS", Module = "Users", Description = "Assign permissions to users" },
             
             // Project Management
-            new Permission { Id = 6, Name = "View Projects", Code = "PROJECTS_VIEW", Module = "Projects", Description = "View project list and details" },
-            new Permission { Id = 7, Name = "Create Projects", Code = "PROJECTS_CREATE", Module = "Projects", Description = "Create new projects" },
-            new Permission { Id = 8, Name = "Edit Projects", Code = "PROJECTS_EDIT", Module = "Projects", Description = "Edit project details" },
-            new Permission { Id = 9, Name = "Delete Projects", Code = "PROJECTS_DELETE", Module = "Projects", Description = "Delete projects" },
+            new Permission { Id = 6, PermissionId = "PER00006", Name = "View Projects", Code = "PROJECTS_VIEW", Module = "Projects", Description = "View project list and details" },
+            new Permission { Id = 7, PermissionId = "PER00007", Name = "Create Projects", Code = "PROJECTS_CREATE", Module = "Projects", Description = "Create new projects" },
+            new Permission { Id = 8, PermissionId = "PER00008", Name = "Edit Projects", Code = "PROJECTS_EDIT", Module = "Projects", Description = "Edit project details" },
+            new Permission { Id = 9, PermissionId = "PER00009", Name = "Delete Projects", Code = "PROJECTS_DELETE", Module = "Projects", Description = "Delete projects" },
             
             // Location Management
-            new Permission { Id = 10, Name = "View Locations", Code = "LOCATIONS_VIEW", Module = "Locations", Description = "View location list and details" },
-            new Permission { Id = 11, Name = "Create Locations", Code = "LOCATIONS_CREATE", Module = "Locations", Description = "Create new locations" },
-            new Permission { Id = 12, Name = "Edit Locations", Code = "LOCATIONS_EDIT", Module = "Locations", Description = "Edit location details" },
-            new Permission { Id = 13, Name = "Delete Locations", Code = "LOCATIONS_DELETE", Module = "Locations", Description = "Delete locations" },
+            new Permission { Id = 10, PermissionId = "PER00010", Name = "View Locations", Code = "LOCATIONS_VIEW", Module = "Locations", Description = "View location list and details" },
+            new Permission { Id = 11, PermissionId = "PER00011", Name = "Create Locations", Code = "LOCATIONS_CREATE", Module = "Locations", Description = "Create new locations" },
+            new Permission { Id = 12, PermissionId = "PER00012", Name = "Edit Locations", Code = "LOCATIONS_EDIT", Module = "Locations", Description = "Edit location details" },
+            new Permission { Id = 13, PermissionId = "PER00013", Name = "Delete Locations", Code = "LOCATIONS_DELETE", Module = "Locations", Description = "Delete locations" },
             
             // Asset Management
-            new Permission { Id = 14, Name = "View Assets", Code = "ASSETS_VIEW", Module = "Assets", Description = "View asset list and details" },
-            new Permission { Id = 15, Name = "Create Assets", Code = "ASSETS_CREATE", Module = "Assets", Description = "Create new assets" },
-            new Permission { Id = 16, Name = "Edit Assets", Code = "ASSETS_EDIT", Module = "Assets", Description = "Edit asset details" },
-            new Permission { Id = 17, Name = "Delete Assets", Code = "ASSETS_DELETE", Module = "Assets", Description = "Delete assets" },
-            new Permission { Id = 18, Name = "Transfer Assets", Code = "ASSETS_TRANSFER", Module = "Assets", Description = "Transfer assets between locations" },
+            new Permission { Id = 14, PermissionId = "PER00014", Name = "View Assets", Code = "ASSETS_VIEW", Module = "Assets", Description = "View asset list and details" },
+            new Permission { Id = 15, PermissionId = "PER00015", Name = "Create Assets", Code = "ASSETS_CREATE", Module = "Assets", Description = "Create new assets" },
+            new Permission { Id = 16, PermissionId = "PER00016", Name = "Edit Assets", Code = "ASSETS_EDIT", Module = "Assets", Description = "Edit asset details" },
+            new Permission { Id = 17, PermissionId = "PER00017", Name = "Delete Assets", Code = "ASSETS_DELETE", Module = "Assets", Description = "Delete assets" },
+            new Permission { Id = 18, PermissionId = "PER00018", Name = "Transfer Assets", Code = "ASSETS_TRANSFER", Module = "Assets", Description = "Transfer assets between locations" },
             
             // Reports
-            new Permission { Id = 19, Name = "View Reports", Code = "REPORTS_VIEW", Module = "Reports", Description = "View system reports" },
-            new Permission { Id = 20, Name = "Export Reports", Code = "REPORTS_EXPORT", Module = "Reports", Description = "Export reports to files" },
+            new Permission { Id = 19, PermissionId = "PER00019", Name = "View Reports", Code = "REPORTS_VIEW", Module = "Reports", Description = "View system reports" },
+            new Permission { Id = 20, PermissionId = "PER00020", Name = "Export Reports", Code = "REPORTS_EXPORT", Module = "Reports", Description = "Export reports to files" },
             
             // Settings
-            new Permission { Id = 21, Name = "System Settings", Code = "SETTINGS_SYSTEM", Module = "Settings", Description = "Manage system settings" },
-            new Permission { Id = 22, Name = "Role Management", Code = "SETTINGS_ROLES", Module = "Settings", Description = "Manage roles and permissions" },
+            new Permission { Id = 21, PermissionId = "PER00021", Name = "System Settings", Code = "SETTINGS_SYSTEM", Module = "Settings", Description = "Manage system settings" },
+            new Permission { Id = 22, PermissionId = "PER00022", Name = "Role Management", Code = "SETTINGS_ROLES", Module = "Settings", Description = "Manage roles and permissions" },
             
             // Audit
-            new Permission { Id = 23, Name = "View Audit Trail", Code = "AUDIT_VIEW", Module = "Audit", Description = "View audit trail and logs" }
+            new Permission { Id = 23, PermissionId = "PER00023", Name = "View Audit Trail", Code = "AUDIT_VIEW", Module = "Audit", Description = "View audit trail and logs" }
         };
 
         modelBuilder.Entity<Permission>().HasData(permissions);
@@ -338,6 +343,7 @@ public class ITAMSDbContext : DbContext
         var superAdmin = new User
         {
             Id = 1,
+            UserId = "USR00001", // Alternate key
             Username = "superadmin",
             Email = "superadmin@itams.com",
             FirstName = "Super",

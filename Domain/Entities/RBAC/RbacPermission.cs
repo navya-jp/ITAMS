@@ -3,53 +3,51 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ITAMS.Domain.Entities.RBAC;
 
-[Table("rbac_permissions")]
+[Table("RbacPermissions")]
 public class RbacPermission
 {
     [Key]
-    [Column("permission_id")]
-    public int PermissionId { get; set; }
+    public int Id { get; set; }
+    
+    [Required]
+    [StringLength(50)]
+    public string RbacPermissionId { get; set; } = string.Empty; // Alternate key (RBP00001, RBP00002, etc.)
+    
+    // Keep PermissionId as alias for Id for backward compatibility with existing code
+    [NotMapped]
+    public int PermissionId => Id;
     
     [Required]
     [StringLength(100)]
-    [Column("permission_code")]
+    [Column("Code")]
     public string PermissionCode { get; set; } = string.Empty;
     
     [Required]
     [StringLength(50)]
-    [Column("module")]
     public string Module { get; set; } = string.Empty;
     
     [Required]
     [StringLength(500)]
-    [Column("description")]
     public string Description { get; set; } = string.Empty;
     
     [Required]
     [StringLength(50)]
-    [Column("resource_type")]
     public string ResourceType { get; set; } = string.Empty;
     
     [Required]
     [StringLength(50)]
-    [Column("action")]
     public string Action { get; set; } = string.Empty;
     
     [Required]
     [StringLength(20)]
-    [Column("status")]
     public string Status { get; set; } = "ACTIVE";
     
-    [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
-    [Column("created_by")]
     public int CreatedBy { get; set; }
     
-    [Column("deactivated_at")]
     public DateTime? DeactivatedAt { get; set; }
     
-    [Column("deactivated_by")]
     public int? DeactivatedBy { get; set; }
     
     // Navigation properties

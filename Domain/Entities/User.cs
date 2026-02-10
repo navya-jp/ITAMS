@@ -7,6 +7,10 @@ public class User
     public int Id { get; set; }
     
     [Required]
+    [StringLength(50)]
+    public string UserId { get; set; } = null!; // Alternate key (USR00001, USR00002, etc.)
+    
+    [Required]
     [StringLength(100)]
     public string Username { get; set; } = string.Empty;
     

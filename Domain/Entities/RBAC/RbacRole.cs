@@ -3,40 +3,40 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ITAMS.Domain.Entities.RBAC;
 
-[Table("rbac_roles")]
+[Table("RbacRoles")]
 public class RbacRole
 {
     [Key]
-    [Column("role_id")]
-    public int RoleId { get; set; }
+    public int Id { get; set; }
+    
+    [Required]
+    [StringLength(50)]
+    public string RbacRoleId { get; set; } = string.Empty; // Alternate key (RBR00001, RBR00002, etc.)
+    
+    // Keep RoleId as alias for Id for backward compatibility with existing code
+    [NotMapped]
+    public int RoleId => Id;
     
     [Required]
     [StringLength(100)]
-    [Column("role_name")]
+    [Column("Name")]
     public string RoleName { get; set; } = string.Empty;
     
     [StringLength(500)]
-    [Column("description")]
     public string? Description { get; set; }
     
-    [Column("is_system_role")]
     public bool IsSystemRole { get; set; } = false;
     
     [Required]
     [StringLength(20)]
-    [Column("status")]
     public string Status { get; set; } = "ACTIVE";
     
-    [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
-    [Column("created_by")]
     public int CreatedBy { get; set; }
     
-    [Column("deactivated_at")]
     public DateTime? DeactivatedAt { get; set; }
     
-    [Column("deactivated_by")]
     public int? DeactivatedBy { get; set; }
     
     // Navigation properties

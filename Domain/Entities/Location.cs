@@ -7,6 +7,10 @@ public class Location
     public int Id { get; set; }
     
     [Required]
+    [StringLength(50)]
+    public string LocationId { get; set; } = string.Empty; // Alternate key (LOC00001, LOC00002, etc.)
+    
+    [Required]
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;
     

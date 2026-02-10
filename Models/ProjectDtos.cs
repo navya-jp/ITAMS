@@ -40,6 +40,7 @@ public class UpdateProjectDto
 public class ProjectSummaryDto
 {
     public int Id { get; set; }
+    public string ProjectId { get; set; } = string.Empty; // Alternate key (PRJ00001, PRJ00002, etc.)
     public string Name { get; set; } = string.Empty;
     public string? PreferredName { get; set; }
     public string? SpvName { get; set; }

@@ -462,6 +462,7 @@ public class UsersController : ControllerBase
         return new UserDto
         {
             Id = user.Id,
+            UserId = user.UserId,
             Username = user.Username,
             Email = user.Email,
             FirstName = user.FirstName,
