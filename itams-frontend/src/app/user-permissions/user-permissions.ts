@@ -116,9 +116,16 @@ export class UserPermissions implements OnInit {
   loadUserPermissions() {
     const userPromises = this.users.map(async user => {
       try {
-        // Load role permissions
-        const rolePermissions = await this.api.getRolePermissions(user.roleId).toPromise();
-        user.rolePermissions = rolePermissions || [];
+        // Load RBAC role permissions (not legacy role permissions)
+        const rolePermissions = await this.api.getRbacRolePermissions(user.roleId).toPromise();
+        user.rolePermissions = (rolePermissions || []).map((p: any) => ({
+          id: p.permissionId,
+          name: p.permissionCode,
+          code: p.permissionCode,
+          description: p.description,
+          module: p.module,
+          isActive: p.status === 'ACTIVE'
+        }));
         
         // TODO: Load user-specific overrides when API is available
         user.userOverrides = [];

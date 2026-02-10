@@ -98,17 +98,10 @@
                       {{ user.isActive ? 'Active' : 'Inactive' }}
                     </span>
                   </td>
-                  <td>
-                    <div class="d-flex align-items-center">
-                      <span class="me-2">{{ user.effectivePermissions.length }}</span>
-                      <div class="progress flex-grow-1" style="height: 4px; max-width: 100px;">
-                        <div class="progress-bar bg-primary" 
-                             [style.width.%]="(user.effectivePermissions.length / permissions.length) * 100">
-                        </div>
-                      </div>
-                    </div>
+                  <td class="text-center">
+                    <span class="badge bg-primary">{{ user.rolePermissions.length }}</span>
                   </td>
-                  <td>
+                  <td class="text-center">
                     <span class="badge" 
                           [class]="user.userOverrides.length > 0 ? 'bg-warning' : 'bg-light text-dark'">
                       {{ user.userOverrides.length }}

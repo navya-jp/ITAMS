@@ -115,28 +115,62 @@ public class RbacController : ControllerBase
     {
         try
         {
-            // First, deactivate all existing role permissions
-            await _context.Database.ExecuteSqlRawAsync(@"
+            _logger.LogInformation("Updating permissions for role {RoleId} with {Count} permissions", roleId, request.PermissionIds.Count);
+
+            // First, mark all existing role permissions as REVOKED
+            var updateSql = @"
                 UPDATE RbacRolePermissions 
                 SET Status = 'REVOKED', RevokedAt = GETUTCDATE(), RevokedBy = 1
-                WHERE RoleId = {0} AND Status = 'ACTIVE'
-            ", roleId);
+                WHERE RoleId = @p0 AND Status = 'ACTIVE'";
+            
+            await _context.Database.ExecuteSqlRawAsync(updateSql, roleId);
 
-            // Then add the new permissions
+            // Then add or reactivate the new permissions
             foreach (var permissionId in request.PermissionIds)
             {
-                await _context.Database.ExecuteSqlRawAsync(@"
-                    INSERT INTO RbacRolePermissions (RoleId, PermissionId, Allowed, GrantedAt, GrantedBy, Status)
-                    VALUES ({0}, {1}, 1, GETUTCDATE(), 1, 'ACTIVE')
-                ", roleId, permissionId);
+                // Check if this role-permission combination already exists
+                var checkSql = @"
+                    SELECT COUNT(*) 
+                    FROM RbacRolePermissions 
+                    WHERE RoleId = @p0 AND PermissionId = @p1";
+                
+                var existsCommand = _context.Database.GetDbConnection().CreateCommand();
+                existsCommand.CommandText = checkSql;
+                existsCommand.Parameters.Add(new Microsoft.Data.SqlClient.SqlParameter("@p0", roleId));
+                existsCommand.Parameters.Add(new Microsoft.Data.SqlClient.SqlParameter("@p1", permissionId));
+                
+                await _context.Database.OpenConnectionAsync();
+                var count = (int)await existsCommand.ExecuteScalarAsync();
+                await _context.Database.CloseConnectionAsync();
+
+                if (count > 0)
+                {
+                    // Update existing record to ACTIVE
+                    var reactivateSql = @"
+                        UPDATE RbacRolePermissions 
+                        SET Status = 'ACTIVE', GrantedAt = GETUTCDATE(), GrantedBy = 1, RevokedAt = NULL, RevokedBy = NULL
+                        WHERE RoleId = @p0 AND PermissionId = @p1";
+                    
+                    await _context.Database.ExecuteSqlRawAsync(reactivateSql, roleId, permissionId);
+                }
+                else
+                {
+                    // Insert new record
+                    var insertSql = @"
+                        INSERT INTO RbacRolePermissions (RoleId, PermissionId, Allowed, GrantedAt, GrantedBy, Status)
+                        VALUES (@p0, @p1, 1, GETUTCDATE(), 1, 'ACTIVE')";
+                    
+                    await _context.Database.ExecuteSqlRawAsync(insertSql, roleId, permissionId);
+                }
             }
 
+            _logger.LogInformation("Successfully updated permissions for role {RoleId}", roleId);
             return Ok(new { message = "Role permissions updated successfully" });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating role permissions for role {RoleId}", roleId);
-            return StatusCode(500, new { message = "An error occurred while updating role permissions", error = ex.Message });
+            return StatusCode(500, new { message = "An error occurred while updating role permissions", error = ex.Message, stackTrace = ex.StackTrace });
         }
     }
 

@@ -46,11 +46,19 @@
 
 .card {
   transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 2;
+}
+
+// When dropdown is open, increase card z-index
+.card:has(.dropdown-menu.show) {
+  z-index: 100 !important;
 }
 
 .badge {
@@ -61,13 +69,36 @@
   display: none;
 }
 
+// Modal z-index fixes - ensure modals appear on top
 .modal {
-  background-color: rgba(248, 250, 252, 0.95) !important;
+  z-index: 1055 !important;
 }
 
 .modal-backdrop {
-  background-color: #f8fafc !important;
-  opacity: 0.95 !important;
+  z-index: 1050 !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  opacity: 1 !important;
+}
+
+// Dropdown menu z-index - ensure dropdown appears above cards
+.dropdown-menu {
+  z-index: 1060 !important;
+  position: absolute !important;
+}
+
+.dropdown {
+  position: relative;
+  z-index: 10;
+}
+
+.dropdown.show {
+  z-index: 100 !important;
+}
+
+// Ensure dropdown button has proper stacking
+.dropdown-toggle {
+  position: relative;
+  z-index: 10;
 }
 
 .alert {
@@ -81,11 +112,12 @@
   .nav-link {
     border: none;
     border-radius: 8px 8px 0 0;
-    color: #64748b;
+    color: #3b82f6;
     font-weight: 500;
     padding: 0.5rem 0.75rem;
     margin-bottom: -2px;
     font-size: 0.875rem;
+    background-color: #ffffff;
     
     &:hover {
       border-color: transparent;
@@ -94,8 +126,8 @@
     }
     
     &.active {
-      color: #3b82f6;
-      background-color: #fff;
+      color: #ffffff !important;
+      background-color: #3b82f6 !important;
       border-bottom: 2px solid #3b82f6;
     }
     
@@ -109,6 +141,10 @@
     
     .badge {
       font-size: 0.65rem;
+    }
+    
+    &.active .badge {
+      background-color: rgba(255, 255, 255, 0.2);
     }
   }
 }
