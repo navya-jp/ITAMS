@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Permission {
   id: number;
@@ -263,11 +264,21 @@ export class Api {
 
   // Projects
   getProjects(): Observable<Project[]> {
-    return this.http.get<Project[]>(`${this.baseUrl}/superadmin/projects`);
+    return this.http.get<any[]>(`${this.baseUrl}/superadmin/projects`).pipe(
+      map(projects => projects.map(p => ({
+        ...p,
+        states: p.states ? (typeof p.states === 'string' ? p.states.split(',').map((s: string) => s.trim()).filter((s: string) => s) : p.states) : []
+      })))
+    );
   }
 
   createProject(project: CreateProject): Observable<Project> {
-    return this.http.post<Project>(`${this.baseUrl}/superadmin/projects`, project, this.httpOptions);
+    // Convert states array to comma-separated string for backend
+    const projectData = {
+      ...project,
+      states: project.states.join(',')
+    };
+    return this.http.post<Project>(`${this.baseUrl}/superadmin/projects`, projectData, this.httpOptions);
   }
 
   updateProject(id: number, project: Partial<Project>): Observable<Project> {

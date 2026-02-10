@@ -18,14 +18,20 @@ public interface IProjectService
 public class CreateProjectRequest
 {
     public string Name { get; set; } = string.Empty;
+    public string? PreferredName { get; set; }
+    public string? SpvName { get; set; }
     public string Description { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
+    public string? States { get; set; }
 }
 
 public class UpdateProjectRequest
 {
     public string? Name { get; set; }
+    public string? PreferredName { get; set; }
+    public string? SpvName { get; set; }
     public string? Description { get; set; }
     public string? Code { get; set; }
+    public string? States { get; set; }
     public bool? IsActive { get; set; }
 }

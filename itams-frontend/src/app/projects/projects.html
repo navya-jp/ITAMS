@@ -34,7 +34,6 @@
         <thead class="table-light">
           <tr>
             <th>Project Code</th>
-            <th>SPV Name</th>
             <th>Preferred Name</th>
             <th>State</th>
             <th>Locations</th>
@@ -48,7 +47,6 @@
             <td>
               <strong class="text-primary">{{ project.code }}</strong>
             </td>
-            <td>{{ project.spvName }}</td>
             <td>{{ project.preferredName || project.name }}</td>
             <td>
               <div class="d-flex flex-wrap gap-1">
@@ -84,7 +82,7 @@
             </td>
           </tr>
           <tr *ngIf="projects.length === 0">
-            <td colspan="8" class="text-center py-4 text-muted">
+            <td colspan="7" class="text-center py-4 text-muted">
               No projects found. <a href="#" (click)="openCreateModal(); $event.preventDefault()">Create your first project</a>
             </td>
           </tr>

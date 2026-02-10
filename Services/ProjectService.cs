@@ -35,8 +35,11 @@ public class ProjectService : IProjectService
         var project = new Project
         {
             Name = request.Name,
+            PreferredName = request.PreferredName,
+            SpvName = request.SpvName,
             Description = request.Description,
             Code = request.Code,
+            States = request.States,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = 1 // TODO: Get from current user context

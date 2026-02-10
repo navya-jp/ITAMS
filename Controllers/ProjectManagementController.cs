@@ -38,8 +38,11 @@ public class ProjectManagementController : ControllerBase
             {
                 Id = p.Id,
                 Name = p.Name,
+                PreferredName = p.PreferredName,
+                SpvName = p.SpvName,
                 Description = p.Description,
                 Code = p.Code,
+                States = string.IsNullOrEmpty(p.States) ? Array.Empty<string>() : p.States.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
                 IsActive = p.IsActive,
                 CreatedAt = p.CreatedAt,
                 LocationCount = p.Locations.Count,
@@ -98,8 +101,11 @@ public class ProjectManagementController : ControllerBase
             var request = new CreateProjectRequest
             {
                 Name = createProjectDto.Name,
+                PreferredName = createProjectDto.PreferredName,
+                SpvName = createProjectDto.SpvName,
                 Description = createProjectDto.Description ?? string.Empty,
-                Code = createProjectDto.Code
+                Code = createProjectDto.Code,
+                States = createProjectDto.States
             };
 
             var project = await _projectService.CreateProjectAsync(request);
@@ -108,8 +114,11 @@ public class ProjectManagementController : ControllerBase
             {
                 Id = project.Id,
                 Name = project.Name,
+                PreferredName = project.PreferredName,
+                SpvName = project.SpvName,
                 Description = project.Description,
                 Code = project.Code,
+                States = string.IsNullOrEmpty(project.States) ? Array.Empty<string>() : project.States.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
                 IsActive = project.IsActive,
                 CreatedAt = project.CreatedAt,
                 LocationCount = 0,
@@ -382,8 +391,11 @@ public class ProjectDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? PreferredName { get; set; }
+    public string? SpvName { get; set; }
     public string? Description { get; set; }
     public string Code { get; set; } = string.Empty;
+    public string[]? States { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public int LocationCount { get; set; }

@@ -10,12 +10,21 @@ public class Project
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;
     
+    [StringLength(200)]
+    public string? PreferredName { get; set; }
+    
+    [StringLength(200)]
+    public string? SpvName { get; set; }
+    
     [StringLength(500)]
     public string? Description { get; set; }
     
     [Required]
     [StringLength(50)]
     public string Code { get; set; } = string.Empty;
+    
+    [StringLength(200)]
+    public string? States { get; set; } // Comma-separated list of states
     
     public bool IsActive { get; set; } = true;
     
