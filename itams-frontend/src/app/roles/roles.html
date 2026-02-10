@@ -36,10 +36,10 @@
                     <i class="fas fa-ellipsis-v"></i>
                   </button>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" (click)="openPermissionsModal(role)">
+                    <li><a class="dropdown-item" href="javascript:void(0)" (click)="openPermissionsModal(role); $event.stopPropagation()">
                       <i class="fas fa-key me-2"></i>Manage Permissions
                     </a></li>
-                    <li *ngIf="!role.isSystemRole"><a class="dropdown-item" href="#" (click)="openEditModal(role)">
+                    <li *ngIf="!role.isSystemRole"><a class="dropdown-item" href="javascript:void(0)" (click)="openEditModal(role); $event.stopPropagation()">
                       <i class="fas fa-edit me-2"></i>Edit Role
                     </a></li>
                   </ul>
