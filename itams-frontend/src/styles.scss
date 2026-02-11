@@ -184,6 +184,7 @@ body {
   border-radius: 12px;
   border: none;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
 }
 
 .modal-header {
@@ -200,6 +201,7 @@ body {
 
 .modal-body {
   padding: 1.5rem;
+  background-color: white;
 }
 
 .modal-footer {
@@ -207,6 +209,66 @@ body {
   background-color: #fafafa;
   border-radius: 0 0 12px 12px;
   padding: 1rem 1.5rem;
+}
+
+/* Global modal backdrop styling */
+.modal {
+  background-color: rgba(248, 250, 252, 0.95) !important;
+}
+
+.modal-backdrop {
+  background-color: #f8fafc !important;
+  opacity: 0.95 !important;
+}
+
+/* Consistent modal sizing */
+.modal-dialog {
+  max-width: 600px;
+  display: flex;
+  align-items: center;
+  min-height: calc(100vh - 3.5rem);
+  margin: 1.75rem auto;
+  
+  &.modal-lg {
+    max-width: 900px;
+  }
+  
+  &.modal-xl {
+    max-width: 1200px;
+  }
+}
+
+.modal-dialog-centered {
+  display: flex;
+  align-items: center;
+  min-height: calc(100vh - 3.5rem);
+}
+
+/* Tab styling for modals */
+.nav-tabs {
+  border-bottom: 1px solid var(--border-color);
+  
+  .nav-link {
+    background-color: transparent;
+    border: none;
+    color: #6c757d;
+    padding: 0.75rem 1.5rem;
+    
+    &.active {
+      background-color: #3b82f6 !important;
+      color: white !important;
+      border-radius: 0.375rem;
+      
+      i {
+        color: white !important;
+      }
+    }
+    
+    &:hover:not(.active) {
+      background-color: #f3f4f6;
+      border-radius: 0.375rem;
+    }
+  }
 }
 
 .password-requirements {
