@@ -187,10 +187,10 @@ public class RbacController : ControllerBase
                 }
                 else
                 {
-                    // Insert new record
+                    // Insert new record - include RoleIdRef and PermissionIdRef
                     var insertSql = @"
-                        INSERT INTO RbacRolePermissions (RoleId, PermissionId, Allowed, GrantedAt, GrantedBy, Status)
-                        VALUES (@p0, @p1, 1, GETUTCDATE(), 1, 'ACTIVE')";
+                        INSERT INTO RbacRolePermissions (RoleId, PermissionId, RoleIdRef, PermissionIdRef, Allowed, GrantedAt, GrantedBy, Status)
+                        VALUES (@p0, @p1, @p0, @p1, 1, GETUTCDATE(), 1, 'ACTIVE')";
                     
                     await _context.Database.ExecuteSqlRawAsync(insertSql, roleId, permissionId);
                 }
