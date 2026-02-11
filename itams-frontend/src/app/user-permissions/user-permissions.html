@@ -258,30 +258,25 @@
               <div class="tab-pane fade" [class.show]="i === 0" [class.active]="i === 0" 
                    [id]="'tab' + i" *ngFor="let group of permissionGroups; let i = index">
                 <div class="row g-2">
-                  <div class="col-md-4 mb-2" *ngFor="let permission of group.permissions">
+                  <div class="col-md-6 mb-2" *ngFor="let permission of group.permissions">
                     <div class="card permission-card" 
-                         [class]="'border-' + (getPermissionSource(selectedUser, permission) === 'role' ? 'info' : 
-                                              getPermissionSource(selectedUser, permission) === 'override-grant' ? 'success' :
-                                              getPermissionSource(selectedUser, permission) === 'override-deny' ? 'danger' : 'light')">
-                      <div class="card-body p-2">
-                        <div class="d-flex justify-content-between align-items-center">
+                         [class.border-info]="getPermissionSource(selectedUser, permission) === 'role'"
+                         [class.border-success]="getPermissionSource(selectedUser, permission) === 'override-grant'"
+                         [class.border-danger]="getPermissionSource(selectedUser, permission) === 'override-deny'"
+                         [class.border-light]="getPermissionSource(selectedUser, permission) === 'none'"
+                         [class.selected]="hasEffectivePermission(selectedUser, permission.id)">
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
                           <div class="flex-grow-1">
                             <h6 class="mb-1">{{ permission.name }}</h6>
-                            <small class="text-info">{{ permission.code }}</small>
+                            <small class="text-info d-block">{{ permission.code }}</small>
                           </div>
-                          <div class="text-end ms-2">
-                            <div class="mb-1">
-                              <i class="fas"
-                                 [class]="hasEffectivePermission(selectedUser, permission.id) ? 'fa-check-circle text-success' : 'fa-times-circle text-muted'">
-                              </i>
-                            </div>
+                          <div class="text-end ms-2" *ngIf="getPermissionSource(selectedUser, permission) !== 'role'">
                             <span class="badge badge-sm"
-                                  [class]="getPermissionSource(selectedUser, permission) === 'role' ? 'bg-info' : 
-                                          getPermissionSource(selectedUser, permission) === 'override-grant' ? 'bg-success' :
+                                  [class]="getPermissionSource(selectedUser, permission) === 'override-grant' ? 'bg-success' :
                                           getPermissionSource(selectedUser, permission) === 'override-deny' ? 'bg-danger' : 'bg-light text-dark'">
-                              {{ getPermissionSource(selectedUser, permission) === 'role' ? 'Role' : 
-                                 getPermissionSource(selectedUser, permission) === 'override-grant' ? '+' :
-                                 getPermissionSource(selectedUser, permission) === 'override-deny' ? '-' : 'None' }}
+                              {{ getPermissionSource(selectedUser, permission) === 'override-grant' ? 'Override +' :
+                                 getPermissionSource(selectedUser, permission) === 'override-deny' ? 'Override -' : 'None' }}
                             </span>
                           </div>
                         </div>

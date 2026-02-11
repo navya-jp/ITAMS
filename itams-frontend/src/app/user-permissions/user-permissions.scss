@@ -14,11 +14,15 @@
 .permission-card {
   transition: all 0.2s ease;
   cursor: default;
-  height: 100%;
+  border: 1.5px solid #e5e7eb;
   
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  
+  &.selected {
+    background-color: rgba(37, 99, 235, 0.05);
   }
   
   &.border-info {
@@ -38,25 +42,22 @@
   }
   
   .card-body {
-    padding: 0.65rem !important;
+    padding: 0.75rem !important;
   }
   
   h6 {
-    font-size: 0.9rem !important;
-    margin-bottom: 0.3rem !important;
+    font-size: 1rem !important;
+    margin-bottom: 0.35rem !important;
     font-weight: 600 !important;
   }
   
   small {
-    font-size: 0.75rem !important;
+    font-size: 0.85rem !important;
   }
   
   .badge {
-    font-size: 0.7rem !important;
-  }
-  
-  i {
-    font-size: 1.1rem !important;
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
   }
 }
 
@@ -151,10 +152,11 @@
 }
 
 .modal-xl {
-  max-width: 1200px;
+  max-width: 900px;
   
   .modal-content {
-    height: 650px;
+    height: 75vh;
+    max-height: 650px;
     display: flex;
     flex-direction: column;
   }
@@ -164,6 +166,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    padding: 1.25rem !important;
   }
   
   .modal-header {
@@ -178,6 +181,19 @@
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+    
+    &::-webkit-scrollbar {
+      width: 0;
+      display: none;
+    }
+    
+    .row {
+      --bs-gutter-y: 0.5rem;
+    }
+  }
+  
+  .nav-tabs {
+    margin-bottom: 1rem !important;
   }
 }
 

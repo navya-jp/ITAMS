@@ -185,10 +185,19 @@
 }
 
 .tab-content {
-  padding-top: 0.5rem;
+  padding-top: 1rem;
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  
+  &::-webkit-scrollbar {
+    width: 0;
+    display: none;
+  }
+}
+
+.nav-tabs {
+  margin-bottom: 1.25rem !important;
 }
 
 .tab-pane {
@@ -200,13 +209,14 @@
   max-width: 1000px;
   
   .modal-content {
-    height: 600px;
+    height: 85vh;
+    max-height: 700px;
     display: flex;
     flex-direction: column;
   }
   
   .modal-body {
-    padding: 0.75rem !important;
+    padding: 1.25rem !important;
     flex: 1;
     overflow: hidden;
     display: flex;
