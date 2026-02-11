@@ -150,9 +150,10 @@ public class RbacController : ControllerBase
             foreach (var permissionId in permissionsToRevoke)
             {
                 var revokeSql = @"
-                    UPDATE RbacRolePermissions 
-                    SET Status = 'REVOKED', RevokedAt = GETUTCDATE(), RevokedBy = 1
-                    WHERE RoleId = @p0 AND PermissionId = @p1 AND Status = 'ACTIVE'";
+                    UPDATE rp
+                    SET rp.Status = 'REVOKED', rp.RevokedAt = GETUTCDATE(), rp.RevokedBy = 1, rp.RevokedByRef = u.UserId
+                    FROM RbacRolePermissions rp, Users u
+                    WHERE rp.RoleId = @p0 AND rp.PermissionId = @p1 AND rp.Status = 'ACTIVE' AND u.Id = 1";
                 
                 await _context.Database.ExecuteSqlRawAsync(revokeSql, roleId, permissionId);
             }
@@ -177,22 +178,23 @@ public class RbacController : ControllerBase
 
                 if (count > 0)
                 {
-                    // Reactivate existing record
+                    // Reactivate existing record - include GrantedByRef
                     var reactivateSql = @"
-                        UPDATE RbacRolePermissions 
-                        SET Status = 'ACTIVE', GrantedAt = GETUTCDATE(), GrantedBy = 1, RevokedAt = NULL, RevokedBy = NULL
-                        WHERE RoleId = @p0 AND PermissionId = @p1";
+                        UPDATE rp
+                        SET rp.Status = 'ACTIVE', rp.GrantedAt = GETUTCDATE(), rp.GrantedBy = 1, rp.GrantedByRef = u.UserId, rp.RevokedAt = NULL, rp.RevokedBy = NULL, rp.RevokedByRef = NULL
+                        FROM RbacRolePermissions rp, Users u
+                        WHERE rp.RoleId = @p0 AND rp.PermissionId = @p1 AND u.Id = 1";
                     
                     await _context.Database.ExecuteSqlRawAsync(reactivateSql, roleId, permissionId);
                 }
                 else
                 {
-                    // Insert new record - lookup alternate keys for RoleIdRef and PermissionIdRef
+                    // Insert new record - lookup alternate keys for RoleIdRef, PermissionIdRef, and GrantedByRef
                     var insertSql = @"
-                        INSERT INTO RbacRolePermissions (RoleId, PermissionId, RoleIdRef, PermissionIdRef, Allowed, GrantedAt, GrantedBy, Status)
-                        SELECT @p0, @p1, r.RbacRoleId, p.RbacPermissionId, 1, GETUTCDATE(), 1, 'ACTIVE'
-                        FROM RbacRoles r, RbacPermissions p
-                        WHERE r.Id = @p0 AND p.Id = @p1";
+                        INSERT INTO RbacRolePermissions (RoleId, PermissionId, RoleIdRef, PermissionIdRef, GrantedBy, GrantedByRef, Allowed, GrantedAt, Status)
+                        SELECT @p0, @p1, r.RbacRoleId, p.RbacPermissionId, 1, u.UserId, 1, GETUTCDATE(), 'ACTIVE'
+                        FROM RbacRoles r, RbacPermissions p, Users u
+                        WHERE r.Id = @p0 AND p.Id = @p1 AND u.Id = 1";
                     
                     await _context.Database.ExecuteSqlRawAsync(insertSql, roleId, permissionId);
                 }
