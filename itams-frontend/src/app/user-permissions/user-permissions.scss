@@ -129,8 +129,7 @@
 
 // Custom scrollbar for modal content
 .modal-body {
-  max-height: 70vh;
-  overflow-y: auto;
+  background-color: white;
   
   &::-webkit-scrollbar {
     width: 6px;
@@ -149,6 +148,46 @@
       background: #a8a8a8;
     }
   }
+}
+
+.modal-xl {
+  max-width: 1200px;
+  
+  .modal-content {
+    height: 650px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .modal-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .modal-header {
+    flex-shrink: 0;
+  }
+  
+  .modal-footer {
+    flex-shrink: 0;
+  }
+  
+  .tab-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+}
+
+.modal {
+  background-color: #f8fafc !important;
+}
+
+.modal-backdrop {
+  background-color: #f8fafc !important;
+  opacity: 1 !important;
 }
 
 // Responsive adjustments
