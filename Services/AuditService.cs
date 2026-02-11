@@ -20,6 +20,10 @@ public class AuditService : IAuditService
     {
         var httpContext = _httpContextAccessor.HttpContext;
         
+        // Get the user's alternate key (UserId like USR00001)
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var userIdRef = user?.UserId ?? "UNKNOWN";
+        
         var auditEntry = new AuditEntry
         {
             Action = action,
@@ -28,6 +32,7 @@ public class AuditService : IAuditService
             OldValues = oldValues,
             NewValues = newValues,
             UserId = userId,
+            UserIdRef = userIdRef,
             UserName = userName,
             Timestamp = DateTime.UtcNow,
             IpAddress = httpContext?.Connection?.RemoteIpAddress?.ToString(),
