@@ -99,7 +99,7 @@
                     </span>
                   </td>
                   <td class="text-center">
-                    <span class="badge bg-primary">{{ user.rolePermissions.length }}</span>
+                    <span class="badge bg-primary">{{ user.effectivePermissions.length }}</span>
                   </td>
                   <td class="text-center">
                     <span class="badge" 
@@ -111,11 +111,13 @@
                     <div class="btn-group btn-group-sm" role="group">
                       <button class="btn btn-outline-primary" 
                               (click)="openPermissionsModal(user)"
+                              [disabled]="!user.isActive"
                               title="View Permissions">
                         <i class="fas fa-eye"></i>
                       </button>
                       <button class="btn btn-outline-warning" 
                               (click)="openOverrideModal(user)"
+                              [disabled]="!user.isActive"
                               title="Manage Overrides">
                         <i class="fas fa-user-cog"></i>
                       </button>
@@ -306,7 +308,8 @@
       <div class="modal-header">
         <h5 class="modal-title">
           <i class="fas fa-user-cog me-2"></i>
-          Grant Permission Override
+          <span *ngIf="overridePermissionFilter === 'granted'">Revoke Permission</span>
+          <span *ngIf="overridePermissionFilter !== 'granted'">Grant Permission Override</span>
         </h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
@@ -317,42 +320,51 @@
 
         <form>
           <div class="mb-3">
+            <label class="form-label">Show Permissions</label>
+            <div class="btn-group w-100 mb-2" role="group">
+              <button type="button" class="btn btn-sm" 
+                      [class.btn-primary]="overridePermissionFilter === 'all'"
+                      [class.btn-outline-primary]="overridePermissionFilter !== 'all'"
+                      (click)="overridePermissionFilter = 'all'; overrideForm.permissionId = 0">
+                All
+              </button>
+              <button type="button" class="btn btn-sm" 
+                      [class.btn-success]="overridePermissionFilter === 'not-granted'"
+                      [class.btn-outline-success]="overridePermissionFilter !== 'not-granted'"
+                      (click)="overridePermissionFilter = 'not-granted'; overrideForm.permissionId = 0; overrideForm.allowed = true">
+                Not Granted
+              </button>
+              <button type="button" class="btn btn-sm" 
+                      [class.btn-info]="overridePermissionFilter === 'granted'"
+                      [class.btn-outline-info]="overridePermissionFilter !== 'granted'"
+                      (click)="overridePermissionFilter = 'granted'; overrideForm.permissionId = 0; overrideForm.allowed = false">
+                Granted
+              </button>
+            </div>
+          </div>
+          
+          <div class="mb-3">
             <label class="form-label">Permission *</label>
             <select class="form-select" [(ngModel)]="overrideForm.permissionId" name="permissionId" required>
               <option value="0">Select a permission...</option>
-              <optgroup *ngFor="let group of permissionGroups" [label]="group.module">
-                <option *ngFor="let permission of group.permissions" 
-                        [value]="permission.id"
-                        [disabled]="hasPermissionOverride(selectedUser, permission.id) !== null">
-                  {{ permission.name }}
-                  <span *ngIf="hasPermissionOverride(selectedUser, permission.id)"> (Already has override)</span>
-                </option>
-              </optgroup>
+              <ng-container *ngFor="let group of permissionGroups">
+                <optgroup [label]="group.module">
+                  <option *ngFor="let permission of getAvailablePermissionsForOverride()"
+                          [value]="permission.id"
+                          [disabled]="hasPermissionOverride(selectedUser, permission.id) !== null"
+                          [hidden]="permission.module !== group.module">
+                    {{ permission.name }}
+                    <span *ngIf="hasPermissionOverride(selectedUser, permission.id)"> (Already has override)</span>
+                  </option>
+                </optgroup>
+              </ng-container>
             </select>
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Override Type *</label>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" [(ngModel)]="overrideForm.allowed" 
-                     [value]="true" name="allowed" id="grant">
-              <label class="form-check-label text-success" for="grant">
-                <i class="fas fa-check me-2"></i>Grant Permission
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" [(ngModel)]="overrideForm.allowed" 
-                     [value]="false" name="allowed" id="deny">
-              <label class="form-check-label text-danger" for="deny">
-                <i class="fas fa-times me-2"></i>Deny Permission
-              </label>
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Reason *</label>
+            <label class="form-label">Reason (Optional)</label>
             <textarea class="form-control" rows="3" [(ngModel)]="overrideForm.reason" 
-                      name="reason" placeholder="Explain why this override is necessary..." required></textarea>
+                      name="reason" placeholder="Explain why this override is necessary..."></textarea>
           </div>
 
           <div class="mb-3">
@@ -364,10 +376,14 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-        <button type="button" class="btn btn-primary" 
-                [disabled]="!overrideForm.permissionId || !overrideForm.reason.trim()"
+        <button type="button" class="btn" 
+                [class.btn-danger]="overridePermissionFilter === 'granted'"
+                [class.btn-success]="overridePermissionFilter !== 'granted'"
+                [disabled]="!overrideForm.permissionId"
                 (click)="grantPermissionOverride()">
-          <i class="fas fa-save me-2"></i>Grant Override
+          <i class="fas me-2" [class.fa-times]="overridePermissionFilter === 'granted'" [class.fa-check]="overridePermissionFilter !== 'granted'"></i>
+          <span *ngIf="overridePermissionFilter === 'granted'">Revoke Permission</span>
+          <span *ngIf="overridePermissionFilter !== 'granted'">Grant Override</span>
         </button>
       </div>
     </div>

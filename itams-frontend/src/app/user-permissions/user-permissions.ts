@@ -59,6 +59,9 @@ export class UserPermissions implements OnInit {
     reason: '',
     expiresAt: ''
   };
+  
+  // Permission filter mode for override modal
+  overridePermissionFilter: 'all' | 'granted' | 'not-granted' = 'all';
 
   constructor(private api: Api) {}
 
@@ -197,6 +200,7 @@ export class UserPermissions implements OnInit {
       reason: '',
       expiresAt: ''
     };
+    this.overridePermissionFilter = 'all'; // Default to showing all permissions
     this.showOverrideModal = true;
     this.error = '';
     this.success = '';
@@ -216,18 +220,85 @@ export class UserPermissions implements OnInit {
       return;
     }
 
-    if (!this.overrideForm.reason.trim()) {
-      this.error = 'Please provide a reason for this override';
-      return;
-    }
+    // Convert permissionId to number
+    const permissionId = Number(this.overrideForm.permissionId);
 
     // TODO: Implement API call for granting permission override
     console.log('Granting permission override:', {
       userId: this.selectedUser.id,
-      ...this.overrideForm
+      permissionId: permissionId,
+      allowed: this.overrideForm.allowed,
+      reason: this.overrideForm.reason,
+      expiresAt: this.overrideForm.expiresAt
     });
 
-    this.success = 'Permission override granted successfully';
+    // For now, simulate the change locally
+    // In production, this should call the API and then reload
+    const permission = this.permissions.find(p => p.id === permissionId);
+    if (!permission) {
+      this.error = 'Permission not found';
+      return;
+    }
+
+    // Find the user in the main array
+    const userIndex = this.users.findIndex(u => u.id === this.selectedUser!.id);
+    if (userIndex === -1) {
+      this.error = 'User not found';
+      return;
+    }
+
+    // Create a new user object with updated data (immutable update)
+    const updatedUser = { ...this.users[userIndex] };
+    
+    if (this.overrideForm.allowed) {
+      // Grant permission - add to effective permissions if not already there
+      if (!updatedUser.effectivePermissions.some(p => p.id === permission.id)) {
+        updatedUser.effectivePermissions = [...updatedUser.effectivePermissions, permission];
+      }
+      // Add to overrides (create new array)
+      updatedUser.userOverrides = [...updatedUser.userOverrides, {
+        id: Date.now(), // temporary ID
+        userId: updatedUser.id,
+        permissionId: permission.id,
+        permission: permission,
+        allowed: true,
+        reason: this.overrideForm.reason,
+        expiresAt: this.overrideForm.expiresAt,
+        grantedBy: 'Current User',
+        grantedAt: new Date().toISOString()
+      }];
+    } else {
+      // Revoke permission - remove from effective permissions
+      updatedUser.effectivePermissions = updatedUser.effectivePermissions.filter(
+        p => p.id !== permission.id
+      );
+      // Add deny override (create new array)
+      updatedUser.userOverrides = [...updatedUser.userOverrides, {
+        id: Date.now(), // temporary ID
+        userId: updatedUser.id,
+        permissionId: permission.id,
+        permission: permission,
+        allowed: false,
+        reason: this.overrideForm.reason,
+        expiresAt: this.overrideForm.expiresAt,
+        grantedBy: 'Current User',
+        grantedAt: new Date().toISOString()
+      }];
+    }
+    
+    // Update the user in the users array (immutable)
+    this.users = [
+      ...this.users.slice(0, userIndex),
+      updatedUser,
+      ...this.users.slice(userIndex + 1)
+    ];
+    
+    // Update selectedUser reference
+    this.selectedUser = updatedUser;
+
+    this.success = this.overrideForm.allowed ? 
+      'Permission granted successfully' : 
+      'Permission revoked successfully';
     this.closeModals();
   }
 
@@ -286,10 +357,20 @@ export class UserPermissions implements OnInit {
   getAvailablePermissionsForOverride(): Permission[] {
     if (!this.selectedUser) return [];
     
-    // Return permissions that don't already have overrides
-    return this.permissions.filter(permission => 
-      !this.hasPermissionOverride(this.selectedUser!, permission.id)
-    );
+    if (this.overridePermissionFilter === 'granted') {
+      // Show only permissions user currently has (from role or override-grant)
+      return this.permissions.filter(permission => 
+        this.hasEffectivePermission(this.selectedUser!, permission.id)
+      );
+    } else if (this.overridePermissionFilter === 'not-granted') {
+      // Show only permissions user doesn't have
+      return this.permissions.filter(permission => 
+        !this.hasEffectivePermission(this.selectedUser!, permission.id)
+      );
+    }
+    
+    // Show all permissions
+    return this.permissions;
   }
 
   clearMessages() {
