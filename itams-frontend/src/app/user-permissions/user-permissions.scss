@@ -155,8 +155,8 @@
   max-width: 900px;
   
   .modal-content {
-    height: 75vh;
-    max-height: 650px;
+    height: 70vh;
+    max-height: 580px;
     display: flex;
     flex-direction: column;
   }
@@ -166,15 +166,21 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 1.25rem !important;
+    padding: 1rem !important;
   }
   
   .modal-header {
     flex-shrink: 0;
+    padding: 0.75rem 1rem !important;
+    
+    .modal-title {
+      font-size: 1.1rem !important;
+    }
   }
   
   .modal-footer {
     flex-shrink: 0;
+    padding: 0.75rem 1rem !important;
   }
   
   .tab-content {
@@ -188,12 +194,38 @@
     }
     
     .row {
-      --bs-gutter-y: 0.5rem;
+      --bs-gutter-y: 0.4rem;
     }
   }
   
   .nav-tabs {
-    margin-bottom: 1rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .card {
+    margin-bottom: 0.5rem !important;
+    
+    .card-body {
+      padding: 0.75rem !important;
+    }
+    
+    h6 {
+      font-size: 0.9rem !important;
+      margin-bottom: 0.5rem !important;
+    }
+    
+    p {
+      font-size: 0.85rem !important;
+      margin-bottom: 0.35rem !important;
+    }
+  }
+  
+  .table {
+    font-size: 0.85rem !important;
+    
+    th, td {
+      padding: 0.5rem !important;
+    }
   }
 }
 
