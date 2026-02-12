@@ -3,6 +3,8 @@
 /* Sidebar Styles */
 .sidebar {
   width: 280px;
+  min-width: 280px;
+  max-width: 280px;
   min-height: 100vh;
   background-color: var(--sidebar-color);
   color: white;
@@ -10,6 +12,7 @@
   border-right: 1px solid var(--border-color);
   position: relative;
   z-index: 1000;
+  flex-shrink: 0;
 }
 
 .sidebar-header {
@@ -158,6 +161,8 @@
 .main-content {
   background: #fafafa;
   min-height: 100vh;
+  flex: 1;
+  overflow-x: hidden;
 }
 
 .main-header {
@@ -165,6 +170,8 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   min-height: 70px;
   border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  overflow: visible;
   
   .header-left {
     h1 {
@@ -229,7 +236,8 @@
 }
 
 .page-content {
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Responsive Design */
