@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ITAMS.Data;
+using ITAMS.Domain.Entities;
 using ITAMS.Domain.Entities.RBAC;
 
 namespace ITAMS.Controllers;
@@ -82,6 +83,50 @@ public class RbacController : ControllerBase
     {
         try
         {
+            int rbacRoleId = roleId;
+            
+            // Check if this is a Roles table ID (from Users.RoleId) or RbacRoles table ID
+            // Use raw SQL since RBAC entities might not be in DbContext
+            var checkRbacRoleSql = "SELECT COUNT(*) FROM RbacRoles WHERE Id = @p0";
+            var rbacRoleExists = await _context.Database.ExecuteSqlRawAsync(checkRbacRoleSql, roleId) > 0;
+            
+            if (!rbacRoleExists)
+            {
+                // Not found in RbacRoles, try to map from Roles table
+                var getRoleNameSql = "SELECT Name FROM Roles WHERE Id = @p0";
+                var roleNameCommand = _context.Database.GetDbConnection().CreateCommand();
+                roleNameCommand.CommandText = getRoleNameSql;
+                roleNameCommand.Parameters.Add(new Microsoft.Data.SqlClient.SqlParameter("@p0", roleId));
+                
+                await _context.Database.OpenConnectionAsync();
+                var reader = await roleNameCommand.ExecuteReaderAsync();
+                string? roleName = null;
+                if (await reader.ReadAsync())
+                {
+                    roleName = reader.GetString(0);
+                }
+                await reader.CloseAsync();
+                await _context.Database.CloseConnectionAsync();
+                
+                if (roleName != null)
+                {
+                    // Get RbacRoles.Id by name
+                    var getRbacRoleIdSql = "SELECT Id FROM RbacRoles WHERE Name = @p0";
+                    var rbacRoleIdCommand = _context.Database.GetDbConnection().CreateCommand();
+                    rbacRoleIdCommand.CommandText = getRbacRoleIdSql;
+                    rbacRoleIdCommand.Parameters.Add(new Microsoft.Data.SqlClient.SqlParameter("@p0", roleName));
+                    
+                    await _context.Database.OpenConnectionAsync();
+                    var rbacReader = await rbacRoleIdCommand.ExecuteReaderAsync();
+                    if (await rbacReader.ReadAsync())
+                    {
+                        rbacRoleId = rbacReader.GetInt32(0);
+                    }
+                    await rbacReader.CloseAsync();
+                    await _context.Database.CloseConnectionAsync();
+                }
+            }
+
             var permissions = await _context.Database.SqlQueryRaw<RbacPermissionDto>(@"
                 SELECT 
                     p.Id as PermissionId,
@@ -98,7 +143,7 @@ public class RbacController : ControllerBase
                   AND rp.Allowed = 1
                   AND p.Status = 'ACTIVE'
                 ORDER BY p.Module, p.Code
-            ", roleId).ToListAsync();
+            ", rbacRoleId).ToListAsync();
 
             return Ok(permissions);
         }
