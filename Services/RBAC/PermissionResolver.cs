@@ -177,10 +177,19 @@ public class PermissionResolver : IPermissionResolver
             throw new ArgumentException($"User with ID {userId} not found");
         }
 
-        // Get role permissions
+        // Map from Roles table to RbacRoles table using the role NAME (not alternate key)
+        var rbacRole = await _context.Set<RbacRole>()
+            .FirstOrDefaultAsync(r => r.RoleName == user.Role.Name);
+
+        if (rbacRole == null)
+        {
+            throw new ArgumentException($"RBAC role not found for user's role {user.Role?.Name}");
+        }
+
+        // Get role permissions using the RbacRoles.Id
         var rolePermissions = await _context.Set<RbacRolePermission>()
             .Include(rp => rp.Permission)
-            .Where(rp => rp.RoleId == user.RoleId && rp.Status == RolePermissionStatus.Active && rp.Allowed)
+            .Where(rp => rp.RoleId == rbacRole.Id && rp.Status == RolePermissionStatus.Active && rp.Allowed)
             .Select(rp => rp.Permission.PermissionCode)
             .ToListAsync();
 
@@ -235,10 +244,18 @@ public class PermissionResolver : IPermissionResolver
 
     private async Task<RbacRolePermission?> GetRolePermissionAsync(int roleId, string permissionCode)
     {
+        // roleId here is from Users.RoleId which points to Roles table
+        // We need to map it to RbacRoles.Id using role NAME
+        var role = await _context.Set<Role>().FirstOrDefaultAsync(r => r.Id == roleId);
+        if (role == null) return null;
+        
+        var rbacRole = await _context.Set<RbacRole>().FirstOrDefaultAsync(r => r.RoleName == role.Name);
+        if (rbacRole == null) return null;
+
         return await _context.Set<RbacRolePermission>()
             .Include(rp => rp.Permission)
             .FirstOrDefaultAsync(rp => 
-                rp.RoleId == roleId && 
+                rp.RoleId == rbacRole.Id && 
                 rp.Permission.PermissionCode == permissionCode && 
                 rp.Status == RolePermissionStatus.Active);
     }
