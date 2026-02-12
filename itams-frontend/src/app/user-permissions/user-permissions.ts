@@ -117,35 +117,70 @@ export class UserPermissions implements OnInit {
   }
 
   loadUserPermissions() {
-    const userPromises = this.users.map(async user => {
-      try {
-        // Load RBAC role permissions (not legacy role permissions)
-        const rolePermissions = await this.api.getRbacRolePermissions(user.roleId).toPromise();
-        user.rolePermissions = (rolePermissions || []).map((p: any) => ({
-          id: p.permissionId,
-          name: p.permissionCode,
-          code: p.permissionCode,
-          description: p.description,
-          module: p.module,
-          isActive: p.status === 'ACTIVE'
-        }));
-        
-        // TODO: Load user-specific overrides when API is available
-        user.userOverrides = [];
-        
-        // Calculate effective permissions (role + overrides)
-        user.effectivePermissions = this.calculateEffectivePermissions(user);
-      } catch (error) {
-        console.error(`Error loading permissions for user ${user.username}:`, error);
-      }
-    });
+    // First load all RBAC roles to create a mapping
+    this.api.getRbacRoles().subscribe({
+      next: (rbacRoles) => {
+        // Create a map of role name to RBAC role ID
+        const roleNameToRbacId = new Map<string, number>();
+        rbacRoles.forEach((rbacRole: any) => {
+          roleNameToRbacId.set(rbacRole.roleName, rbacRole.roleId);
+        });
 
-    Promise.all(userPromises).then(() => {
-      this.loading = false;
-    }).catch(error => {
-      this.error = 'Failed to load user permissions';
-      this.loading = false;
-      console.error('Error loading user permissions:', error);
+        // Now load permissions for each user
+        const userPromises = this.users.map(async user => {
+          try {
+            // Get the role name from the roles array
+            const role = this.roles.find(r => r.id === user.roleId);
+            if (!role) {
+              console.error(`Role not found for user ${user.username} with roleId ${user.roleId}`);
+              return;
+            }
+            
+            // Get the RBAC role ID by name
+            const rbacRoleId = roleNameToRbacId.get(role.name);
+            if (!rbacRoleId) {
+              console.error(`RBAC role ID not found for role name ${role.name}`);
+              return;
+            }
+            
+            console.log(`User ${user.username}: Role=${role.name}, RoleId=${user.roleId}, RbacRoleId=${rbacRoleId}`);
+            
+            // Load RBAC role permissions using the correct RbacRole ID
+            const rolePermissions = await this.api.getRbacRolePermissions(rbacRoleId).toPromise();
+            user.rolePermissions = (rolePermissions || []).map((p: any) => ({
+              id: p.permissionId,
+              name: p.permissionCode,
+              code: p.permissionCode,
+              description: p.description,
+              module: p.module,
+              isActive: p.status === 'ACTIVE'
+            }));
+            
+            console.log(`User ${user.username} has ${user.rolePermissions.length} permissions`);
+            
+            // TODO: Load user-specific overrides when API is available
+            user.userOverrides = [];
+            
+            // Calculate effective permissions (role + overrides)
+            user.effectivePermissions = this.calculateEffectivePermissions(user);
+          } catch (error) {
+            console.error(`Error loading permissions for user ${user.username}:`, error);
+          }
+        });
+
+        Promise.all(userPromises).then(() => {
+          this.loading = false;
+        }).catch(error => {
+          this.error = 'Failed to load user permissions';
+          this.loading = false;
+          console.error('Error loading user permissions:', error);
+        });
+      },
+      error: (error) => {
+        console.error('Error loading RBAC roles:', error);
+        this.error = 'Failed to load RBAC roles';
+        this.loading = false;
+      }
     });
   }
 

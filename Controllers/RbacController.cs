@@ -83,12 +83,28 @@ public class RbacController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("GetRolePermissions called with roleId: {RoleId}", roleId);
+            
             int rbacRoleId = roleId;
             
             // Check if this is a Roles table ID (from Users.RoleId) or RbacRoles table ID
             // Use raw SQL since RBAC entities might not be in DbContext
-            var checkRbacRoleSql = "SELECT COUNT(*) FROM RbacRoles WHERE Id = @p0";
-            var rbacRoleExists = await _context.Database.ExecuteSqlRawAsync(checkRbacRoleSql, roleId) > 0;
+            var checkRbacRoleSql = "SELECT COUNT(*) as cnt FROM RbacRoles WHERE Id = @p0";
+            var checkCommand = _context.Database.GetDbConnection().CreateCommand();
+            checkCommand.CommandText = checkRbacRoleSql;
+            checkCommand.Parameters.Add(new Microsoft.Data.SqlClient.SqlParameter("@p0", roleId));
+            
+            await _context.Database.OpenConnectionAsync();
+            var checkReader = await checkCommand.ExecuteReaderAsync();
+            bool rbacRoleExists = false;
+            if (await checkReader.ReadAsync())
+            {
+                rbacRoleExists = checkReader.GetInt32(0) > 0;
+            }
+            await checkReader.CloseAsync();
+            await _context.Database.CloseConnectionAsync();
+            
+            _logger.LogInformation("RoleId {RoleId} exists in RbacRoles: {Exists}", roleId, rbacRoleExists);
             
             if (!rbacRoleExists)
             {
@@ -108,6 +124,8 @@ public class RbacController : ControllerBase
                 await reader.CloseAsync();
                 await _context.Database.CloseConnectionAsync();
                 
+                _logger.LogInformation("Mapped roleId {RoleId} from Roles table to name: {RoleName}", roleId, roleName);
+                
                 if (roleName != null)
                 {
                     // Get RbacRoles.Id by name
@@ -124,8 +142,12 @@ public class RbacController : ControllerBase
                     }
                     await rbacReader.CloseAsync();
                     await _context.Database.CloseConnectionAsync();
+                    
+                    _logger.LogInformation("Mapped role name {RoleName} to RbacRoles ID: {RbacRoleId}", roleName, rbacRoleId);
                 }
             }
+
+            _logger.LogInformation("Querying permissions for RbacRoles ID: {RbacRoleId}", rbacRoleId);
 
             var permissions = await _context.Database.SqlQueryRaw<RbacPermissionDto>(@"
                 SELECT 
@@ -144,6 +166,8 @@ public class RbacController : ControllerBase
                   AND p.Status = 'ACTIVE'
                 ORDER BY p.Module, p.Code
             ", rbacRoleId).ToListAsync();
+
+            _logger.LogInformation("Found {Count} permissions for RbacRoles ID {RbacRoleId}", permissions.Count, rbacRoleId);
 
             return Ok(permissions);
         }
