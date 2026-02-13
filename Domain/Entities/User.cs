@@ -45,6 +45,12 @@ public class User
     
     public DateTime? LockedUntil { get; set; }
     
+    // Session management
+    [StringLength(500)]
+    public string? ActiveSessionId { get; set; }
+    
+    public DateTime? SessionStartedAt { get; set; }
+    
     // Navigation properties
     public virtual Role Role { get; set; } = null!;
     public virtual ICollection<AuditEntry> AuditEntries { get; set; } = new List<AuditEntry>();

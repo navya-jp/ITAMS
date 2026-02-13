@@ -18,6 +18,8 @@ public interface IUserService
     Task UnlockUserAsync(int userId);
     Task<bool> ValidatePasswordPolicyAsync(string password);
     Task<bool> IsUsernameAvailableAsync(string username);
+    Task UpdateSessionAsync(int userId, string sessionId, DateTime sessionStartedAt);
+    Task ClearSessionAsync(int userId);
 }
 
 public class CreateUserRequest

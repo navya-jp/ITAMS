@@ -352,3 +352,33 @@ public class UserService : IUserService
         return existingUser == null;
     }
 }
+
+    public async Task UpdateSessionAsync(int userId, string sessionId, DateTime sessionStartedAt)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new InvalidOperationException("User not found");
+        }
+
+        user.ActiveSessionId = sessionId;
+        user.SessionStartedAt = sessionStartedAt;
+        
+        await _userRepository.UpdateAsync(user);
+        await _auditService.LogAsync("SESSION_STARTED", "User", user.Id.ToString(), user.Id, user.Username);
+    }
+
+    public async Task ClearSessionAsync(int userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new InvalidOperationException("User not found");
+        }
+
+        user.ActiveSessionId = null;
+        user.SessionStartedAt = null;
+        
+        await _userRepository.UpdateAsync(user);
+        await _auditService.LogAsync("SESSION_ENDED", "User", user.Id.ToString(), user.Id, user.Username);
+    }

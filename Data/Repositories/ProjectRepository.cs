@@ -49,6 +49,35 @@ public class ProjectRepository : IProjectRepository
 
     public async Task<Project> CreateAsync(Project project)
     {
+        // Generate ProjectId if not set
+        if (string.IsNullOrEmpty(project.ProjectId))
+        {
+            var maxId = await _context.Projects
+                .Where(p => !string.IsNullOrEmpty(p.ProjectId))
+                .Select(p => p.ProjectId)
+                .ToListAsync();
+            
+            int nextNumber = 1;
+            if (maxId.Any())
+            {
+                // Extract numbers from ProjectIds like "PRJ00001", "PRJ00002"
+                var numbers = maxId
+                    .Where(id => id.StartsWith("PRJ"))
+                    .Select(id => {
+                        var numPart = id.Substring(3);
+                        return int.TryParse(numPart, out int num) ? num : 0;
+                    })
+                    .Where(num => num > 0);
+                
+                if (numbers.Any())
+                {
+                    nextNumber = numbers.Max() + 1;
+                }
+            }
+            
+            project.ProjectId = $"PRJ{nextNumber:D5}";
+        }
+        
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
         return project;

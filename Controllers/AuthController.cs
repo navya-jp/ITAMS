@@ -40,7 +40,7 @@ namespace ITAMS.Controllers
                     });
                 }
 
-                // First, get the user to check if it's their first login
+                // First, get the user to check if it's their first login and session status
                 var users = await _userService.GetAllUsersAsync();
                 var user = users.FirstOrDefault(u => 
                     u.Username.Equals(request.Username, StringComparison.OrdinalIgnoreCase) && 
@@ -54,6 +54,22 @@ namespace ITAMS.Controllers
                         Success = false,
                         Message = "Invalid username or password"
                     });
+                }
+
+                // Check if user already has an active session
+                if (!string.IsNullOrEmpty(user.ActiveSessionId) && user.SessionStartedAt.HasValue)
+                {
+                    // Check if session is still valid (within 30 minutes)
+                    var sessionAge = DateTime.UtcNow - user.SessionStartedAt.Value;
+                    if (sessionAge.TotalMinutes < 30)
+                    {
+                        _logger.LogWarning("User {Username} attempted login with active session", request.Username);
+                        return Unauthorized(new LoginResponse
+                        {
+                            Success = false,
+                            Message = "This account is currently logged in from another location. Please logout from the other session first."
+                        });
+                    }
                 }
 
                 // Check if this is the first login BEFORE authentication (which updates LastLoginAt)
@@ -72,12 +88,16 @@ namespace ITAMS.Controllers
                     });
                 }
 
+                // Generate session ID and update user
+                var sessionId = Guid.NewGuid().ToString();
+                await _userService.UpdateSessionAsync(authenticatedUser.Id, sessionId, DateTime.UtcNow);
+
                 // Log the successful authentication
-                _logger.LogInformation("Login successful for user: {Username}, Role: {Role}, FirstLogin: {IsFirstLogin}", 
-                    authenticatedUser.Username, authenticatedUser.Role?.Name, isFirstLogin);
+                _logger.LogInformation("Login successful for user: {Username}, Role: {Role}, FirstLogin: {IsFirstLogin}, SessionId: {SessionId}", 
+                    authenticatedUser.Username, authenticatedUser.Role?.Name, isFirstLogin, sessionId);
 
                 // Generate JWT token
-                var token = GenerateJwtToken(authenticatedUser);
+                var token = GenerateJwtToken(authenticatedUser, sessionId);
 
                 var response = new LoginResponse
                 {
@@ -94,8 +114,9 @@ namespace ITAMS.Controllers
                         RoleName = authenticatedUser.Role?.Name ?? "User",
                         IsActive = authenticatedUser.IsActive,
                         MustChangePassword = authenticatedUser.MustChangePassword,
-                        IsFirstLogin = isFirstLogin, // Use the value we captured before authentication
-                        LastLoginAt = authenticatedUser.LastLoginAt?.ToString("yyyy-MM-dd HH:mm:ss")
+                        IsFirstLogin = isFirstLogin,
+                        LastLoginAt = authenticatedUser.LastLoginAt?.ToString("yyyy-MM-dd HH:mm:ss"),
+                        SessionId = sessionId
                     }
                 };
 
@@ -115,11 +136,24 @@ namespace ITAMS.Controllers
         }
 
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest? request)
         {
-            // TODO: Implement token blacklisting or session invalidation
-            _logger.LogInformation("User logged out");
-            return Ok(new { success = true, message = "Logged out successfully" });
+            try
+            {
+                if (request != null && request.UserId > 0)
+                {
+                    // Clear the user's session
+                    await _userService.ClearSessionAsync(request.UserId);
+                    _logger.LogInformation("User {UserId} logged out successfully", request.UserId);
+                }
+                
+                return Ok(new { success = true, message = "Logged out successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during logout");
+                return StatusCode(500, new { success = false, message = "An error occurred during logout" });
+            }
         }
 
         [HttpPost("change-password")]
@@ -224,7 +258,7 @@ namespace ITAMS.Controllers
             return Ok(settings);
         }
 
-        private string GenerateJwtToken(Domain.Entities.User user)
+        private string GenerateJwtToken(Domain.Entities.User user, string sessionId)
         {
             // TODO: Move to configuration
             var secretKey = "your-super-secret-key-that-should-be-in-configuration-and-at-least-32-characters-long";
@@ -237,7 +271,8 @@ namespace ITAMS.Controllers
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Name, user.Username),
                     new Claim(ClaimTypes.Email, user.Email),
-                    new Claim(ClaimTypes.Role, user.Role?.Name ?? "User")
+                    new Claim(ClaimTypes.Role, user.Role?.Name ?? "User"),
+                    new Claim("SessionId", sessionId)
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(30),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -254,6 +289,11 @@ namespace ITAMS.Controllers
     {
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+    }
+
+    public class LogoutRequest
+    {
+        public int UserId { get; set; }
     }
 
     public class LoginResponse
