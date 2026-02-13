@@ -16,6 +16,7 @@ export class Navigation implements OnInit, OnDestroy {
   isAuthenticated = false;
   pageTitle = 'Dashboard';
   currentRoute = '';
+  showProfileDropdown = false;
   
   // Properties for time display to avoid change detection issues
   lastActivity = 'Active now';
@@ -155,5 +156,13 @@ export class Navigation implements OnInit, OnDestroy {
 
   refreshActivity() {
     this.authService.updateActivity();
+  }
+
+  toggleProfileDropdown() {
+    this.showProfileDropdown = !this.showProfileDropdown;
+  }
+
+  closeProfileDropdown() {
+    this.showProfileDropdown = false;
   }
 }

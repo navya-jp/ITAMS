@@ -30,58 +30,6 @@
         </li>
       </ul>
     </div>
-
-    <!-- User Profile Section -->
-    <div class="sidebar-footer p-3 border-top">
-      <div class="user-profile">
-        <div class="d-flex align-items-center mb-2">
-          <div class="user-avatar me-2">
-            <div class="avatar-circle">
-              {{ getUserInitials() }}
-            </div>
-          </div>
-          <div class="user-info flex-grow-1">
-            <div class="user-name">{{ getUserDisplayName() }}</div>
-            <small class="user-role text-muted">{{ getUserRole() }}</small>
-          </div>
-        </div>
-        
-        <!-- Session Info -->
-        <div class="session-info mb-2">
-          <small class="text-muted d-block">
-            <i class="fas fa-clock me-1"></i>Last activity: {{ lastActivity }}
-          </small>
-          <small class="text-muted d-block">
-            <i class="fas fa-hourglass-half me-1"></i>Session: {{ sessionTimeRemaining }}
-          </small>
-        </div>
-
-        <!-- User Actions -->
-        <div class="user-actions d-flex gap-1">
-          <button 
-            class="btn btn-sm btn-outline-secondary flex-fill"
-            (click)="onChangePassword()"
-            title="Change Password"
-          >
-            <i class="fas fa-key"></i>
-          </button>
-          <button 
-            class="btn btn-sm btn-outline-secondary"
-            (click)="refreshActivity()"
-            title="Refresh Session"
-          >
-            <i class="fas fa-sync-alt"></i>
-          </button>
-          <button 
-            class="btn btn-sm btn-outline-danger"
-            (click)="onLogout()"
-            title="Logout"
-          >
-            <i class="fas fa-sign-out-alt"></i>
-          </button>
-        </div>
-      </div>
-    </div>
   </nav>
 
   <!-- Main Content Area -->
@@ -94,23 +42,62 @@
       </div>
       
       <div class="header-right d-flex align-items-center gap-3">
-        <!-- Session Status -->
-        <div class="session-status d-none d-md-block">
-          <span class="badge bg-success">
-            <i class="fas fa-circle me-1"></i>Online
-          </span>
-        </div>
-        
         <!-- User Info -->
         <div class="user-header-info d-none d-lg-block text-end">
           <div class="fw-bold">{{ getUserDisplayName() }}</div>
           <small class="text-muted">{{ getUserRole() }}</small>
         </div>
         
-        <!-- User Avatar -->
-        <div class="user-header-avatar">
-          <div class="avatar-circle bg-primary text-white">
+        <!-- User Avatar with Dropdown -->
+        <div class="user-header-avatar position-relative">
+          <div class="avatar-circle bg-primary text-white" 
+               style="cursor: pointer;"
+               (click)="toggleProfileDropdown()">
             {{ getUserInitials() }}
+          </div>
+          
+          <!-- Profile Dropdown Menu -->
+          <div class="profile-dropdown" *ngIf="showProfileDropdown">
+            <div class="dropdown-header">
+              <div class="d-flex align-items-center mb-2">
+                <div class="avatar-circle bg-primary text-white me-2">
+                  {{ getUserInitials() }}
+                </div>
+                <div>
+                  <div class="fw-bold">{{ getUserDisplayName() }}</div>
+                  <small class="text-muted">{{ getUserRole() }}</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="dropdown-divider"></div>
+            
+            <div class="dropdown-body">
+              <div class="session-info mb-2">
+                <small class="text-muted d-block">
+                  <i class="fas fa-clock me-1"></i>Last activity: {{ lastActivity }}
+                </small>
+                <small class="text-muted d-block">
+                  <i class="fas fa-hourglass-half me-1"></i>Session: {{ sessionTimeRemaining }}
+                </small>
+              </div>
+              
+              <div class="dropdown-divider"></div>
+              
+              <button class="dropdown-item" (click)="onChangePassword(); closeProfileDropdown()">
+                <i class="fas fa-key me-2"></i>Change Password
+              </button>
+              
+              <button class="dropdown-item" (click)="refreshActivity(); closeProfileDropdown()">
+                <i class="fas fa-sync-alt me-2"></i>Refresh Session
+              </button>
+              
+              <div class="dropdown-divider"></div>
+              
+              <button class="dropdown-item text-danger" (click)="onLogout(); closeProfileDropdown()">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+              </button>
+            </div>
           </div>
         </div>
       </div>
