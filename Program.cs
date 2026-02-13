@@ -66,6 +66,7 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IAccessControlService, AccessControlService>();
 
 // Add RBAC services
 builder.Services.AddScoped<ITAMS.Services.RBAC.IPermissionResolver, ITAMS.Services.RBAC.PermissionResolver>();

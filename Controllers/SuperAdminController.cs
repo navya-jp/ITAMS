@@ -492,7 +492,7 @@ public class SuperAdminController : ControllerBase
                 IsActive = p.IsActive,
                 CreatedAt = p.CreatedAt,
                 LocationCount = p.Locations.Count,
-                UserCount = p.UserProjects.Count(up => up.IsActive)
+                UserCount = p.Users.Count(u => u.IsActive)
             });
 
             return Ok(projectDtos);
@@ -580,7 +580,7 @@ public class SuperAdminController : ControllerBase
                 IsActive = project.IsActive,
                 CreatedAt = project.CreatedAt,
                 LocationCount = project.Locations.Count,
-                UserCount = project.UserProjects.Count(up => up.IsActive)
+                UserCount = project.Users.Count(u => u.IsActive)
             };
 
             return Ok(projectDto);
@@ -850,7 +850,7 @@ public class SuperAdminController : ControllerBase
                 IsActive = p.IsActive,
                 CreatedAt = p.CreatedAt,
                 LocationCount = p.Locations.Count,
-                UserCount = p.UserProjects.Count(up => up.IsActive)
+                UserCount = p.Users.Count(u => u.IsActive)
             });
 
             return Ok(projectDtos);

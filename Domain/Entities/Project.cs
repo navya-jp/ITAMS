@@ -37,6 +37,7 @@ public class Project
     public int CreatedBy { get; set; }
     
     // Navigation properties
+    public virtual ICollection<User> Users { get; set; } = new List<User>();
     public virtual ICollection<Location> Locations { get; set; } = new List<Location>();
     public virtual ICollection<UserProject> UserProjects { get; set; } = new List<UserProject>();
     public virtual ICollection<Asset> Assets { get; set; } = new List<Asset>();

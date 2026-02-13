@@ -40,6 +40,12 @@ public class Location
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
+    // Sensitive location flag (for future use)
+    public bool IsSensitive { get; set; } = false;
+    
+    [StringLength(500)]
+    public string? SensitiveReason { get; set; }
+    
     // Navigation properties
     public virtual Project Project { get; set; } = null!;
     public virtual ICollection<Asset> Assets { get; set; } = new List<Asset>();

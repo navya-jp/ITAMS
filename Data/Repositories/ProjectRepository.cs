@@ -16,6 +16,7 @@ public class ProjectRepository : IProjectRepository
     public async Task<Project?> GetByIdAsync(int id)
     {
         return await _context.Projects
+            .Include(p => p.Users.Where(u => u.IsActive))
             .Include(p => p.Locations)
             .Include(p => p.UserProjects.Where(up => up.IsActive))
             .ThenInclude(up => up.User)
@@ -31,6 +32,7 @@ public class ProjectRepository : IProjectRepository
     public async Task<IEnumerable<Project>> GetAllAsync()
     {
         return await _context.Projects
+            .Include(p => p.Users.Where(u => u.IsActive))
             .Include(p => p.Locations)
             .Include(p => p.UserProjects.Where(up => up.IsActive))
             .OrderBy(p => p.Name)

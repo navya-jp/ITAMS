@@ -51,8 +51,26 @@ public class User
     
     public DateTime? SessionStartedAt { get; set; }
     
+    public DateTime? LastActivityAt { get; set; }
+    
+    // Project and Location Access Control
+    public int ProjectId { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedRegion { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedState { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedPlaza { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedOffice { get; set; }
+    
     // Navigation properties
     public virtual Role Role { get; set; } = null!;
+    public virtual Project Project { get; set; } = null!;
     public virtual ICollection<AuditEntry> AuditEntries { get; set; } = new List<AuditEntry>();
     public virtual ICollection<UserProject> UserProjects { get; set; } = new List<UserProject>();
     public virtual ICollection<Asset> AssignedAssets { get; set; } = new List<Asset>();
