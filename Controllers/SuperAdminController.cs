@@ -3,6 +3,7 @@ using ITAMS.Domain.Entities;
 using ITAMS.Domain.Interfaces;
 using ITAMS.Data;
 using ITAMS.Models;
+using ITAMS.Services;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,7 @@ namespace ITAMS.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SuperAdminController : ControllerBase
+public class SuperAdminController : BaseController
 {
     private readonly IUserService _userService;
     private readonly IProjectService _projectService;
@@ -19,6 +20,7 @@ public class SuperAdminController : ControllerBase
     private readonly IRoleRepository _roleRepository;
     private readonly IAuditService _auditService;
     private readonly ITAMSDbContext _context;
+    private readonly IAccessControlService _accessControlService;
 
     public SuperAdminController(
         IUserService userService,
@@ -27,7 +29,8 @@ public class SuperAdminController : ControllerBase
         IPermissionService permissionService,
         IRoleRepository roleRepository,
         IAuditService auditService,
-        ITAMSDbContext context)
+        ITAMSDbContext context,
+        IAccessControlService accessControlService)
     {
         _userService = userService;
         _projectService = projectService;
@@ -36,6 +39,7 @@ public class SuperAdminController : ControllerBase
         _roleRepository = roleRepository;
         _auditService = auditService;
         _context = context;
+        _accessControlService = accessControlService;
     }
 
     #region Users
@@ -59,8 +63,14 @@ public class SuperAdminController : ControllerBase
                 IsActive = u.IsActive,
                 CreatedAt = u.CreatedAt,
                 LastLoginAt = u.LastLoginAt,
+                LastActivityAt = u.LastActivityAt,
                 MustChangePassword = u.MustChangePassword,
-                IsLocked = u.LockedUntil.HasValue && u.LockedUntil > DateTime.UtcNow
+                IsLocked = u.LockedUntil.HasValue && u.LockedUntil > DateTime.UtcNow,
+                ProjectId = u.ProjectId,
+                RestrictedRegion = u.RestrictedRegion,
+                RestrictedState = u.RestrictedState,
+                RestrictedPlaza = u.RestrictedPlaza,
+                RestrictedOffice = u.RestrictedOffice
             });
 
             return Ok(userDtos);
@@ -95,8 +105,14 @@ public class SuperAdminController : ControllerBase
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
                 LastLoginAt = user.LastLoginAt,
+                LastActivityAt = user.LastActivityAt,
                 MustChangePassword = user.MustChangePassword,
-                IsLocked = user.LockedUntil.HasValue && user.LockedUntil > DateTime.UtcNow
+                IsLocked = user.LockedUntil.HasValue && user.LockedUntil > DateTime.UtcNow,
+                ProjectId = user.ProjectId,
+                RestrictedRegion = user.RestrictedRegion,
+                RestrictedState = user.RestrictedState,
+                RestrictedPlaza = user.RestrictedPlaza,
+                RestrictedOffice = user.RestrictedOffice
             };
 
             return Ok(userDto);
@@ -125,7 +141,12 @@ public class SuperAdminController : ControllerBase
                 LastName = createUserDto.LastName,
                 RoleId = createUserDto.RoleId,
                 Password = createUserDto.Password,
-                MustChangePassword = createUserDto.MustChangePassword
+                MustChangePassword = createUserDto.MustChangePassword,
+                ProjectId = createUserDto.ProjectId,
+                RestrictedRegion = createUserDto.RestrictedRegion,
+                RestrictedState = createUserDto.RestrictedState,
+                RestrictedPlaza = createUserDto.RestrictedPlaza,
+                RestrictedOffice = createUserDto.RestrictedOffice
             };
 
             var user = await _userService.CreateUserAsync(request);
@@ -143,8 +164,14 @@ public class SuperAdminController : ControllerBase
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
                 LastLoginAt = user.LastLoginAt,
+                LastActivityAt = user.LastActivityAt,
                 MustChangePassword = user.MustChangePassword,
-                IsLocked = false
+                IsLocked = false,
+                ProjectId = user.ProjectId,
+                RestrictedRegion = user.RestrictedRegion,
+                RestrictedState = user.RestrictedState,
+                RestrictedPlaza = user.RestrictedPlaza,
+                RestrictedOffice = user.RestrictedOffice
             };
 
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, userDto);
@@ -175,7 +202,12 @@ public class SuperAdminController : ControllerBase
                 FirstName = updateUserDto.FirstName,
                 LastName = updateUserDto.LastName,
                 RoleId = updateUserDto.RoleId,
-                IsActive = updateUserDto.IsActive
+                IsActive = updateUserDto.IsActive,
+                ProjectId = updateUserDto.ProjectId,
+                RestrictedRegion = updateUserDto.RestrictedRegion,
+                RestrictedState = updateUserDto.RestrictedState,
+                RestrictedPlaza = updateUserDto.RestrictedPlaza,
+                RestrictedOffice = updateUserDto.RestrictedOffice
             };
 
             var user = await _userService.UpdateUserAsync(id, request);
@@ -193,8 +225,14 @@ public class SuperAdminController : ControllerBase
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
                 LastLoginAt = user.LastLoginAt,
+                LastActivityAt = user.LastActivityAt,
                 MustChangePassword = user.MustChangePassword,
-                IsLocked = user.LockedUntil.HasValue && user.LockedUntil > DateTime.UtcNow
+                IsLocked = user.LockedUntil.HasValue && user.LockedUntil > DateTime.UtcNow,
+                ProjectId = user.ProjectId,
+                RestrictedRegion = user.RestrictedRegion,
+                RestrictedState = user.RestrictedState,
+                RestrictedPlaza = user.RestrictedPlaza,
+                RestrictedOffice = user.RestrictedOffice
             };
 
             return Ok(userDto);
@@ -622,8 +660,20 @@ public class SuperAdminController : ControllerBase
     {
         try
         {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { message = "User not authenticated" });
+            }
+
             var locations = await _locationService.GetAllLocationsAsync();
-            var locationDtos = locations.Select(l => new LocationSummaryDto
+            
+            // Apply location filtering based on user's access
+            var query = locations.AsQueryable();
+            var filteredQuery = await _accessControlService.ApplyLocationFilter(query, userId.Value);
+            var filteredLocations = filteredQuery.ToList();
+            
+            var locationDtos = filteredLocations.Select(l => new LocationSummaryDto
             {
                 Id = l.Id,
                 Name = l.Name,
@@ -651,8 +701,26 @@ public class SuperAdminController : ControllerBase
     {
         try
         {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { message = "User not authenticated" });
+            }
+
+            // Check if user can access this project
+            if (!await CanAccessProject(projectId, _accessControlService))
+            {
+                return Forbidden("You do not have access to this project");
+            }
+
             var locations = await _locationService.GetLocationsByProjectAsync(projectId);
-            var locationDtos = locations.Select(l => new LocationSummaryDto
+            
+            // Apply location filtering based on user's access
+            var query = locations.AsQueryable();
+            var filteredQuery = await _accessControlService.ApplyLocationFilter(query, userId.Value);
+            var filteredLocations = filteredQuery.ToList();
+            
+            var locationDtos = filteredLocations.Select(l => new LocationSummaryDto
             {
                 Id = l.Id,
                 Name = l.Name,

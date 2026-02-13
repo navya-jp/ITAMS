@@ -59,26 +59,41 @@ export class UserProjects implements OnInit {
   loadUserProjects() {
     this.loading = true;
     
-    // TODO: Replace with actual API call for user's projects
-    // For now, show empty state since no projects exist yet
-    setTimeout(() => {
-      this.projects = []; // Empty array - no projects created yet
-      this.totalItems = 0;
-      this.loading = false;
-    }, 500);
-    
-    // Uncomment when user projects API is implemented:
-    // this.api.getUserProjects(this.currentUser.id).subscribe({
-    //   next: (projects) => {
-    //     this.projects = projects;
-    //     this.totalItems = projects.length;
-    //     this.loading = false;
-    //   },
-    //   error: (error) => {
-    //     this.error = 'Failed to load projects';
-    //     this.loading = false;
-    //   }
-    // });
+    // Get user's assigned project from API
+    this.api.getMyProject().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const project = response.data;
+          this.projects = [{
+            id: project.id,
+            name: project.name,
+            preferredName: project.preferredName,
+            code: project.code,
+            description: project.description || 'No description available',
+            status: project.isActive ? 'Active' : 'Inactive',
+            progress: 0, // TODO: Calculate actual progress
+            role: project.userRole,
+            dueDate: 'N/A', // TODO: Add due date field
+            budget: 0, // TODO: Add budget field
+            spent: 0, // TODO: Add spent field
+            team: [], // TODO: Get team members
+            locations: Array(project.locationCount).fill('Location') // Placeholder
+          }];
+          this.totalItems = this.projects.length;
+        } else {
+          this.projects = [];
+          this.totalItems = 0;
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading project:', error);
+        this.error = 'Failed to load your assigned project';
+        this.projects = [];
+        this.totalItems = 0;
+        this.loading = false;
+      }
+    });
   }
 
   get filteredProjects() {

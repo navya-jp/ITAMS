@@ -15,8 +15,16 @@ public class UserDto
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
+    public DateTime? LastActivityAt { get; set; }
     public bool MustChangePassword { get; set; }
     public bool IsLocked { get; set; }
+    
+    // Project and Location Access Control
+    public int? ProjectId { get; set; }
+    public string? RestrictedRegion { get; set; }
+    public string? RestrictedState { get; set; }
+    public string? RestrictedPlaza { get; set; }
+    public string? RestrictedOffice { get; set; }
 }
 
 public class CreateUserDto
@@ -50,6 +58,21 @@ public class CreateUserDto
     public string Password { get; set; } = string.Empty;
     
     public bool MustChangePassword { get; set; } = true;
+    
+    // Project and Location Access Control
+    public int? ProjectId { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedRegion { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedState { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedPlaza { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedOffice { get; set; }
 }
 
 public class UpdateUserDto
@@ -68,6 +91,21 @@ public class UpdateUserDto
     public int? RoleId { get; set; }
     
     public bool? IsActive { get; set; }
+    
+    // Project and Location Access Control
+    public int? ProjectId { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedRegion { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedState { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedPlaza { get; set; }
+    
+    [StringLength(100)]
+    public string? RestrictedOffice { get; set; }
 }
 
 public class ResetPasswordDto

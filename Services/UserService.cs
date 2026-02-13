@@ -131,7 +131,12 @@ public class UserService : IUserService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             MustChangePassword = request.MustChangePassword,
             CreatedAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
+            ProjectId = request.ProjectId ?? 0, // Default to 0 if not provided (will need validation)
+            RestrictedRegion = request.RestrictedRegion,
+            RestrictedState = request.RestrictedState,
+            RestrictedPlaza = request.RestrictedPlaza,
+            RestrictedOffice = request.RestrictedOffice
         };
 
         var createdUser = await _userRepository.CreateAsync(user);
@@ -149,7 +154,7 @@ public class UserService : IUserService
             throw new InvalidOperationException("User not found");
         }
 
-        var oldValues = $"Email: {user.Email}, FirstName: {user.FirstName}, LastName: {user.LastName}, RoleId: {user.RoleId}, IsActive: {user.IsActive}";
+        var oldValues = $"Email: {user.Email}, FirstName: {user.FirstName}, LastName: {user.LastName}, RoleId: {user.RoleId}, IsActive: {user.IsActive}, ProjectId: {user.ProjectId}";
 
         // Update fields if provided
         if (!string.IsNullOrEmpty(request.Email))
@@ -195,9 +200,35 @@ public class UserService : IUserService
             user.IsActive = request.IsActive.Value;
         }
 
+        // Update project and location fields
+        if (request.ProjectId.HasValue)
+        {
+            user.ProjectId = request.ProjectId.Value;
+        }
+
+        if (request.RestrictedRegion != null)
+        {
+            user.RestrictedRegion = string.IsNullOrWhiteSpace(request.RestrictedRegion) ? null : request.RestrictedRegion;
+        }
+
+        if (request.RestrictedState != null)
+        {
+            user.RestrictedState = string.IsNullOrWhiteSpace(request.RestrictedState) ? null : request.RestrictedState;
+        }
+
+        if (request.RestrictedPlaza != null)
+        {
+            user.RestrictedPlaza = string.IsNullOrWhiteSpace(request.RestrictedPlaza) ? null : request.RestrictedPlaza;
+        }
+
+        if (request.RestrictedOffice != null)
+        {
+            user.RestrictedOffice = string.IsNullOrWhiteSpace(request.RestrictedOffice) ? null : request.RestrictedOffice;
+        }
+
         var updatedUser = await _userRepository.UpdateAsync(user);
         
-        var newValues = $"Email: {user.Email}, FirstName: {user.FirstName}, LastName: {user.LastName}, RoleId: {user.RoleId}, IsActive: {user.IsActive}";
+        var newValues = $"Email: {user.Email}, FirstName: {user.FirstName}, LastName: {user.LastName}, RoleId: {user.RoleId}, IsActive: {user.IsActive}, ProjectId: {user.ProjectId}";
         await _auditService.LogAsync("USER_UPDATED", "User", user.Id.ToString(), user.Id, user.Username, oldValues, newValues);
         
         // Reload user with Role navigation property

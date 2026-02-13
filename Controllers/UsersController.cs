@@ -2,20 +2,31 @@ using Microsoft.AspNetCore.Mvc;
 using ITAMS.Domain.Entities;
 using ITAMS.Domain.Interfaces;
 using ITAMS.Models;
+using ITAMS.Services;
+using ITAMS.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ITAMS.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class UsersController : ControllerBase
+public class UsersController : BaseController
 {
     private readonly IUserService _userService;
     private readonly IAuditService _auditService;
+    private readonly IAccessControlService _accessControlService;
+    private readonly ITAMSDbContext _context;
 
-    public UsersController(IUserService userService, IAuditService auditService)
+    public UsersController(
+        IUserService userService, 
+        IAuditService auditService,
+        IAccessControlService accessControlService,
+        ITAMSDbContext context)
     {
         _userService = userService;
         _auditService = auditService;
+        _accessControlService = accessControlService;
+        _context = context;
     }
 
     /// <summary>
@@ -457,6 +468,97 @@ public class UsersController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Get current user's assigned project
+    /// </summary>
+    [HttpGet("my-project")]
+    public async Task<ActionResult<ApiResponse<object>>> GetMyProject()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "User not authenticated"
+                });
+            }
+
+            var user = await _context.Users
+                .Include(u => u.Project)
+                    .ThenInclude(p => p.Locations)
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId.Value);
+
+            if (user == null)
+            {
+                return NotFound(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "User not found"
+                });
+            }
+
+            if (user.Project == null)
+            {
+                return NotFound(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "No project assigned to user"
+                });
+            }
+
+            // Apply location filtering
+            var locations = user.Project.Locations.AsQueryable();
+            var filteredLocations = await _accessControlService.ApplyLocationFilter(locations, userId.Value);
+
+            var projectData = new
+            {
+                id = user.Project.Id,
+                projectId = user.Project.ProjectId,
+                name = user.Project.Name,
+                preferredName = user.Project.PreferredName,
+                spvName = user.Project.SpvName,
+                code = user.Project.Code,
+                description = user.Project.Description,
+                states = user.Project.States,
+                isActive = user.Project.IsActive,
+                createdAt = user.Project.CreatedAt,
+                locationCount = filteredLocations.Count(),
+                userRole = user.Role.Name,
+                accessLevel = new
+                {
+                    region = user.RestrictedRegion,
+                    state = user.RestrictedState,
+                    plaza = user.RestrictedPlaza,
+                    office = user.RestrictedOffice,
+                    level = !string.IsNullOrEmpty(user.RestrictedOffice) ? "Office" :
+                           !string.IsNullOrEmpty(user.RestrictedPlaza) ? "Plaza" :
+                           !string.IsNullOrEmpty(user.RestrictedState) ? "State" :
+                           !string.IsNullOrEmpty(user.RestrictedRegion) ? "Region" : "Full Project Access"
+                }
+            };
+
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Data = projectData,
+                Message = "Project retrieved successfully"
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<object>
+            {
+                Success = false,
+                Message = "An error occurred while retrieving project",
+                Error = ex.Message
+            });
+        }
+    }
+
     private static UserDto MapToUserDto(User user)
     {
         return new UserDto
@@ -472,8 +574,14 @@ public class UsersController : ControllerBase
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt,
             LastLoginAt = user.LastLoginAt,
+            LastActivityAt = user.LastActivityAt,
             MustChangePassword = user.MustChangePassword,
-            IsLocked = user.LockedUntil.HasValue && user.LockedUntil > DateTime.UtcNow
+            IsLocked = user.LockedUntil.HasValue && user.LockedUntil > DateTime.UtcNow,
+            ProjectId = user.ProjectId,
+            RestrictedRegion = user.RestrictedRegion,
+            RestrictedState = user.RestrictedState,
+            RestrictedPlaza = user.RestrictedPlaza,
+            RestrictedOffice = user.RestrictedOffice
         };
     }
 }

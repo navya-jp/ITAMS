@@ -13,6 +13,7 @@ import { AuthService } from '../services/auth.service';
 export class Users implements OnInit {
   users: User[] = [];
   roles: Role[] = [];
+  projects: any[] = []; // List of projects for assignment
   loading = false;
   error = '';
   success = '';
@@ -22,6 +23,8 @@ export class Users implements OnInit {
   showCreateModal = false;
   showEditModal = false;
   selectedUser: User | null = null;
+  showLocationRestrictions = false;
+  showEditLocationRestrictions = false;
 
   // Form data
   createForm: CreateUser = {
@@ -31,7 +34,12 @@ export class Users implements OnInit {
     lastName: '',
     roleId: 0,
     password: '',
-    mustChangePassword: true
+    mustChangePassword: true,
+    projectId: undefined,
+    restrictedRegion: '',
+    restrictedState: '',
+    restrictedPlaza: '',
+    restrictedOffice: ''
   };
 
   editForm: UpdateUser = {
@@ -39,7 +47,12 @@ export class Users implements OnInit {
     firstName: '',
     lastName: '',
     roleId: 0,
-    isActive: true
+    isActive: true,
+    projectId: undefined,
+    restrictedRegion: '',
+    restrictedState: '',
+    restrictedPlaza: '',
+    restrictedOffice: ''
   };
 
   // Password validation
@@ -70,6 +83,18 @@ export class Users implements OnInit {
     
     this.loadUsers();
     this.loadRoles();
+    this.loadProjects();
+  }
+
+  loadProjects() {
+    this.api.getProjects().subscribe({
+      next: (projects) => {
+        this.projects = projects;
+      },
+      error: (error) => {
+        console.error('Error loading projects:', error);
+      }
+    });
   }
 
   loadUsers() {
@@ -110,7 +135,12 @@ export class Users implements OnInit {
       lastName: '',
       roleId: 0,
       password: '',
-      mustChangePassword: true
+      mustChangePassword: true,
+      projectId: undefined,
+      restrictedRegion: '',
+      restrictedState: '',
+      restrictedPlaza: '',
+      restrictedOffice: ''
     };
     this.resetPasswordRequirements();
     this.resetUsernameValidation();
@@ -130,8 +160,22 @@ export class Users implements OnInit {
       firstName: user.firstName,
       lastName: user.lastName,
       roleId: user.roleId,
-      isActive: user.isActive
+      isActive: user.isActive,
+      projectId: user.projectId || undefined,
+      restrictedRegion: user.restrictedRegion || '',
+      restrictedState: user.restrictedState || '',
+      restrictedPlaza: user.restrictedPlaza || '',
+      restrictedOffice: user.restrictedOffice || ''
     };
+    
+    // Auto-expand location restrictions if any are set
+    this.showEditLocationRestrictions = !!(
+      this.editForm.restrictedRegion || 
+      this.editForm.restrictedState || 
+      this.editForm.restrictedPlaza || 
+      this.editForm.restrictedOffice
+    );
+    
     this.showEditModal = true;
     this.error = '';
     this.success = '';
@@ -141,8 +185,18 @@ export class Users implements OnInit {
     this.showCreateModal = false;
     this.showEditModal = false;
     this.selectedUser = null;
+    this.showLocationRestrictions = false;
+    this.showEditLocationRestrictions = false;
     this.error = '';
     this.success = '';
+  }
+
+  toggleLocationRestrictions() {
+    this.showLocationRestrictions = !this.showLocationRestrictions;
+  }
+
+  toggleEditLocationRestrictions() {
+    this.showEditLocationRestrictions = !this.showEditLocationRestrictions;
   }
 
   // Generate username from name (for button click)

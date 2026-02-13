@@ -32,6 +32,13 @@ public class CreateUserRequest
     public int? RoleId { get; set; } // New role system
     public string Password { get; set; } = string.Empty;
     public bool MustChangePassword { get; set; } = true;
+    
+    // Project and Location Access Control
+    public int? ProjectId { get; set; }
+    public string? RestrictedRegion { get; set; }
+    public string? RestrictedState { get; set; }
+    public string? RestrictedPlaza { get; set; }
+    public string? RestrictedOffice { get; set; }
 }
 
 public class UpdateUserRequest
@@ -42,4 +49,11 @@ public class UpdateUserRequest
     public UserRole? Role { get; set; } // For backward compatibility
     public int? RoleId { get; set; } // New role system
     public bool? IsActive { get; set; }
+    
+    // Project and Location Access Control
+    public int? ProjectId { get; set; }
+    public string? RestrictedRegion { get; set; }
+    public string? RestrictedState { get; set; }
+    public string? RestrictedPlaza { get; set; }
+    public string? RestrictedOffice { get; set; }
 }

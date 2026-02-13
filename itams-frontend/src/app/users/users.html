@@ -184,6 +184,57 @@
             </div>
           </div>
 
+          <!-- Row 4: Project Assignment -->
+          <div class="row mb-3">
+            <div class="col-12">
+              <label class="form-label">Project Assignment *</label>
+              <select class="form-select form-select-sm" [(ngModel)]="createForm.projectId" name="projectId" required>
+                <option [value]="undefined">Select project</option>
+                <option *ngFor="let project of projects" [value]="project.id">
+                  {{ project.code }} - {{ project.name }}
+                </option>
+              </select>
+              <div class="form-text">Every user must be assigned to a project</div>
+            </div>
+          </div>
+
+          <!-- Location Restrictions (Optional) -->
+          <div class="location-restrictions mb-3">
+            <div class="d-flex align-items-center mb-2" (click)="toggleLocationRestrictions()" style="cursor: pointer;">
+              <i class="fas me-2" [class.fa-chevron-down]="showLocationRestrictions" [class.fa-chevron-right]="!showLocationRestrictions"></i>
+              <label class="form-label mb-0">Location Restrictions (Optional)</label>
+            </div>
+            <div *ngIf="showLocationRestrictions" class="location-fields ps-3">
+              <div class="row mb-2">
+                <div class="col-6">
+                  <label class="form-label form-label-sm">Region</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.restrictedRegion" 
+                         name="restrictedRegion" placeholder="e.g., North">
+                </div>
+                <div class="col-6">
+                  <label class="form-label form-label-sm">State</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.restrictedState" 
+                         name="restrictedState" placeholder="e.g., Haryana">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-6">
+                  <label class="form-label form-label-sm">Plaza</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.restrictedPlaza" 
+                         name="restrictedPlaza" placeholder="e.g., Plaza 1">
+                </div>
+                <div class="col-6">
+                  <label class="form-label form-label-sm">Office</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.restrictedOffice" 
+                         name="restrictedOffice" placeholder="e.g., Main Office">
+                </div>
+              </div>
+              <div class="form-text mt-2">
+                <small>Leave empty for full access within project. Hierarchy: Office → Plaza → State → Region</small>
+              </div>
+            </div>
+          </div>
+
           <!-- Checkbox row -->
           <div class="row">
             <div class="col-12">
@@ -250,6 +301,54 @@
                 {{ role.name }} - {{ role.description }}
               </option>
             </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Project Assignment *</label>
+            <select class="form-select" [(ngModel)]="editForm.projectId" name="projectId" required>
+              <option [value]="undefined">Select project</option>
+              <option *ngFor="let project of projects" [value]="project.id">
+                {{ project.code }} - {{ project.name }}
+              </option>
+            </select>
+            <div class="form-text">Every user must be assigned to a project</div>
+          </div>
+
+          <!-- Location Restrictions (Optional) -->
+          <div class="location-restrictions mb-3">
+            <div class="d-flex align-items-center mb-2" (click)="toggleEditLocationRestrictions()" style="cursor: pointer;">
+              <i class="fas me-2" [class.fa-chevron-down]="showEditLocationRestrictions" [class.fa-chevron-right]="!showEditLocationRestrictions"></i>
+              <label class="form-label mb-0">Location Restrictions (Optional)</label>
+            </div>
+            <div *ngIf="showEditLocationRestrictions" class="location-fields ps-3">
+              <div class="row mb-2">
+                <div class="col-6">
+                  <label class="form-label form-label-sm">Region</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="editForm.restrictedRegion" 
+                         name="restrictedRegion" placeholder="e.g., North">
+                </div>
+                <div class="col-6">
+                  <label class="form-label form-label-sm">State</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="editForm.restrictedState" 
+                         name="restrictedState" placeholder="e.g., Haryana">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-6">
+                  <label class="form-label form-label-sm">Plaza</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="editForm.restrictedPlaza" 
+                         name="restrictedPlaza" placeholder="e.g., Plaza 1">
+                </div>
+                <div class="col-6">
+                  <label class="form-label form-label-sm">Office</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="editForm.restrictedOffice" 
+                         name="restrictedOffice" placeholder="e.g., Main Office">
+                </div>
+              </div>
+              <div class="form-text mt-2">
+                <small>Leave empty for full access within project. Hierarchy: Office → Plaza → State → Region</small>
+              </div>
+            </div>
           </div>
 
           <div class="mb-3">

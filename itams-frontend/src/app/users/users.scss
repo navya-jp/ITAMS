@@ -164,3 +164,34 @@
     box-shadow: 0 0 0 1px #10b981, 0 0 8px rgba(16, 185, 129, 0.4);
   }
 }
+
+// Location restrictions styling
+.location-restrictions {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  
+  .form-label {
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    user-select: none;
+    
+    &.form-label-sm {
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+    }
+  }
+  
+  .location-fields {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  i {
+    color: #6b7280;
+    transition: transform 0.2s;
+  }
+}

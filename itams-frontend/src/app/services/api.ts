@@ -29,8 +29,14 @@ export interface User {
   isActive: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  lastActivityAt?: string;
   mustChangePassword: boolean;
   isLocked: boolean;
+  projectId?: number;
+  restrictedRegion?: string;
+  restrictedState?: string;
+  restrictedPlaza?: string;
+  restrictedOffice?: string;
 }
 
 export interface CreateUser {
@@ -41,6 +47,11 @@ export interface CreateUser {
   roleId: number;    // required, > 0
   password: string;  // 8+ chars, must have uppercase, lowercase, digit, special char (@$!%*?&)
   mustChangePassword: boolean;
+  projectId?: number; // Project assignment
+  restrictedRegion?: string; // Location restriction - Region level
+  restrictedState?: string;  // Location restriction - State level
+  restrictedPlaza?: string;  // Location restriction - Plaza level
+  restrictedOffice?: string; // Location restriction - Office level
 }
 
 export interface UpdateUser {
@@ -49,6 +60,11 @@ export interface UpdateUser {
   lastName?: string;
   roleId?: number;
   isActive?: boolean;
+  projectId?: number; // Project assignment
+  restrictedRegion?: string; // Location restriction - Region level
+  restrictedState?: string;  // Location restriction - State level
+  restrictedPlaza?: string;  // Location restriction - Plaza level
+  restrictedOffice?: string; // Location restriction - Office level
 }
 
 export interface ApiResponse<T> {
@@ -313,5 +329,10 @@ export class Api {
   // Login Audit
   getLoginAudits(pageSize: number = 100): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/superadmin/login-audit?pageSize=${pageSize}`);
+  }
+
+  // User Projects
+  getMyProject(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/users/my-project`);
   }
 }

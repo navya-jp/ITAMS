@@ -106,6 +106,13 @@ app.UseCors("AllowAll");
 
 // Add authentication and authorization
 app.UseAuthentication();
+
+// Add activity tracking middleware (must be after authentication)
+app.UseMiddleware<ITAMS.Middleware.ActivityTrackingMiddleware>();
+
+// Add project access control middleware (must be after authentication)
+app.UseMiddleware<ITAMS.Middleware.ProjectAccessControlMiddleware>();
+
 app.UseAuthorization();
 
 // Add default route that redirects to Angular frontend
