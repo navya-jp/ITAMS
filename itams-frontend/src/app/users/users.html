@@ -42,7 +42,13 @@
               <tbody>
                 <tr *ngFor="let user of users">
                   <td>
-                    <strong>{{ user.username }}</strong>
+                    <div class="d-flex align-items-center">
+                      <div class="online-status-indicator me-2" 
+                           [class.online]="isUserOnline(user)"
+                           [title]="isUserOnline(user) ? 'Online' : 'Offline'">
+                      </div>
+                      <strong>{{ user.username }}</strong>
+                    </div>
                   </td>
                   <td>{{ user.firstName }} {{ user.lastName }}</td>
                   <td>{{ user.email }}</td>

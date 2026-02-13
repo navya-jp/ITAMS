@@ -135,3 +135,32 @@
 .tab-pane {
   min-height: 300px;
 }
+
+// Online status indicator
+.online-status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #d1d5db;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px #e5e7eb;
+  flex-shrink: 0;
+  
+  &.online {
+    background-color: #10b981;
+    box-shadow: 0 0 0 1px #10b981, 0 0 8px rgba(16, 185, 129, 0.4);
+    animation: pulse-online 2s infinite;
+  }
+}
+
+@keyframes pulse-online {
+  0% {
+    box-shadow: 0 0 0 1px #10b981, 0 0 8px rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 1px #10b981, 0 0 12px rgba(16, 185, 129, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 1px #10b981, 0 0 8px rgba(16, 185, 129, 0.4);
+  }
+}

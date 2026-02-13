@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Api, User, CreateUser, UpdateUser, Role, ApiResponse } from '../services/api';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-users',
@@ -15,6 +16,7 @@ export class Users implements OnInit {
   loading = false;
   error = '';
   success = '';
+  currentUsername = '';
 
   // Modal states
   showCreateModal = false;
@@ -56,9 +58,16 @@ export class Users implements OnInit {
   private usernameCheckTimeout: any;
   private userHasEditedUsername = false; // Track if user manually edited username
 
-  constructor(private api: Api) {}
+  constructor(private api: Api, private authService: AuthService) {}
 
   ngOnInit() {
+    // Get current user
+    this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        this.currentUsername = user.username;
+      }
+    });
+    
     this.loadUsers();
     this.loadRoles();
   }
@@ -477,5 +486,24 @@ export class Users implements OnInit {
   clearMessages() {
     this.error = '';
     this.success = '';
+  }
+
+  isUserOnline(user: User): boolean {
+    // Check if this is the currently logged-in user
+    if (this.currentUsername && this.currentUsername === user.username) {
+      return true;
+    }
+    
+    if (!user.lastLoginAt) {
+      return false;
+    }
+    
+    // Consider a user online if their last login was within the last 30 minutes
+    const lastLogin = new Date(user.lastLoginAt).getTime();
+    const now = Date.now();
+    const thirtyMinutes = 30 * 60 * 1000;
+    const timeSinceLogin = now - lastLogin;
+    
+    return timeSinceLogin < thirtyMinutes;
   }
 }
