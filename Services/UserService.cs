@@ -351,7 +351,6 @@ public class UserService : IUserService
         var existingUser = await _userRepository.GetByUsernameAsync(username);
         return existingUser == null;
     }
-}
 
     public async Task UpdateSessionAsync(int userId, string sessionId, DateTime sessionStartedAt)
     {
@@ -382,3 +381,4 @@ public class UserService : IUserService
         await _userRepository.UpdateAsync(user);
         await _auditService.LogAsync("SESSION_ENDED", "User", user.Id.ToString(), user.Id, user.Username);
     }
+}

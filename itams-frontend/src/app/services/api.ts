@@ -309,4 +309,9 @@ export class Api {
   deleteLocation(id: number): Observable<any> {
     return this.http.delete<any>(`${this.baseUrl}/superadmin/locations/${id}`);
   }
+
+  // Login Audit
+  getLoginAudits(pageSize: number = 100): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/superadmin/login-audit?pageSize=${pageSize}`);
+  }
 }

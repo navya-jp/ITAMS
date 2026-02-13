@@ -204,12 +204,22 @@ export class AuthService {
       clearInterval(this.activityTimer);
     }
 
-    // Notify backend about logout
+    // Notify backend about logout with userId
+    const currentUser = this.currentUser;
     const token = localStorage.getItem('auth_token');
-    if (token) {
-      this.http.post(`${this.baseUrl}/logout`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).subscribe();
+    if (token && currentUser) {
+      this.http.post(`${this.baseUrl}/logout`, 
+        { userId: currentUser.id }, 
+        {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+          }
+        }
+      ).subscribe({
+        next: () => console.log('Logout successful'),
+        error: (err) => console.error('Logout error:', err)
+      });
     }
 
     // Clear local storage

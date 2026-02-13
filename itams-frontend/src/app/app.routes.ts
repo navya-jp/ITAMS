@@ -8,6 +8,7 @@ import { Login } from './login/login';
 import { ChangePassword } from './change-password/change-password';
 import { UserDashboard } from './user-dashboard/user-dashboard';
 import { UserProjects } from './user-projects/user-projects';
+import { AuditTrail } from './audit-trail/audit-trail';
 import { AuthGuard, AdminGuard, UserGuard, LoginGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -25,7 +26,7 @@ export const routes: Routes = [
   { path: 'admin/user-permissions', component: UserPermissions, canActivate: [AdminGuard] },
   { path: 'admin/projects', component: Projects, canActivate: [AdminGuard] },
   { path: 'admin/assets', component: Dashboard, canActivate: [AdminGuard] }, // Placeholder
-  { path: 'admin/audit', component: Dashboard, canActivate: [AdminGuard] }, // Placeholder
+  { path: 'admin/audit', component: AuditTrail, canActivate: [AdminGuard] },
   
   // User routes (Regular Users)
   { path: 'user/dashboard', component: UserDashboard, canActivate: [UserGuard] },

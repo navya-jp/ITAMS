@@ -4,6 +4,7 @@ using ITAMS.Domain.Interfaces;
 using ITAMS.Data;
 using ITAMS.Models;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace ITAMS.Controllers;
 
@@ -929,5 +930,57 @@ public class SuperAdminController : ControllerBase
         }
     }
 
+
+    [HttpGet("login-audit")]
+    public async Task<ActionResult<IEnumerable<LoginAuditDto>>> GetLoginAudit(
+        [FromQuery] int? userId = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] int pageSize = 100)
+    {
+        try
+        {
+            var query = _context.LoginAudits.AsQueryable();
+
+            if (userId.HasValue)
+            {
+                query = query.Where(la => la.UserId == userId.Value);
+            }
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(la => la.LoginTime >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(la => la.LoginTime <= toDate.Value);
+            }
+
+            var loginAudits = await query
+                .OrderByDescending(la => la.LoginTime)
+                .Take(pageSize)
+                .Select(la => new LoginAuditDto
+                {
+                    Id = la.Id,
+                    UserId = la.UserId,
+                    Username = la.Username,
+                    LoginTime = la.LoginTime,
+                    LogoutTime = la.LogoutTime,
+                    IpAddress = la.IpAddress,
+                    BrowserType = la.BrowserType,
+                    OperatingSystem = la.OperatingSystem,
+                    SessionId = la.SessionId,
+                    Status = la.Status
+                })
+                .ToListAsync();
+
+            return Ok(loginAudits);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving login audit", error = ex.Message });
+        }
+    }
     #endregion
 }

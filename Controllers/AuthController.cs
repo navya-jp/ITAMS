@@ -5,6 +5,9 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using ITAMS.Data;
+using ITAMS.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace ITAMS.Controllers
 {
@@ -15,15 +18,18 @@ namespace ITAMS.Controllers
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
+        private readonly ITAMSDbContext _context;
 
         public AuthController(
             IUserService userService,
             IConfiguration configuration,
-            ILogger<AuthController> logger)
+            ILogger<AuthController> logger,
+            ITAMSDbContext context)
         {
             _userService = userService;
             _configuration = configuration;
             _logger = logger;
+            _context = context;
         }
 
         [HttpPost("login")]
@@ -92,9 +98,30 @@ namespace ITAMS.Controllers
                 var sessionId = Guid.NewGuid().ToString();
                 await _userService.UpdateSessionAsync(authenticatedUser.Id, sessionId, DateTime.UtcNow);
 
+                // Capture login audit details
+                var ipAddress = GetClientIpAddress();
+                var userAgent = Request.Headers["User-Agent"].ToString();
+                var browserType = ExtractBrowserType(userAgent);
+                var operatingSystem = ExtractOperatingSystem(userAgent);
+
+                var loginAudit = new LoginAudit
+                {
+                    UserId = authenticatedUser.Id,
+                    Username = authenticatedUser.Username,
+                    LoginTime = DateTime.UtcNow,
+                    IpAddress = ipAddress,
+                    BrowserType = browserType,
+                    OperatingSystem = operatingSystem,
+                    SessionId = sessionId,
+                    Status = "ACTIVE"
+                };
+
+                _context.LoginAudits.Add(loginAudit);
+                await _context.SaveChangesAsync();
+
                 // Log the successful authentication
-                _logger.LogInformation("Login successful for user: {Username}, Role: {Role}, FirstLogin: {IsFirstLogin}, SessionId: {SessionId}", 
-                    authenticatedUser.Username, authenticatedUser.Role?.Name, isFirstLogin, sessionId);
+                _logger.LogInformation("Login successful for user: {Username}, Role: {Role}, FirstLogin: {IsFirstLogin}, SessionId: {SessionId}, IP: {IpAddress}", 
+                    authenticatedUser.Username, authenticatedUser.Role?.Name, isFirstLogin, sessionId, ipAddress);
 
                 // Generate JWT token
                 var token = GenerateJwtToken(authenticatedUser, sessionId);
@@ -142,6 +169,24 @@ namespace ITAMS.Controllers
             {
                 if (request != null && request.UserId > 0)
                 {
+                    // Get user to find active session
+                    var user = await _userService.GetUserByIdAsync(request.UserId);
+                    if (user != null && !string.IsNullOrEmpty(user.ActiveSessionId))
+                    {
+                        // Update login audit record
+                        var loginAudit = _context.LoginAudits
+                            .Where(la => la.SessionId == user.ActiveSessionId && la.Status == "ACTIVE")
+                            .OrderByDescending(la => la.LoginTime)
+                            .FirstOrDefault();
+
+                        if (loginAudit != null)
+                        {
+                            loginAudit.LogoutTime = DateTime.UtcNow;
+                            loginAudit.Status = "LOGGED_OUT";
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+
                     // Clear the user's session
                     await _userService.ClearSessionAsync(request.UserId);
                     _logger.LogInformation("User {UserId} logged out successfully", request.UserId);
@@ -281,6 +326,96 @@ namespace ITAMS.Controllers
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        private string ExtractBrowserType(string userAgent)
+        {
+            if (string.IsNullOrEmpty(userAgent)) return "Unknown";
+
+            if (userAgent.Contains("Edg/")) return "Microsoft Edge";
+            if (userAgent.Contains("Chrome/") && !userAgent.Contains("Edg/")) return "Google Chrome";
+            if (userAgent.Contains("Firefox/")) return "Mozilla Firefox";
+            if (userAgent.Contains("Safari/") && !userAgent.Contains("Chrome/")) return "Safari";
+            if (userAgent.Contains("Opera/") || userAgent.Contains("OPR/")) return "Opera";
+            if (userAgent.Contains("MSIE") || userAgent.Contains("Trident/")) return "Internet Explorer";
+
+            return "Other";
+        }
+
+        private string ExtractOperatingSystem(string userAgent)
+        {
+            if (string.IsNullOrEmpty(userAgent)) return "Unknown";
+
+            if (userAgent.Contains("Windows NT 10.0")) return "Windows 10/11";
+            if (userAgent.Contains("Windows NT 6.3")) return "Windows 8.1";
+            if (userAgent.Contains("Windows NT 6.2")) return "Windows 8";
+            if (userAgent.Contains("Windows NT 6.1")) return "Windows 7";
+            if (userAgent.Contains("Windows")) return "Windows";
+            
+            if (userAgent.Contains("Mac OS X")) return "macOS";
+            if (userAgent.Contains("Linux")) return "Linux";
+            if (userAgent.Contains("Android")) return "Android";
+            if (userAgent.Contains("iOS") || userAgent.Contains("iPhone") || userAgent.Contains("iPad")) return "iOS";
+
+            return "Other";
+        }
+
+        private string GetClientIpAddress()
+        {
+            // Check for forwarded IP (when behind proxy/load balancer)
+            var forwardedFor = Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(forwardedFor))
+            {
+                var ips = forwardedFor.Split(',');
+                if (ips.Length > 0)
+                {
+                    return ips[0].Trim();
+                }
+            }
+
+            // Check for real IP header
+            var realIp = Request.Headers["X-Real-IP"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(realIp))
+            {
+                return realIp;
+            }
+
+            // Get remote IP address
+            var remoteIp = HttpContext.Connection.RemoteIpAddress;
+            if (remoteIp != null)
+            {
+                // If it's localhost, get the actual network IP of the server
+                if (remoteIp.ToString() == "::1" || remoteIp.ToString() == "127.0.0.1")
+                {
+                    try
+                    {
+                        var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+                        var localIp = host.AddressList
+                            .FirstOrDefault(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+                        
+                        if (localIp != null)
+                        {
+                            return $"{localIp} (localhost)";
+                        }
+                    }
+                    catch
+                    {
+                        // If we can't get the network IP, fall back to localhost
+                    }
+                    
+                    return "127.0.0.1 (localhost)";
+                }
+                
+                // If it's IPv4-mapped IPv6, extract the IPv4 part
+                if (remoteIp.IsIPv4MappedToIPv6)
+                {
+                    return remoteIp.MapToIPv4().ToString();
+                }
+                
+                return remoteIp.ToString();
+            }
+
+            return "Unknown";
         }
     }
 

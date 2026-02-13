@@ -20,6 +20,7 @@ public class ITAMSDbContext : DbContext
     public DbSet<UserProjectPermission> UserProjectPermissions { get; set; }
     public DbSet<Asset> Assets { get; set; }
     public DbSet<AuditEntry> AuditEntries { get; set; }
+    public DbSet<LoginAudit> LoginAudits { get; set; }
 
     // RBAC entities - Temporarily disabled due to naming conflicts
     // public DbSet<RbacRole> RbacRoles { get; set; }
@@ -262,6 +263,26 @@ public class ITAMSDbContext : DbContext
                 
             entity.HasOne(e => e.User)
                 .WithMany(u => u.AuditEntries)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // LoginAudit entity configuration
+        modelBuilder.Entity<LoginAudit>(entity =>
+        {
+            entity.ToTable("LoginAudit"); // Map to singular table name
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Username)
+                .IsRequired()
+                .HasMaxLength(100);
+                
+            entity.Property(e => e.SessionId)
+                .IsRequired()
+                .HasMaxLength(500);
+                
+            entity.HasOne(e => e.User)
+                .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
