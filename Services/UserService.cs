@@ -121,24 +121,35 @@ public class UserService : IUserService
             throw new InvalidOperationException("Invalid role specified");
         }
 
-        // Validate ProjectId is provided (required field)
-        if (!request.ProjectId.HasValue || request.ProjectId.Value <= 0)
+        // Get the role to fetch its RoleId alternate key
+        var role = await _roleRepository.GetByIdAsync(roleId);
+        if (role == null)
         {
-            throw new InvalidOperationException("Project assignment is required. Please select a project.");
+            throw new InvalidOperationException("Role not found");
         }
+
+        // Use projectId if provided, otherwise default to 1 (first project)
+        int finalProjectId = request.ProjectId ?? 1;
+
+        // Generate UserId (alternate key) - get the next available number
+        var lastUser = await _userRepository.GetAllAsync();
+        var maxId = lastUser.Any() ? lastUser.Max(u => u.Id) : 0;
+        var userId = $"USR{(maxId + 1):D5}"; // Format: USR00001, USR00002, etc.
 
         var user = new User
         {
+            UserId = userId,
             Username = request.Username,
             Email = request.Email,
             FirstName = request.FirstName,
             LastName = request.LastName,
             RoleId = roleId,
+            RoleIdRef = role.RoleId, // Set the alternate key reference
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             MustChangePassword = request.MustChangePassword,
             CreatedAt = DateTime.UtcNow,
             IsActive = true,
-            ProjectId = request.ProjectId.Value,
+            ProjectId = finalProjectId,
             RestrictedRegion = request.RestrictedRegion,
             RestrictedState = request.RestrictedState,
             RestrictedPlaza = request.RestrictedPlaza,

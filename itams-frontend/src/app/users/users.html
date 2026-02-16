@@ -193,7 +193,7 @@
             <div class="col-12">
               <label class="form-label">Project Assignment *</label>
               <select class="form-select form-select-sm" [(ngModel)]="createForm.projectId" name="projectId" required>
-                <option [value]="undefined">Select project</option>
+                <option [value]="0">Select project</option>
                 <option *ngFor="let project of projects" [value]="project.id">
                   {{ project.code }} - {{ project.name }}
                 </option>
@@ -310,7 +310,7 @@
           <div class="mb-3">
             <label class="form-label">Project Assignment *</label>
             <select class="form-select" [(ngModel)]="editForm.projectId" name="projectId" required>
-              <option [value]="undefined">Select project</option>
+              <option [value]="0">Select project</option>
               <option *ngFor="let project of projects" [value]="project.id">
                 {{ project.code }} - {{ project.name }}
               </option>

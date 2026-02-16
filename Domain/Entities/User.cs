@@ -31,6 +31,9 @@ public class User
     
     public int RoleId { get; set; }
     
+    [StringLength(50)]
+    public string? RoleIdRef { get; set; } // Alternate key reference to Roles table
+    
     public bool IsActive { get; set; } = true;
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
