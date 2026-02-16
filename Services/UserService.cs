@@ -121,6 +121,12 @@ public class UserService : IUserService
             throw new InvalidOperationException("Invalid role specified");
         }
 
+        // Validate ProjectId is provided (required field)
+        if (!request.ProjectId.HasValue || request.ProjectId.Value <= 0)
+        {
+            throw new InvalidOperationException("Project assignment is required. Please select a project.");
+        }
+
         var user = new User
         {
             Username = request.Username,
@@ -132,7 +138,7 @@ public class UserService : IUserService
             MustChangePassword = request.MustChangePassword,
             CreatedAt = DateTime.UtcNow,
             IsActive = true,
-            ProjectId = request.ProjectId ?? 0, // Default to 0 if not provided (will need validation)
+            ProjectId = request.ProjectId.Value,
             RestrictedRegion = request.RestrictedRegion,
             RestrictedState = request.RestrictedState,
             RestrictedPlaza = request.RestrictedPlaza,

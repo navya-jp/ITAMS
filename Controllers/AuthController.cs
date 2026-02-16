@@ -65,16 +65,25 @@ namespace ITAMS.Controllers
                 // Check if user already has an active session
                 if (!string.IsNullOrEmpty(user.ActiveSessionId) && user.SessionStartedAt.HasValue)
                 {
-                    // Check if session is still valid (within 30 minutes)
-                    var sessionAge = DateTime.UtcNow - user.SessionStartedAt.Value;
-                    if (sessionAge.TotalMinutes < 30)
+                    // Check if session is still valid based on last activity (within 5 minutes)
+                    var lastActivity = user.LastActivityAt ?? user.SessionStartedAt.Value;
+                    var timeSinceActivity = DateTime.UtcNow - lastActivity;
+                    
+                    if (timeSinceActivity.TotalMinutes < 5)
                     {
-                        _logger.LogWarning("User {Username} attempted login with active session", request.Username);
+                        _logger.LogWarning("User {Username} attempted login with active session (last activity: {LastActivity})", 
+                            request.Username, lastActivity);
                         return Unauthorized(new LoginResponse
                         {
                             Success = false,
                             Message = "This account is currently logged in from another location. Please logout from the other session first."
                         });
+                    }
+                    else
+                    {
+                        // Session expired due to inactivity, clear it
+                        _logger.LogInformation("Clearing expired session for user {Username}", request.Username);
+                        await _userService.ClearSessionAsync(user.Id);
                     }
                 }
 

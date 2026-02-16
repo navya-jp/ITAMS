@@ -195,3 +195,10 @@
     transition: transform 0.2s;
   }
 }
+
+// Disabled button styling
+.btn-group .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}

@@ -65,16 +65,20 @@
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
-                      <button class="btn btn-outline-primary" (click)="openEditModal(user)" title="Edit">
+                      <button class="btn btn-outline-primary" (click)="openEditModal(user)" 
+                              [disabled]="!user.isActive" title="Edit">
                         <i class="fas fa-edit"></i>
                       </button>
-                      <button *ngIf="!user.isLocked" class="btn btn-outline-warning" (click)="lockUser(user)" title="Lock">
+                      <button *ngIf="!user.isLocked" class="btn btn-outline-warning" (click)="lockUser(user)" 
+                              [disabled]="!user.isActive" title="Lock">
                         <i class="fas fa-lock"></i>
                       </button>
-                      <button *ngIf="user.isLocked" class="btn btn-outline-success" (click)="unlockUser(user)" title="Unlock">
+                      <button *ngIf="user.isLocked" class="btn btn-outline-success" (click)="unlockUser(user)" 
+                              [disabled]="!user.isActive" title="Unlock">
                         <i class="fas fa-unlock"></i>
                       </button>
-                      <button class="btn btn-outline-info" (click)="resetPassword(user)" title="Reset Password">
+                      <button class="btn btn-outline-info" (click)="resetPassword(user)" 
+                              [disabled]="!user.isActive" title="Reset Password">
                         <i class="fas fa-key"></i>
                       </button>
                       <button *ngIf="user.isActive" class="btn btn-outline-secondary" (click)="deactivateUser(user)" title="Deactivate">

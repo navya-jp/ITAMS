@@ -327,8 +327,15 @@ export class Users implements OnInit {
       return;
     }
     
-    // Convert roleId to number (HTML forms return strings)
+    // Validate project selection
+    if (!this.createForm.projectId || this.createForm.projectId === 0) {
+      this.error = 'Please select a project';
+      return;
+    }
+    
+    // Convert roleId and projectId to numbers (HTML forms return strings)
     this.createForm.roleId = Number(this.createForm.roleId);
+    this.createForm.projectId = Number(this.createForm.projectId);
     
     this.createUser();
   }

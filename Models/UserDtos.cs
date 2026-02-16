@@ -60,6 +60,8 @@ public class CreateUserDto
     public bool MustChangePassword { get; set; } = true;
     
     // Project and Location Access Control
+    [Required(ErrorMessage = "Project assignment is required")]
+    [Range(1, int.MaxValue, ErrorMessage = "Please select a valid project")]
     public int? ProjectId { get; set; }
     
     [StringLength(100)]
