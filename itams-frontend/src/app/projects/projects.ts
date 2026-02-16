@@ -669,8 +669,8 @@ export class Projects implements OnInit {
   }
 
   isPlazaTab3Valid(): boolean {
-    // Tab 3 (Internal Locations) is optional, always valid
-    return true;
+    // Tab 3 (Internal Locations) requires at least one location selected
+    return !!(this.locationForm.internalLocations && this.locationForm.internalLocations.length > 0);
   }
 
   canMoveToNextPlazaTab(): boolean {
@@ -716,6 +716,8 @@ export class Projects implements OnInit {
       if (!this.locationForm.chainageNumber) return 'Chainage number is required';
       if (!this.locationForm.latitude) return 'Latitude is required';
       if (!this.locationForm.longitude) return 'Longitude is required';
+      if (!this.locationForm.numberOfLanes || this.locationForm.numberOfLanes <= 0) return 'Number of lanes is required';
+      if (!this.locationForm.internalLocations || this.locationForm.internalLocations.length === 0) return 'At least one internal location is required';
     }
 
     return '';

@@ -18,10 +18,9 @@
 
 // Tab-based modal styling
 .modal-content {
-  &.h-75 {
-    height: 75vh !important;
-    max-height: 75vh;
-  }
+  // Removed fixed height to allow proper flex layout
+  display: flex;
+  flex-direction: column;
 }
 
 .nav-tabs {

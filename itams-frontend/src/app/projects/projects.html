@@ -389,15 +389,15 @@
 <!-- Add Location Modal - Multi-tab for Office/Plaza -->
 <div class="modal fade" [class.show]="showAddLocationModal" [style.display]="showAddLocationModal ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content h-75">
-      <div class="modal-header">
+    <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="flex-shrink: 0;">
         <h5 class="modal-title">Add Location</h5>
         <button type="button" class="btn-close" (click)="closeAddLocationModal()"></button>
       </div>
 
-      <div class="modal-body p-0 d-flex flex-column">
+      <div class="modal-body p-0 d-flex flex-column" style="flex: 1; min-height: 0; overflow: hidden;">
         <!-- Location Type Selection -->
-        <div class="p-3 border-bottom">
+        <div class="p-3 border-bottom" style="flex-shrink: 0;">
           <label class="form-label">Location Type *</label>
           <div class="btn-group w-100" role="group">
             <input type="radio" class="btn-check" name="locationType" id="office" value="office" [(ngModel)]="locationForm.type">
@@ -413,7 +413,7 @@
         </div>
 
         <!-- Office Form -->
-        <div *ngIf="locationForm.type === 'office'" class="flex-grow-1 p-3">
+        <div *ngIf="locationForm.type === 'office'" class="flex-grow-1 p-3" style="overflow-y: auto;">
           <h6 class="mb-3">Office Details</h6>
           <div class="row g-3">
             <div class="col-md-6">
@@ -450,9 +450,9 @@
         </div>
 
         <!-- Plaza Form with Tabs -->
-        <div *ngIf="locationForm.type === 'plaza'" class="flex-grow-1 d-flex flex-column">
+        <div *ngIf="locationForm.type === 'plaza'" class="d-flex flex-column" style="flex: 1; min-height: 0;">
           <!-- Plaza Sub-tabs -->
-          <ul class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
+          <ul class="nav nav-tabs px-3 pt-3 mb-0" role="tablist" style="flex-shrink: 0;">
             <li class="nav-item" role="presentation">
               <button class="nav-link" 
                       [class.active]="plazaTab === 1"
@@ -497,7 +497,7 @@
           </ul>
 
           <!-- Plaza Tab Content -->
-          <div class="tab-content flex-grow-1 p-3" style="overflow-y: auto;">
+          <div class="tab-content p-3" style="flex: 1; overflow-y: auto; min-height: 0;">
             <!-- Plaza Tab 1: Basic Details -->
             <div class="tab-pane fade" [class.show]="plazaTab === 1" [class.active]="plazaTab === 1">
               <div class="row g-3">
@@ -609,7 +609,8 @@
 
             <!-- Plaza Tab 3: Internal Locations -->
             <div class="tab-pane fade" [class.show]="plazaTab === 3" [class.active]="plazaTab === 3">
-              <label class="form-label">Internal Locations</label>
+              <label class="form-label">Internal Locations *</label>
+              <div class="form-text mb-3">Select at least one internal location</div>
               <div class="row g-2">
                 <div class="col-md-4" *ngFor="let location of internalLocationOptions">
                   <div class="form-check">
@@ -682,7 +683,7 @@
         </div>
       </div>
 
-      <div class="modal-footer">
+      <div class="modal-footer" style="flex-shrink: 0; border-top: 1px solid #dee2e6;">
         <button type="button" class="btn btn-secondary" (click)="closeAddLocationModal()">Cancel</button>
         
         <!-- Validation Message -->
