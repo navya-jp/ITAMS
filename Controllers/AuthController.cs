@@ -62,16 +62,22 @@ namespace ITAMS.Controllers
                     });
                 }
 
+                _logger.LogInformation("Login attempt for user: {Username}, ActiveSessionId: {SessionId}, LastActivity: {LastActivity}", 
+                    user.Username, user.ActiveSessionId, user.LastActivityAt);
+
                 // Check if user already has an active session
                 if (!string.IsNullOrEmpty(user.ActiveSessionId) && user.SessionStartedAt.HasValue)
                 {
-                    // Check if session is still valid based on last activity (within 5 minutes)
+                    // Check if session is still valid based on last activity (within 30 minutes)
                     var lastActivity = user.LastActivityAt ?? user.SessionStartedAt.Value;
                     var timeSinceActivity = DateTime.UtcNow - lastActivity;
                     
-                    if (timeSinceActivity.TotalMinutes < 5)
+                    _logger.LogInformation("Session check: User {Username}, Time since activity: {Minutes} minutes", 
+                        user.Username, timeSinceActivity.TotalMinutes);
+                    
+                    if (timeSinceActivity.TotalMinutes < 30)
                     {
-                        _logger.LogWarning("User {Username} attempted login with active session (last activity: {LastActivity})", 
+                        _logger.LogWarning("BLOCKING LOGIN: User {Username} attempted login with active session (last activity: {LastActivity})", 
                             request.Username, lastActivity);
                         return Unauthorized(new LoginResponse
                         {
