@@ -680,6 +680,28 @@ export class Projects implements OnInit {
     return true;
   }
 
+  canNavigateToPlazaTab(targetTab: number): boolean {
+    // Can always go back to tab 1
+    if (targetTab === 1) return true;
+    
+    // To go to tab 2, tab 1 must be valid
+    if (targetTab === 2) return this.isPlazaTab1Valid();
+    
+    // To go to tab 3, tabs 1 and 2 must be valid
+    if (targetTab === 3) return this.isPlazaTab1Valid() && this.isPlazaTab2Valid();
+    
+    // To go to tab 4 (review), all previous tabs must be valid
+    if (targetTab === 4) return this.isPlazaTab1Valid() && this.isPlazaTab2Valid() && this.isPlazaTab3Valid();
+    
+    return false;
+  }
+
+  navigateToPlazaTab(targetTab: number): void {
+    if (this.canNavigateToPlazaTab(targetTab)) {
+      this.plazaTab = targetTab;
+    }
+  }
+
   getLocationValidationMessage(): string {
     if (!this.locationForm.name) return 'Location name is required';
     if (!this.locationForm.type) return 'Location type is required';

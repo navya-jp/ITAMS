@@ -40,9 +40,16 @@
       }
     }
     
-    &.disabled {
+    &.disabled,
+    &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      pointer-events: none;
+      color: #adb5bd;
+      
+      i {
+        color: #adb5bd;
+      }
     }
     
     .fa-check {

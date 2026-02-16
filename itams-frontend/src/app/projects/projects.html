@@ -456,7 +456,7 @@
             <li class="nav-item" role="presentation">
               <button class="nav-link" 
                       [class.active]="plazaTab === 1"
-                      (click)="plazaTab = 1"
+                      (click)="navigateToPlazaTab(1)"
                       type="button">
                 <i class="fas fa-info-circle me-2"></i>Basic Details
               </button>
@@ -464,24 +464,33 @@
             <li class="nav-item" role="presentation">
               <button class="nav-link" 
                       [class.active]="plazaTab === 2"
-                      (click)="plazaTab = 2"
-                      type="button">
+                      [class.disabled]="!canNavigateToPlazaTab(2)"
+                      [disabled]="!canNavigateToPlazaTab(2)"
+                      (click)="navigateToPlazaTab(2)"
+                      type="button"
+                      [title]="!canNavigateToPlazaTab(2) ? 'Complete Basic Details first' : ''">
                 <i class="fas fa-road me-2"></i>Lane Config
               </button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link" 
                       [class.active]="plazaTab === 3"
-                      (click)="plazaTab = 3"
-                      type="button">
+                      [class.disabled]="!canNavigateToPlazaTab(3)"
+                      [disabled]="!canNavigateToPlazaTab(3)"
+                      (click)="navigateToPlazaTab(3)"
+                      type="button"
+                      [title]="!canNavigateToPlazaTab(3) ? 'Complete previous tabs first' : ''">
                 <i class="fas fa-map-marker-alt me-2"></i>Internal Locations
               </button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link" 
                       [class.active]="plazaTab === 4"
-                      (click)="plazaTab = 4"
-                      type="button">
+                      [class.disabled]="!canNavigateToPlazaTab(4)"
+                      [disabled]="!canNavigateToPlazaTab(4)"
+                      (click)="navigateToPlazaTab(4)"
+                      type="button"
+                      [title]="!canNavigateToPlazaTab(4) ? 'Complete previous tabs first' : ''">
                 <i class="fas fa-check me-2"></i>Review
               </button>
             </li>
