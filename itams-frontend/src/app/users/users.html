@@ -21,6 +21,38 @@
       <!-- Users Table -->
       <div class="card">
         <div class="card-body">
+          <!-- Search and Filter Row -->
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Search Users</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" class="form-control" placeholder="Name, username, or email..." 
+                       [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Filter by Role</label>
+              <select class="form-select" [(ngModel)]="filterRole" (ngModelChange)="onRoleFilterChange()">
+                <option [ngValue]="0">All Roles</option>
+                <option *ngFor="let role of roles" [ngValue]="role.id">{{ role.name }}</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Filter by Status</label>
+              <select class="form-select" [(ngModel)]="filterStatus" (ngModelChange)="onStatusFilterChange()">
+                <option value="all">All Users</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+              </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+                <i class="fas fa-times me-1"></i>Clear
+              </button>
+            </div>
+          </div>
+
           <div *ngIf="loading" class="text-center py-4">
             <div class="spinner-border text-primary" role="status">
               <span class="visually-hidden">Loading...</span>
@@ -40,7 +72,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let user of users">
+                <tr *ngFor="let user of filteredUsers">
                   <td>
                     <div class="d-flex align-items-center">
                       <div class="online-status-indicator me-2" 
@@ -90,9 +122,9 @@
                     </div>
                   </td>
                 </tr>
-                <tr *ngIf="users.length === 0">
+                <tr *ngIf="filteredUsers.length === 0">
                   <td colspan="6" class="text-center py-4 text-muted">
-                    No users found. <a href="#" (click)="openCreateModal()">Create your first user</a>
+                    No users found matching your filters. <a href="#" (click)="clearFilters(); $event.preventDefault()">Clear filters</a>
                   </td>
                 </tr>
               </tbody>

@@ -12,12 +12,18 @@ import { AuthService } from '../services/auth.service';
 })
 export class Users implements OnInit {
   users: User[] = [];
+  filteredUsers: User[] = [];
   roles: Role[] = [];
   projects: any[] = []; // List of projects for assignment
   loading = false;
   error = '';
   success = '';
   currentUsername = '';
+
+  // Search and filter
+  searchTerm = '';
+  filterRole = 0; // 0 = All Roles
+  filterStatus = 'all'; // 'all', 'active', 'inactive'
 
   // Modal states
   showCreateModal = false;
@@ -103,6 +109,7 @@ export class Users implements OnInit {
       next: (response: ApiResponse<User[]>) => {
         if (response.success && response.data) {
           this.users = response.data;
+          this.applyFilters();
         } else {
           this.error = response.message || 'Failed to load users';
         }
@@ -114,6 +121,46 @@ export class Users implements OnInit {
         console.error('Error loading users:', error);
       }
     });
+  }
+
+  applyFilters() {
+    this.filteredUsers = this.users.filter(user => {
+      // Search filter
+      const matchesSearch = !this.searchTerm || 
+        user.username.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        user.firstName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        user.lastName.toLowerCase().includes(this.searchTerm.toLowerCase());
+
+      // Role filter
+      const matchesRole = this.filterRole === 0 || user.roleId === this.filterRole;
+
+      // Status filter
+      const matchesStatus = this.filterStatus === 'all' ||
+        (this.filterStatus === 'active' && user.isActive) ||
+        (this.filterStatus === 'inactive' && !user.isActive);
+
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+  }
+
+  onSearchChange() {
+    this.applyFilters();
+  }
+
+  onRoleFilterChange() {
+    this.applyFilters();
+  }
+
+  onStatusFilterChange() {
+    this.applyFilters();
+  }
+
+  clearFilters() {
+    this.searchTerm = '';
+    this.filterRole = 0;
+    this.filterStatus = 'all';
+    this.applyFilters();
   }
 
   loadRoles() {

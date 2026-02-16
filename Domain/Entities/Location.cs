@@ -38,6 +38,9 @@ public class Location
     
     public int ProjectId { get; set; }
     
+    [StringLength(50)]
+    public string? ProjectIdRef { get; set; } // Reference to Project.ProjectId alternate key
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     // Sensitive location flag (for future use)

@@ -28,8 +28,14 @@ public class LocationService : ILocationService
             throw new InvalidOperationException("Project not found");
         }
 
+        // Generate LocationId (alternate key) - get the next available number
+        var allLocations = await _locationRepository.GetAllAsync();
+        var maxId = allLocations.Any() ? allLocations.Max(l => l.Id) : 0;
+        var locationId = $"LOC{(maxId + 1):D5}"; // Format: LOC00001, LOC00002, etc.
+
         var location = new Location
         {
+            LocationId = locationId,
             Name = request.Name,
             Region = request.Region,
             State = request.State,
@@ -38,6 +44,7 @@ public class LocationService : ILocationService
             Office = request.Office,
             Address = request.Address,
             ProjectId = request.ProjectId,
+            ProjectIdRef = project.ProjectId, // Set the alternate key reference
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
