@@ -75,7 +75,7 @@ export class Users implements OnInit {
   usernameAvailable: boolean | null = null;
   checkingUsername = false;
   private usernameCheckTimeout: any;
-  private userHasEditedUsername = false; // Track if user manually edited username
+  userHasEditedUsername = false;
 
   constructor(private api: Api, private authService: AuthService) {}
 
@@ -256,30 +256,80 @@ export class Users implements OnInit {
     }
   }
 
-  // Handle name changes - auto-suggest username only if user hasn't manually edited it
-  onNameChange() {
-    if (!this.userHasEditedUsername && this.createForm.firstName && this.createForm.lastName) {
-      const suggestedUsername = (this.createForm.firstName.toLowerCase() + '.' + this.createForm.lastName.toLowerCase())
+  // Get the base username (firstname.lastname)
+  getBaseUsername(): string {
+    if (this.createForm.firstName && this.createForm.lastName) {
+      return (this.createForm.firstName.toLowerCase() + '.' + this.createForm.lastName.toLowerCase())
         .replace(/[^a-z0-9.]/g, '');
-      this.createForm.username = suggestedUsername;
-      this.onUsernameChange();
+    }
+    return '';
+  }
+
+  // Handle name changes - auto-update username
+  onNameChange() {
+    const baseUsername = this.getBaseUsername();
+    // Preserve any suffix the user added
+    const currentUsername = this.createForm.username || '';
+    const currentBase = this.getBaseUsername();
+    
+    if (currentUsername.startsWith(currentBase)) {
+      // Keep the suffix
+      const suffix = currentUsername.substring(currentBase.length);
+      this.createForm.username = baseUsername + suffix;
+    } else {
+      // Reset to base
+      this.createForm.username = baseUsername;
+    }
+    
+    this.onUsernameChange();
+  }
+
+  // Handle username input - prevent erasing base
+  onUsernameInput(event: any) {
+    const baseUsername = this.getBaseUsername();
+    const currentValue = event.target.value;
+    
+    // If user tries to erase the base, restore it
+    if (baseUsername && !currentValue.startsWith(baseUsername)) {
+      // Find what they're trying to add
+      if (currentValue.length < baseUsername.length) {
+        // They're trying to delete the base - prevent it
+        this.createForm.username = baseUsername;
+        event.target.value = baseUsername;
+      } else {
+        // They're typing something that doesn't match - reset to base + their addition
+        const suffix = currentValue.replace(/[^0-9]/g, ''); // Only allow numbers as suffix
+        this.createForm.username = baseUsername + suffix;
+        event.target.value = baseUsername + suffix;
+      }
+    } else {
+      // They're adding to the base - only allow numbers
+      const suffix = currentValue.substring(baseUsername.length).replace(/[^0-9]/g, '');
+      this.createForm.username = baseUsername + suffix;
+      event.target.value = baseUsername + suffix;
+    }
+    
+    this.onUsernameChange();
+  }
+
+  // Handle keydown to prevent deleting base username
+  onUsernameKeydown(event: KeyboardEvent) {
+    const baseUsername = this.getBaseUsername();
+    const input = event.target as HTMLInputElement;
+    const cursorPosition = input.selectionStart || 0;
+    
+    // Prevent backspace/delete if it would affect the base username
+    if ((event.key === 'Backspace' || event.key === 'Delete') && cursorPosition <= baseUsername.length) {
+      event.preventDefault();
+      // Move cursor to end of base username
+      setTimeout(() => {
+        input.setSelectionRange(baseUsername.length, baseUsername.length);
+      }, 0);
     }
   }
 
   // Username validation and availability checking
   onUsernameChange() {
-    // Mark that user has manually edited the username (unless it's from auto-suggestion)
-    if (this.createForm.username) {
-      // Check if this change is from manual typing (not from name-based auto-suggestion)
-      const expectedUsername = this.createForm.firstName && this.createForm.lastName 
-        ? (this.createForm.firstName.toLowerCase() + '.' + this.createForm.lastName.toLowerCase()).replace(/[^a-z0-9.]/g, '')
-        : '';
-      
-      if (this.createForm.username !== expectedUsername) {
-        this.userHasEditedUsername = true;
-      }
-    }
-
     this.validateUsername();
     
     // Clear previous timeout
@@ -329,7 +379,6 @@ export class Users implements OnInit {
     this.isUsernameValid = false;
     this.usernameAvailable = null;
     this.checkingUsername = false;
-    this.userHasEditedUsername = false;
     if (this.usernameCheckTimeout) {
       clearTimeout(this.usernameCheckTimeout);
     }

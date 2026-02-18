@@ -127,7 +127,6 @@ namespace ITAMS.Controllers
                     IpAddress = ipAddress,
                     BrowserType = browserType,
                     OperatingSystem = operatingSystem,
-                    SessionId = sessionId,
                     Status = "ACTIVE"
                 };
 
@@ -182,29 +181,65 @@ namespace ITAMS.Controllers
         {
             try
             {
+                int userId = 0;
+                string? logoutType = null;
+                
+                // Try to get data from JSON body first
                 if (request != null && request.UserId > 0)
                 {
-                    // Get user to find active session
-                    var user = await _userService.GetUserByIdAsync(request.UserId);
-                    if (user != null && !string.IsNullOrEmpty(user.ActiveSessionId))
+                    userId = request.UserId;
+                    logoutType = request.LogoutType;
+                }
+                // If not in body, try form data (for sendBeacon)
+                else if (Request.HasFormContentType)
+                {
+                    var form = await Request.ReadFormAsync();
+                    if (form.ContainsKey("userId") && int.TryParse(form["userId"], out int formUserId))
                     {
-                        // Update login audit record
+                        userId = formUserId;
+                        logoutType = form.ContainsKey("logoutType") ? form["logoutType"].ToString() : null;
+                    }
+                }
+                
+                _logger.LogInformation("Logout request received: UserId={UserId}, LogoutType={LogoutType}", 
+                    userId, logoutType);
+                
+                if (userId > 0)
+                {
+                    // Get user to find active session
+                    var user = await _userService.GetUserByIdAsync(userId);
+                    if (user != null)
+                    {
+                        // Update the most recent active login audit record for this user
                         var loginAudit = _context.LoginAudits
-                            .Where(la => la.SessionId == user.ActiveSessionId && la.Status == "ACTIVE")
+                            .Where(la => la.UserId == user.Id && la.Status == "ACTIVE")
                             .OrderByDescending(la => la.LoginTime)
                             .FirstOrDefault();
 
                         if (loginAudit != null)
                         {
                             loginAudit.LogoutTime = DateTime.UtcNow;
-                            loginAudit.Status = "LOGGED_OUT";
+                            // Set status based on logout type
+                            loginAudit.Status = logoutType switch
+                            {
+                                "SESSION_TIMEOUT" => "SESSION_TIMEOUT",
+                                "FORCED_LOGOUT" => "FORCED_LOGOUT",
+                                _ => "LOGGED_OUT"
+                            };
                             await _context.SaveChangesAsync();
+                            
+                            _logger.LogInformation("Login audit updated: AuditId={AuditId}, Status={Status}", 
+                                loginAudit.Id, loginAudit.Status);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("No active login audit found for UserId={UserId}", user.Id);
                         }
                     }
 
                     // Clear the user's session
-                    await _userService.ClearSessionAsync(request.UserId);
-                    _logger.LogInformation("User {UserId} logged out successfully", request.UserId);
+                    await _userService.ClearSessionAsync(userId);
+                    _logger.LogInformation("User {UserId} logged out with type: {LogoutType}", userId, logoutType ?? "LOGGED_OUT");
                 }
                 
                 return Ok(new { success = true, message = "Logged out successfully" });
@@ -444,6 +479,7 @@ namespace ITAMS.Controllers
     public class LogoutRequest
     {
         public int UserId { get; set; }
+        public string? LogoutType { get; set; } // LOGGED_OUT, SESSION_TIMEOUT, FORCED_LOGOUT
     }
 
     public class LoginResponse

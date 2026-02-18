@@ -24,14 +24,10 @@ public class LoginAudit
     [StringLength(200)]
     public string? OperatingSystem { get; set; }
     
-    [Required]
-    [StringLength(500)]
-    public string SessionId { get; set; } = string.Empty;
-    
     public DateTime? LogoutTime { get; set; }
     
     [StringLength(50)]
-    public string Status { get; set; } = "ACTIVE"; // ACTIVE, LOGGED_OUT, EXPIRED
+    public string Status { get; set; } = "ACTIVE"; // ACTIVE, LOGGED_OUT, SESSION_TIMEOUT, FORCED_LOGOUT
     
     // Navigation property
     public virtual User User { get; set; } = null!;

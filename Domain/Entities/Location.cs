@@ -23,7 +23,7 @@ public class Location
     public string State { get; set; } = string.Empty;
     
     [StringLength(100)]
-    public string? Plaza { get; set; }
+    public string? Site { get; set; } // Changed from Plaza to Site
     
     [StringLength(100)]
     public string? Lane { get; set; }

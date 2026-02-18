@@ -11,7 +11,7 @@ interface LoginAudit {
   ipAddress?: string;
   browserType?: string;
   operatingSystem?: string;
-  sessionId: string;
+  sessionId?: string;
   status: string;
 }
 
@@ -57,10 +57,27 @@ export class AuditTrail implements OnInit {
         return 'badge bg-success';
       case 'LOGGED_OUT':
         return 'badge bg-secondary';
-      case 'EXPIRED':
+      case 'SESSION_TIMEOUT':
         return 'badge bg-warning';
+      case 'FORCED_LOGOUT':
+        return 'badge bg-danger';
       default:
         return 'badge bg-secondary';
+    }
+  }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'ACTIVE':
+        return 'Active';
+      case 'LOGGED_OUT':
+        return 'Logged Out';
+      case 'SESSION_TIMEOUT':
+        return 'Session Timeout';
+      case 'FORCED_LOGOUT':
+        return 'Forced Logout';
+      default:
+        return status;
     }
   }
 

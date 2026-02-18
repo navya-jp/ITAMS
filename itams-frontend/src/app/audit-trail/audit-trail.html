@@ -33,7 +33,6 @@
               <th>IP Address</th>
               <th>Browser</th>
               <th>Operating System</th>
-              <th>Session ID</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -61,16 +60,13 @@
                 </span>
               </td>
               <td>
-                <small class="text-muted font-monospace">{{ audit.sessionId.substring(0, 8) }}...</small>
-              </td>
-              <td>
                 <span [class]="getStatusClass(audit.status)">
-                  {{ audit.status }}
+                  {{ getStatusLabel(audit.status) }}
                 </span>
               </td>
             </tr>
             <tr *ngIf="loginAudits.length === 0">
-              <td colspan="9" class="text-center py-4 text-muted">
+              <td colspan="8" class="text-center py-4 text-muted">
                 No login audit records found
               </td>
             </tr>

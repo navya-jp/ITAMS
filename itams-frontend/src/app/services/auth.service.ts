@@ -94,6 +94,36 @@ export class AuthService {
   ) {
     this.initializeAuth();
     this.setupActivityTracking();
+    this.setupBeforeUnloadHandler();
+  }
+
+  private setupBeforeUnloadHandler() {
+    // Use beforeunload for browser/tab close detection
+    window.addEventListener('beforeunload', (e) => {
+      if (this.isAuthenticated) {
+        this.sendForcedLogout();
+      }
+    });
+    
+    // Also use pagehide as a backup (more reliable on mobile)
+    window.addEventListener('pagehide', (e) => {
+      if (this.isAuthenticated) {
+        this.sendForcedLogout();
+      }
+    });
+  }
+  
+  private sendForcedLogout() {
+    const currentUser = this.currentUser;
+    if (currentUser && currentUser.id) {
+      // Use FormData for better compatibility with sendBeacon
+      const formData = new FormData();
+      formData.append('userId', currentUser.id.toString());
+      formData.append('logoutType', 'FORCED_LOGOUT');
+      
+      const sent = navigator.sendBeacon(`${this.baseUrl}/logout`, formData);
+      console.log('Forced logout beacon sent:', sent, 'for userId:', currentUser.id);
+    }
   }
 
   private initializeAuth() {
@@ -135,7 +165,7 @@ export class AuthService {
     const warningMs = this.securitySettings.autoLogoutWarningMinutes * 60 * 1000;
     
     if (this.isAuthenticated && (now - this.lastActivity) > timeoutMs) {
-      this.logout('Session expired due to inactivity');
+      this.logout('Session expired due to inactivity', 'SESSION_TIMEOUT');
     } else if (this.isAuthenticated && (now - this.lastActivity) > (timeoutMs - warningMs)) {
       this.showAutoLogoutWarning();
     }
@@ -197,19 +227,22 @@ export class AuthService {
     });
   }
 
-  logout(reason?: string): void {
+  logout(reason?: string, logoutType: string = 'LOGGED_OUT'): void {
     // Clear timers
     this.clearTimers();
     if (this.activityTimer) {
       clearInterval(this.activityTimer);
     }
 
-    // Notify backend about logout with userId
+    // Notify backend about logout with userId and logout type
     const currentUser = this.currentUser;
     const token = localStorage.getItem('auth_token');
     if (token && currentUser) {
       this.http.post(`${this.baseUrl}/logout`, 
-        { userId: currentUser.id }, 
+        { 
+          userId: currentUser.id,
+          logoutType: logoutType
+        }, 
         {
           headers: { 
             'Content-Type': 'application/json',
@@ -217,7 +250,7 @@ export class AuthService {
           }
         }
       ).subscribe({
-        next: () => console.log('Logout successful'),
+        next: () => console.log(`Logout successful: ${logoutType}`),
         error: (err) => console.error('Logout error:', err)
       });
     }

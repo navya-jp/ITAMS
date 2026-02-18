@@ -60,9 +60,8 @@ export class Projects implements OnInit {
     type: 'office',
     projectId: 0,
     internalLocations: [],
-    // Plaza specific properties
-    plazaCode: '',
-    governmentCode: '',
+    // Site specific properties
+    siteCode: '',
     chainageNumber: '',
     latitude: undefined,
     longitude: undefined,
@@ -75,7 +74,7 @@ export class Projects implements OnInit {
     name: '',
     region: '',
     state: '',
-    plaza: '',
+    site: '',
     lane: '',
     office: '',
     address: '',
@@ -485,9 +484,8 @@ export class Projects implements OnInit {
       type: 'office',
       projectId: this.selectedProject?.id || 0,
       internalLocations: [],
-      // Plaza specific properties
-      plazaCode: '',
-      governmentCode: '',
+      // Site specific properties
+      siteCode: '',
       chainageNumber: '',
       latitude: undefined,
       longitude: undefined,
@@ -559,21 +557,16 @@ export class Projects implements OnInit {
     this.showDistrictDropdown = false;
   }
 
-  // Plaza form methods
-  onPlazaNameInput(event: any) {
+  // Site form methods
+  onSiteNameInput(event: any) {
     const value = event.target.value;
     this.locationForm.name = value;
   }
 
-  onPlazaCodeChange() {
-    if (this.locationForm.plazaCode) {
-      this.locationForm.plazaCode = this.locationForm.plazaCode.toUpperCase();
+  onSiteCodeChange() {
+    if (this.locationForm.siteCode) {
+      this.locationForm.siteCode = this.locationForm.siteCode.toUpperCase();
     }
-  }
-
-  onGovCodeInput(event: any) {
-    const value = event.target.value.toUpperCase();
-    this.locationForm.governmentCode = value;
   }
 
   onChainageInput(event: any) {
@@ -634,11 +627,10 @@ export class Projects implements OnInit {
       return !!(this.locationForm.name && this.locationForm.district);
     }
 
-    if (this.locationForm.type === 'plaza') {
+    if (this.locationForm.type === 'site') {
       return !!(
         this.locationForm.name &&
-        this.locationForm.plazaCode &&
-        this.locationForm.governmentCode &&
+        this.locationForm.siteCode &&
         this.locationForm.chainageNumber &&
         this.locationForm.latitude &&
         this.locationForm.longitude
@@ -648,12 +640,11 @@ export class Projects implements OnInit {
     return false;
   }
 
-  // Validate specific plaza tabs
-  isPlazaTab1Valid(): boolean {
+  // Validate specific site tabs
+  isSiteTab1Valid(): boolean {
     return !!(
       this.locationForm.name &&
-      this.locationForm.plazaCode &&
-      this.locationForm.governmentCode &&
+      this.locationForm.siteCode &&
       this.locationForm.chainageNumber &&
       this.locationForm.latitude !== undefined &&
       this.locationForm.longitude !== undefined &&
@@ -664,40 +655,40 @@ export class Projects implements OnInit {
     );
   }
 
-  isPlazaTab2Valid(): boolean {
+  isSiteTab2Valid(): boolean {
     return !!(this.locationForm.numberOfLanes && this.locationForm.numberOfLanes > 0);
   }
 
-  isPlazaTab3Valid(): boolean {
+  isSiteTab3Valid(): boolean {
     // Tab 3 (Internal Locations) requires at least one location selected
     return !!(this.locationForm.internalLocations && this.locationForm.internalLocations.length > 0);
   }
 
-  canMoveToNextPlazaTab(): boolean {
-    if (this.plazaTab === 1) return this.isPlazaTab1Valid();
-    if (this.plazaTab === 2) return this.isPlazaTab2Valid();
-    if (this.plazaTab === 3) return this.isPlazaTab3Valid();
+  canMoveToNextSiteTab(): boolean {
+    if (this.plazaTab === 1) return this.isSiteTab1Valid();
+    if (this.plazaTab === 2) return this.isSiteTab2Valid();
+    if (this.plazaTab === 3) return this.isSiteTab3Valid();
     return true;
   }
 
-  canNavigateToPlazaTab(targetTab: number): boolean {
+  canNavigateToSiteTab(targetTab: number): boolean {
     // Can always go back to tab 1
     if (targetTab === 1) return true;
     
     // To go to tab 2, tab 1 must be valid
-    if (targetTab === 2) return this.isPlazaTab1Valid();
+    if (targetTab === 2) return this.isSiteTab1Valid();
     
     // To go to tab 3, tabs 1 and 2 must be valid
-    if (targetTab === 3) return this.isPlazaTab1Valid() && this.isPlazaTab2Valid();
+    if (targetTab === 3) return this.isSiteTab1Valid() && this.isSiteTab2Valid();
     
     // To go to tab 4 (review), all previous tabs must be valid
-    if (targetTab === 4) return this.isPlazaTab1Valid() && this.isPlazaTab2Valid() && this.isPlazaTab3Valid();
+    if (targetTab === 4) return this.isSiteTab1Valid() && this.isSiteTab2Valid() && this.isSiteTab3Valid();
     
     return false;
   }
 
-  navigateToPlazaTab(targetTab: number): void {
-    if (this.canNavigateToPlazaTab(targetTab)) {
+  navigateToSiteTab(targetTab: number): void {
+    if (this.canNavigateToSiteTab(targetTab)) {
       this.plazaTab = targetTab;
     }
   }
@@ -710,9 +701,8 @@ export class Projects implements OnInit {
       if (!this.locationForm.district) return 'District is required for office locations';
     }
 
-    if (this.locationForm.type === 'plaza') {
-      if (!this.locationForm.plazaCode) return 'Plaza code is required';
-      if (!this.locationForm.governmentCode) return 'Government code is required';
+    if (this.locationForm.type === 'site') {
+      if (!this.locationForm.siteCode) return 'Site code is required';
       if (!this.locationForm.chainageNumber) return 'Chainage number is required';
       if (!this.locationForm.latitude) return 'Latitude is required';
       if (!this.locationForm.longitude) return 'Longitude is required';
@@ -746,9 +736,9 @@ export class Projects implements OnInit {
     };
 
     // Add type-specific fields only if they have values
-    if (this.locationForm.type === 'plaza') {
-      backendLocation.plaza = this.locationForm.name;
-      const address = `${this.locationForm.plazaCode || ''} ${this.locationForm.governmentCode || ''} ${this.locationForm.chainageNumber || ''}`.trim();
+    if (this.locationForm.type === 'site') {
+      backendLocation.site = this.locationForm.name;
+      const address = `${this.locationForm.siteCode || ''} ${this.locationForm.chainageNumber || ''}`.trim();
       if (address) {
         backendLocation.address = address;
       }
@@ -764,14 +754,18 @@ export class Projects implements OnInit {
     
     this.api.createLocation(backendLocation).subscribe({
       next: (location) => {
-        this.success = `${this.locationForm.type === 'office' ? 'Office' : 'Plaza'} location created successfully`;
+        this.success = `${this.locationForm.type === 'office' ? 'Office' : 'Site'} location created successfully`;
         this.loading = false;
         this.closeAddLocationModal();
-        // Refresh project data and locations
-        this.loadProjects();
-        if (this.selectedProject) {
-          this.loadProjectLocations(this.selectedProject.id);
-        }
+        
+        // Refresh with a small delay to ensure database transaction completes
+        setTimeout(() => {
+          // Refresh project data and locations
+          this.loadProjects();
+          if (this.selectedProject) {
+            this.loadProjectLocations(this.selectedProject.id);
+          }
+        }, 500);
       },
       error: (error) => {
         console.error('Location creation error:', error); // Debug log
@@ -818,12 +812,16 @@ export class Projects implements OnInit {
         this.success = 'Location updated successfully';
         this.loading = false;
         this.closeEditLocationModal();
-        // Refresh locations list
-        if (this.selectedProject) {
-          this.loadProjectLocations(this.selectedProject.id);
-        }
-        // Refresh projects to update data
-        this.loadProjects();
+        
+        // Refresh with a small delay to ensure database transaction completes
+        setTimeout(() => {
+          // Refresh locations list
+          if (this.selectedProject) {
+            this.loadProjectLocations(this.selectedProject.id);
+          }
+          // Refresh projects to update data
+          this.loadProjects();
+        }, 500);
       },
       error: (error) => {
         this.error = error.error?.message || 'Failed to update location';
@@ -840,12 +838,16 @@ export class Projects implements OnInit {
         next: () => {
           this.success = 'Location deleted successfully';
           this.loading = false;
-          // Refresh locations list
-          if (this.selectedProject) {
-            this.loadProjectLocations(this.selectedProject.id);
-          }
-          // Refresh projects to update location count
-          this.loadProjects();
+          
+          // Refresh with a small delay to ensure database transaction completes
+          setTimeout(() => {
+            // Refresh locations list
+            if (this.selectedProject) {
+              this.loadProjectLocations(this.selectedProject.id);
+            }
+            // Refresh projects to update location count
+            this.loadProjects();
+          }, 500);
         },
         error: (error) => {
           this.error = error.error?.message || 'Failed to delete location';

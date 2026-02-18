@@ -20,8 +20,8 @@ public class CreateLocationDto
     [StringLength(100, MinimumLength = 2, ErrorMessage = "State must be between 2 and 100 characters")]
     public string State { get; set; } = string.Empty;
     
-    [StringLength(100, ErrorMessage = "Plaza cannot exceed 100 characters")]
-    public string? Plaza { get; set; }
+    [StringLength(100, ErrorMessage = "Site cannot exceed 100 characters")]
+    public string? Site { get; set; } // Changed from Plaza to Site
     
     [StringLength(100, ErrorMessage = "Lane cannot exceed 100 characters")]
     public string? Lane { get; set; }
@@ -47,8 +47,8 @@ public class UpdateLocationDto
     [StringLength(100, MinimumLength = 2, ErrorMessage = "State must be between 2 and 100 characters")]
     public string State { get; set; } = string.Empty;
     
-    [StringLength(100, ErrorMessage = "Plaza cannot exceed 100 characters")]
-    public string? Plaza { get; set; }
+    [StringLength(100, ErrorMessage = "Site cannot exceed 100 characters")]
+    public string? Site { get; set; } // Changed from Plaza to Site
     
     [StringLength(100, ErrorMessage = "Lane cannot exceed 100 characters")]
     public string? Lane { get; set; }
@@ -68,7 +68,7 @@ public class LocationSummaryDto
     public string Name { get; set; } = string.Empty;
     public string Region { get; set; } = string.Empty;
     public string State { get; set; } = string.Empty;
-    public string? Plaza { get; set; }
+    public string? Site { get; set; } // Changed from Plaza to Site
     public string? Lane { get; set; }
     public string? Office { get; set; }
     public string? Address { get; set; }
@@ -83,7 +83,7 @@ public class LocationDto
     public string Name { get; set; } = string.Empty;
     public string Region { get; set; } = string.Empty;
     public string State { get; set; } = string.Empty;
-    public string? Plaza { get; set; }
+    public string? Site { get; set; } // Changed from Plaza to Site
     public string? Lane { get; set; }
     public string? Office { get; set; }
     public string? Address { get; set; }

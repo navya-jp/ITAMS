@@ -39,7 +39,7 @@ public class LocationService : ILocationService
             Name = request.Name,
             Region = request.Region,
             State = request.State,
-            Plaza = request.Plaza,
+            Site = request.Site,
             Lane = request.Lane,
             Office = request.Office,
             Address = request.Address,
@@ -63,7 +63,7 @@ public class LocationService : ILocationService
             throw new InvalidOperationException("Location not found");
         }
 
-        var oldValues = $"Name: {location.Name}, Region: {location.Region}, State: {location.State}, Plaza: {location.Plaza}, Lane: {location.Lane}, Office: {location.Office}, Address: {location.Address}, IsActive: {location.IsActive}";
+        var oldValues = $"Name: {location.Name}, Region: {location.Region}, State: {location.State}, Site: {location.Site}, Lane: {location.Lane}, Office: {location.Office}, Address: {location.Address}, IsActive: {location.IsActive}";
 
         // Update fields if provided
         if (!string.IsNullOrEmpty(request.Name))
@@ -81,9 +81,9 @@ public class LocationService : ILocationService
             location.State = request.State;
         }
 
-        if (request.Plaza != null)
+        if (request.Site != null)
         {
-            location.Plaza = request.Plaza;
+            location.Site = request.Site;
         }
 
         if (request.Lane != null)
@@ -108,7 +108,7 @@ public class LocationService : ILocationService
 
         var updatedLocation = await _locationRepository.UpdateAsync(location);
         
-        var newValues = $"Name: {location.Name}, Region: {location.Region}, State: {location.State}, Plaza: {location.Plaza}, Lane: {location.Lane}, Office: {location.Office}, Address: {location.Address}, IsActive: {location.IsActive}";
+        var newValues = $"Name: {location.Name}, Region: {location.Region}, State: {location.State}, Site: {location.Site}, Lane: {location.Lane}, Office: {location.Office}, Address: {location.Address}, IsActive: {location.IsActive}";
         await _auditService.LogAsync("LOCATION_UPDATED", "Location", location.Id.ToString(), 1, "superadmin", oldValues, newValues);
         
         return updatedLocation;

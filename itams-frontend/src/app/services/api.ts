@@ -146,15 +146,14 @@ export interface Lane {
 
 export interface CreateLocation {
   name: string;
-  type: 'office' | 'plaza';
+  type: 'office' | 'site';
   projectId: number;
   
   // Office specific
   district?: string;
   
-  // Plaza specific
-  plazaCode?: string;
-  governmentCode?: string;
+  // Site specific
+  siteCode?: string;
   chainageNumber?: string;
   latitude?: number;
   longitude?: number;
@@ -164,7 +163,7 @@ export interface CreateLocation {
   // Backend required fields
   region?: string;
   state?: string;
-  plaza?: string;
+  site?: string;
   lane?: string;
   office?: string;
   address?: string;
@@ -182,6 +181,16 @@ export class Api {
   };
 
   constructor(private http: HttpClient) { }
+
+  private getAuthHeaders() {
+    const token = localStorage.getItem('auth_token');
+    return {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      })
+    };
+  }
 
   // Users - Using dedicated Users controller
   getUsers(): Observable<ApiResponse<User[]>> {
@@ -307,23 +316,23 @@ export class Api {
 
   // Locations
   getLocations(): Observable<Location[]> {
-    return this.http.get<Location[]>(`${this.baseUrl}/superadmin/locations`);
+    return this.http.get<Location[]>(`${this.baseUrl}/superadmin/locations`, this.getAuthHeaders());
   }
 
   createLocation(location: any): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/superadmin/locations`, location, this.httpOptions);
+    return this.http.post<any>(`${this.baseUrl}/superadmin/locations`, location, this.getAuthHeaders());
   }
 
   getProjectLocations(projectId: number): Observable<Location[]> {
-    return this.http.get<Location[]>(`${this.baseUrl}/superadmin/projects/${projectId}/locations`);
+    return this.http.get<Location[]>(`${this.baseUrl}/superadmin/projects/${projectId}/locations`, this.getAuthHeaders());
   }
 
   updateLocation(id: number, location: any): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/superadmin/locations/${id}`, location, this.httpOptions);
+    return this.http.put<any>(`${this.baseUrl}/superadmin/locations/${id}`, location, this.getAuthHeaders());
   }
 
   deleteLocation(id: number): Observable<any> {
-    return this.http.delete<any>(`${this.baseUrl}/superadmin/locations/${id}`);
+    return this.http.delete<any>(`${this.baseUrl}/superadmin/locations/${id}`, this.getAuthHeaders());
   }
 
   // Login Audit

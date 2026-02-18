@@ -17,7 +17,7 @@ public class CreateLocationRequest
     public string Name { get; set; } = string.Empty;
     public string Region { get; set; } = string.Empty;
     public string State { get; set; } = string.Empty;
-    public string? Plaza { get; set; }
+    public string? Site { get; set; }
     public string? Lane { get; set; }
     public string? Office { get; set; }
     public string? Address { get; set; }
@@ -29,7 +29,7 @@ public class UpdateLocationRequest
     public string? Name { get; set; }
     public string? Region { get; set; }
     public string? State { get; set; }
-    public string? Plaza { get; set; }
+    public string? Site { get; set; }
     public string? Lane { get; set; }
     public string? Office { get; set; }
     public string? Address { get; set; }

@@ -108,7 +108,7 @@ public class AccessControlService : IAccessControlService
                 l.ProjectId,
                 l.Region,
                 l.State,
-                l.Plaza,
+                l.Site,
                 l.Office
             })
             .FirstOrDefaultAsync();
@@ -147,7 +147,7 @@ public class AccessControlService : IAccessControlService
         // Plaza level
         if (!string.IsNullOrEmpty(user.RestrictedPlaza))
         {
-            return location.Plaza == user.RestrictedPlaza;
+            return location.Site == user.RestrictedPlaza;
         }
 
         // State level
@@ -231,7 +231,7 @@ public class AccessControlService : IAccessControlService
         }
         else if (!string.IsNullOrEmpty(user.RestrictedPlaza))
         {
-            query = query.Where(l => l.Plaza == user.RestrictedPlaza);
+            query = query.Where(l => l.Site == user.RestrictedPlaza);
         }
         else if (!string.IsNullOrEmpty(user.RestrictedState))
         {

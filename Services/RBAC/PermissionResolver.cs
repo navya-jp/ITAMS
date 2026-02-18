@@ -446,5 +446,4 @@ public class AccessAttemptLog
     public DateTime Timestamp { get; set; }
     public string? IpAddress { get; set; }
     public string? UserAgent { get; set; }
-    public string? SessionId { get; set; }
 }

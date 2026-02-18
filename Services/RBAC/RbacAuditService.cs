@@ -42,7 +42,6 @@ public class RbacAuditService : IRbacAuditService
                 Reason = log.Reason,
                 IpAddress = log.IpAddress,
                 UserAgent = log.UserAgent,
-                SessionId = log.SessionId,
                 Timestamp = DateTime.UtcNow
             };
 
@@ -77,7 +76,6 @@ public class RbacAuditService : IRbacAuditService
                 ScopeValidated = log.ScopeValidated,
                 IpAddress = log.IpAddress,
                 UserAgent = log.UserAgent,
-                SessionId = log.SessionId,
                 Timestamp = log.Timestamp
             };
 
@@ -389,7 +387,6 @@ public class PermissionChangeLog
     public string? Reason { get; set; }
     public string? IpAddress { get; set; }
     public string? UserAgent { get; set; }
-    public string? SessionId { get; set; }
 }
 
 public class PermissionAuditFilter

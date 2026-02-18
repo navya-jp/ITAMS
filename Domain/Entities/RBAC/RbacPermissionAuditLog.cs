@@ -50,10 +50,6 @@ public class RbacPermissionAuditLog
     [Column("user_agent")]
     public string? UserAgent { get; set; }
     
-    [StringLength(100)]
-    [Column("session_id")]
-    public string? SessionId { get; set; }
-    
     [Column("timestamp")]
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     

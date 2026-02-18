@@ -324,13 +324,13 @@
                     <strong>{{ location.name }}</strong>
                   </td>
                   <td>
-                    <span class="badge" [class]="location.plaza ? 'bg-info' : 'bg-secondary'">
-                      {{ location.plaza ? 'Plaza' : 'Office' }}
+                    <span class="badge" [class]="location.site ? 'bg-info' : 'bg-secondary'">
+                      {{ location.site ? 'Site' : 'Office' }}
                     </span>
                   </td>
                   <td>
                     <div class="small">
-                      <div *ngIf="location.plaza"><strong>Plaza:</strong> {{ location.plaza }}</div>
+                      <div *ngIf="location.site"><strong>Site:</strong> {{ location.site }}</div>
                       <div *ngIf="location.office"><strong>Office:</strong> {{ location.office }}</div>
                       <div *ngIf="location.address"><strong>Address:</strong> {{ location.address }}</div>
                       <div><strong>Region:</strong> {{ location.region }}</div>
@@ -405,9 +405,9 @@
               <i class="fas fa-building me-2"></i>Office
             </label>
             
-            <input type="radio" class="btn-check" name="locationType" id="plaza" value="plaza" [(ngModel)]="locationForm.type">
-            <label class="btn btn-outline-primary" for="plaza">
-              <i class="fas fa-road me-2"></i>Plaza
+            <input type="radio" class="btn-check" name="locationType" id="site" value="site" [(ngModel)]="locationForm.type">
+            <label class="btn btn-outline-primary" for="site">
+              <i class="fas fa-road me-2"></i>Site
             </label>
           </div>
         </div>
@@ -449,14 +449,14 @@
           </div>
         </div>
 
-        <!-- Plaza Form with Tabs -->
-        <div *ngIf="locationForm.type === 'plaza'" class="d-flex flex-column" style="flex: 1; min-height: 0;">
-          <!-- Plaza Sub-tabs -->
+        <!-- Site Form with Tabs -->
+        <div *ngIf="locationForm.type === 'site'" class="d-flex flex-column" style="flex: 1; min-height: 0;">
+          <!-- Site Sub-tabs -->
           <ul class="nav nav-tabs px-3 pt-3 mb-0" role="tablist" style="flex-shrink: 0;">
             <li class="nav-item" role="presentation">
               <button class="nav-link" 
                       [class.active]="plazaTab === 1"
-                      (click)="navigateToPlazaTab(1)"
+                      (click)="navigateToSiteTab(1)"
                       type="button">
                 <i class="fas fa-info-circle me-2"></i>Basic Details
               </button>
@@ -464,75 +464,64 @@
             <li class="nav-item" role="presentation">
               <button class="nav-link" 
                       [class.active]="plazaTab === 2"
-                      [class.disabled]="!canNavigateToPlazaTab(2)"
-                      [disabled]="!canNavigateToPlazaTab(2)"
-                      (click)="navigateToPlazaTab(2)"
+                      [class.disabled]="!canNavigateToSiteTab(2)"
+                      [disabled]="!canNavigateToSiteTab(2)"
+                      (click)="navigateToSiteTab(2)"
                       type="button"
-                      [title]="!canNavigateToPlazaTab(2) ? 'Complete Basic Details first' : ''">
+                      [title]="!canNavigateToSiteTab(2) ? 'Complete Basic Details first' : ''">
                 <i class="fas fa-road me-2"></i>Lane Config
               </button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link" 
                       [class.active]="plazaTab === 3"
-                      [class.disabled]="!canNavigateToPlazaTab(3)"
-                      [disabled]="!canNavigateToPlazaTab(3)"
-                      (click)="navigateToPlazaTab(3)"
+                      [class.disabled]="!canNavigateToSiteTab(3)"
+                      [disabled]="!canNavigateToSiteTab(3)"
+                      (click)="navigateToSiteTab(3)"
                       type="button"
-                      [title]="!canNavigateToPlazaTab(3) ? 'Complete previous tabs first' : ''">
+                      [title]="!canNavigateToSiteTab(3) ? 'Complete previous tabs first' : ''">
                 <i class="fas fa-map-marker-alt me-2"></i>Internal Locations
               </button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link" 
                       [class.active]="plazaTab === 4"
-                      [class.disabled]="!canNavigateToPlazaTab(4)"
-                      [disabled]="!canNavigateToPlazaTab(4)"
-                      (click)="navigateToPlazaTab(4)"
+                      [class.disabled]="!canNavigateToSiteTab(4)"
+                      [disabled]="!canNavigateToSiteTab(4)"
+                      (click)="navigateToSiteTab(4)"
                       type="button"
-                      [title]="!canNavigateToPlazaTab(4) ? 'Complete previous tabs first' : ''">
+                      [title]="!canNavigateToSiteTab(4) ? 'Complete previous tabs first' : ''">
                 <i class="fas fa-check me-2"></i>Review
               </button>
             </li>
           </ul>
 
-          <!-- Plaza Tab Content -->
+          <!-- Site Tab Content -->
           <div class="tab-content p-3" style="flex: 1; overflow-y: auto; min-height: 0;">
-            <!-- Plaza Tab 1: Basic Details -->
+            <!-- Site Tab 1: Basic Details -->
             <div class="tab-pane fade" [class.show]="plazaTab === 1" [class.active]="plazaTab === 1">
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label">Plaza Name *</label>
+                  <label class="form-label">Site Name *</label>
                   <input type="text" 
                          class="form-control" 
                          [(ngModel)]="locationForm.name" 
-                         name="plazaName"
-                         placeholder="Enter plaza name"
+                         name="siteName"
+                         placeholder="Enter site name"
                          autocomplete="off">
                 </div>
                 
                 <div class="col-md-6">
-                  <label class="form-label">Plaza Code *</label>
+                  <label class="form-label">Site Code *</label>
                   <input type="text" 
                          class="form-control text-uppercase" 
-                         [(ngModel)]="locationForm.plazaCode" 
-                         name="plazaCode"
-                         (input)="onPlazaCodeChange()"
-                         placeholder="Enter plaza code">
+                         [(ngModel)]="locationForm.siteCode" 
+                         name="siteCode"
+                         (input)="onSiteCodeChange()"
+                         placeholder="Enter site code">
                 </div>
 
-                <div class="col-md-6">
-                  <label class="form-label">Government Code *</label>
-                  <input type="text" 
-                         class="form-control text-uppercase" 
-                         [(ngModel)]="locationForm.governmentCode" 
-                         name="governmentCode"
-                         (input)="onGovCodeInput($event)"
-                         placeholder="Enter government code"
-                         autocomplete="off">
-                </div>
-
-                <div class="col-md-6">
+                <div class="col-md-12">
                   <label class="form-label">Chainage Number *</label>
                   <input type="text" 
                          class="form-control" 
@@ -569,7 +558,7 @@
               </div>
             </div>
 
-            <!-- Plaza Tab 2: Lane Configuration -->
+            <!-- Site Tab 2: Lane Configuration -->
             <div class="tab-pane fade" [class.show]="plazaTab === 2" [class.active]="plazaTab === 2">
               <div class="row g-3">
                 <div class="col-md-4">
@@ -580,10 +569,9 @@
                          name="numberOfLanes"
                          (input)="generateLanes()"
                          min="1"
-                         max="20"
                          step="1"
                          placeholder="Enter number of lanes">
-                  <div class="form-text">Enter 1-20 lanes</div>
+                  <div class="form-text">Enter number of lanes (no limit)</div>
                 </div>
               </div>
               
@@ -607,7 +595,7 @@
               </div>
             </div>
 
-            <!-- Plaza Tab 3: Internal Locations -->
+            <!-- Site Tab 3: Internal Locations -->
             <div class="tab-pane fade" [class.show]="plazaTab === 3" [class.active]="plazaTab === 3">
               <label class="form-label">Internal Locations *</label>
               <div class="form-text mb-3">Select at least one internal location</div>
@@ -646,20 +634,17 @@
               </div>
             </div>
 
-            <!-- Plaza Tab 4: Review -->
+            <!-- Site Tab 4: Review -->
             <div class="tab-pane fade" [class.show]="plazaTab === 4" [class.active]="plazaTab === 4">
-              <h6>Review Plaza Configuration</h6>
+              <h6>Review Site Configuration</h6>
               <div class="row g-3">
                 <div class="col-md-6">
-                  <strong>Plaza Name:</strong> {{ locationForm.name || 'Not set' }}
+                  <strong>Site Name:</strong> {{ locationForm.name || 'Not set' }}
                 </div>
                 <div class="col-md-6">
-                  <strong>Plaza Code:</strong> {{ locationForm.plazaCode || 'Not set' }}
+                  <strong>Site Code:</strong> {{ locationForm.siteCode || 'Not set' }}
                 </div>
-                <div class="col-md-6">
-                  <strong>Government Code:</strong> {{ locationForm.governmentCode || 'Not set' }}
-                </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                   <strong>Chainage:</strong> {{ locationForm.chainageNumber || 'Not set' }}
                 </div>
                 <div class="col-md-6">
@@ -691,18 +676,18 @@
           <small><i class="fas fa-exclamation-triangle me-1"></i>{{ getLocationValidationMessage() }}</small>
         </div>
         
-        <button *ngIf="locationForm.type === 'plaza' && plazaTab > 1" 
+        <button *ngIf="locationForm.type === 'site' && plazaTab > 1" 
                 type="button" 
                 class="btn btn-outline-primary" 
                 (click)="plazaTab = plazaTab - 1">
           <i class="fas fa-arrow-left me-2"></i>Previous
         </button>
-        <button *ngIf="locationForm.type === 'plaza' && plazaTab < 4" 
+        <button *ngIf="locationForm.type === 'site' && plazaTab < 4" 
                 type="button" 
                 class="btn btn-primary" 
-                [disabled]="!canMoveToNextPlazaTab()"
+                [disabled]="!canMoveToNextSiteTab()"
                 (click)="plazaTab = plazaTab + 1"
-                [title]="!canMoveToNextPlazaTab() ? 'Please fill all required fields' : 'Next'">
+                [title]="!canMoveToNextSiteTab() ? 'Please fill all required fields' : 'Next'">
           Next<i class="fas fa-arrow-right ms-2"></i>
         </button>
         <button type="button" 
@@ -779,13 +764,13 @@
 
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label for="editLocationPlaza" class="form-label">Plaza</label>
+              <label for="editLocationSite" class="form-label">Site</label>
               <input 
                 type="text" 
                 class="form-control" 
-                id="editLocationPlaza"
-                [(ngModel)]="editLocationForm.plaza"
-                name="plaza"
+                id="editLocationSite"
+                [(ngModel)]="editLocationForm.site"
+                name="site"
               />
             </div>
 

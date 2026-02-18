@@ -277,10 +277,6 @@ public class ITAMSDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(100);
                 
-            entity.Property(e => e.SessionId)
-                .IsRequired()
-                .HasMaxLength(500);
-                
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)

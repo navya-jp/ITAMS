@@ -69,7 +69,7 @@ export const OFFICE_NAMES = [
 ];
 
 export const INTERNAL_LOCATIONS = [
-  'DG Room', 'Admin Building', 'SWB', 'Electrical Room', 'Server Room',
+  'DG Room', 'Admin Building', 'SWB1', 'SWB2', 'Electrical Room', 'Server Room',
   'Control Room', 'Cashier Room', 'Tunnel', 'Security Cabin', 'Parking Area',
   'Canteen', 'Rest Room', 'Store Room', 'Workshop', 'Fuel Station'
 ];

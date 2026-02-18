@@ -10,6 +10,5 @@ public class LoginAuditDto
     public string? IpAddress { get; set; }
     public string? BrowserType { get; set; }
     public string? OperatingSystem { get; set; }
-    public string SessionId { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
 }
