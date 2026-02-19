@@ -279,6 +279,10 @@ export class AuthService {
     return this.http.post(`${this.baseUrl}/change-password`, request, this.getAuthHeaders());
   }
 
+  requestPasswordReset(username: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/forgot-password`, { username }, this.httpOptions);
+  }
+
   validateSession(): Observable<any> {
     return new Observable(observer => {
       this.http.get(`${this.baseUrl}/validate-session`, this.getAuthHeaders())

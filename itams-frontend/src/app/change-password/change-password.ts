@@ -108,6 +108,34 @@ export class ChangePassword implements OnInit {
     });
   }
 
+  onRequestPasswordReset() {
+    const user = this.authService.currentUser;
+    if (!user) {
+      this.error = 'User not authenticated';
+      return;
+    }
+
+    this.loading = true;
+    this.error = '';
+    this.success = '';
+
+    this.authService.requestPasswordReset(user.username).subscribe({
+      next: (response) => {
+        this.loading = false;
+        this.success = 'Password reset request sent to your administrator. They will reset your password shortly.';
+        
+        // Redirect after 3 seconds
+        setTimeout(() => {
+          this.redirectBasedOnRole();
+        }, 3000);
+      },
+      error: (error) => {
+        this.loading = false;
+        this.error = 'Failed to send password reset request. Please try again or contact your administrator.';
+      }
+    });
+  }
+
   private validateForm(): boolean {
     // Current password validation (skip for first login)
     if (!this.isFirstLogin && !this.passwordForm.currentPassword) {
