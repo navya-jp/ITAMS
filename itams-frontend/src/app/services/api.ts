@@ -338,8 +338,17 @@ export class Api {
   }
 
   // Login Audit
-  getLoginAudits(pageSize: number = 100): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/superadmin/login-audit?pageSize=${pageSize}`);
+  getLoginAudits(pageSize: number = 100, startDate?: Date, endDate?: Date): Observable<any[]> {
+    let url = `${this.baseUrl}/superadmin/login-audit?pageSize=${pageSize}`;
+    
+    if (startDate) {
+      url += `&fromDate=${startDate.toISOString()}`;
+    }
+    if (endDate) {
+      url += `&toDate=${endDate.toISOString()}`;
+    }
+    
+    return this.http.get<any[]>(url);
   }
 
   // System Settings

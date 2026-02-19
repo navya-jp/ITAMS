@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Api } from '../services/api';
 
 interface LoginAudit {
@@ -18,14 +19,32 @@ interface LoginAudit {
 @Component({
   selector: 'app-audit-trail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './audit-trail.html',
   styleUrls: ['./audit-trail.scss']
 })
 export class AuditTrail implements OnInit {
   loginAudits: LoginAudit[] = [];
+  filteredAudits: LoginAudit[] = [];
   loading = false;
   error: string | null = null;
+  
+  // Time range filter
+  selectedTimeRange: 'today' | 'week' | 'month' | 'year' | 'custom' = 'today';
+  timeRanges = [
+    { value: 'today', label: 'Today', days: 1 },
+    { value: 'week', label: 'Last Week', days: 7 },
+    { value: 'month', label: 'Last Month', days: 30 },
+    { value: 'year', label: 'Last Year', days: 365 },
+    { value: 'custom', label: 'Custom Range', days: 0 }
+  ];
+  
+  // Custom date range
+  customStartDate: string = '';
+  customEndDate: string = '';
+  
+  // Username filter
+  usernameFilter: string = '';
 
   constructor(private api: Api) {}
 
@@ -33,14 +52,61 @@ export class AuditTrail implements OnInit {
     this.loadLoginAudits();
   }
 
+  onTimeRangeChange() {
+    if (this.selectedTimeRange !== 'custom') {
+      this.loadLoginAudits();
+    }
+  }
+  
+  onCustomDateChange() {
+    if (this.customStartDate && this.customEndDate) {
+      this.loadLoginAudits();
+    }
+  }
+  
+  onUsernameFilterChange() {
+    this.applyUsernameFilter();
+  }
+  
+  clearFilters() {
+    this.selectedTimeRange = 'today';
+    this.customStartDate = '';
+    this.customEndDate = '';
+    this.usernameFilter = '';
+    this.loadLoginAudits();
+  }
+
   loadLoginAudits() {
     this.loading = true;
     this.error = null;
 
-    this.api.getLoginAudits(100)
+    // Calculate date range based on selected time range
+    let startDate: Date;
+    let endDate = new Date();
+    
+    if (this.selectedTimeRange === 'custom') {
+      if (!this.customStartDate || !this.customEndDate) {
+        this.loading = false;
+        return;
+      }
+      startDate = new Date(this.customStartDate);
+      endDate = new Date(this.customEndDate);
+      endDate.setHours(23, 59, 59, 999); // End of day
+    } else {
+      startDate = new Date();
+      const selectedRange = this.timeRanges.find(r => r.value === this.selectedTimeRange);
+      
+      if (selectedRange && selectedRange.days > 0) {
+        startDate.setDate(startDate.getDate() - selectedRange.days);
+      }
+      startDate.setHours(0, 0, 0, 0); // Start of day
+    }
+
+    this.api.getLoginAudits(1000, startDate, endDate)
       .subscribe({
         next: (data: LoginAudit[]) => {
           this.loginAudits = data;
+          this.applyUsernameFilter();
           this.loading = false;
         },
         error: (err: any) => {
@@ -49,6 +115,17 @@ export class AuditTrail implements OnInit {
           console.error('Error loading login audits:', err);
         }
       });
+  }
+  
+  applyUsernameFilter() {
+    if (!this.usernameFilter.trim()) {
+      this.filteredAudits = this.loginAudits;
+    } else {
+      const filter = this.usernameFilter.toLowerCase().trim();
+      this.filteredAudits = this.loginAudits.filter(audit => 
+        audit.username.toLowerCase().includes(filter)
+      );
+    }
   }
 
   getStatusClass(status: string): string {
@@ -106,5 +183,10 @@ export class AuditTrail implements OnInit {
     if (!ipAddress) return 'Unknown';
     // Remove (localhost) suffix for display
     return ipAddress.replace(/\s*\(localhost\)\s*$/i, '').trim();
+  }
+  
+  getSelectedRangeLabel(): string {
+    const range = this.timeRanges.find(r => r.value === this.selectedTimeRange);
+    return range ? range.label : 'Today';
   }
 }
