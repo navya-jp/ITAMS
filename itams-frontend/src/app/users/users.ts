@@ -28,9 +28,21 @@ export class Users implements OnInit {
   // Modal states
   showCreateModal = false;
   showEditModal = false;
+  showPasswordModal = false;
   selectedUser: User | null = null;
   showLocationRestrictions = false;
   showEditLocationRestrictions = false;
+
+  // Password change form
+  newPassword = '';
+  confirmPassword = '';
+  newPasswordRequirements = {
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSpecial: false
+  };
 
   // Form data
   createForm: CreateUser = {
@@ -305,9 +317,19 @@ export class Users implements OnInit {
   closeModals() {
     this.showCreateModal = false;
     this.showEditModal = false;
+    this.showPasswordModal = false;
     this.selectedUser = null;
     this.showLocationRestrictions = false;
     this.showEditLocationRestrictions = false;
+    this.error = '';
+    this.success = '';
+  }
+
+  closePasswordModal() {
+    this.showPasswordModal = false;
+    this.newPassword = '';
+    this.confirmPassword = '';
+    this.resetNewPasswordRequirements();
     this.error = '';
     this.success = '';
   }
@@ -738,26 +760,71 @@ export class Users implements OnInit {
   }
 
   resetPassword(user: User) {
-    const newPassword = prompt('Enter new password for ' + user.username + ':');
-    if (newPassword) {
-      this.loading = true;
-      this.api.resetPassword(user.id, newPassword).subscribe({
-        next: (response: ApiResponse<any>) => {
-          if (response.success) {
-            this.success = response.message || 'Password reset successfully';
-            this.loading = false;
-          } else {
-            this.error = response.message || 'Failed to reset password';
-            this.loading = false;
-          }
-        },
-        error: (error) => {
-          this.error = error.error?.message || 'Failed to reset password';
-          this.loading = false;
-          console.error('Error resetting password:', error);
-        }
-      });
+    this.selectedUser = user;
+    this.newPassword = '';
+    this.confirmPassword = '';
+    this.resetNewPasswordRequirements();
+    this.showPasswordModal = true;
+    this.error = '';
+    this.success = '';
+  }
+
+  validateNewPassword() {
+    const password = this.newPassword;
+    this.newPasswordRequirements = {
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /\d/.test(password),
+      hasSpecial: /[@$!%*?&]/.test(password)
+    };
+  }
+
+  isNewPasswordValid(): boolean {
+    return Object.values(this.newPasswordRequirements).every(req => req) &&
+           this.newPassword === this.confirmPassword &&
+           this.newPassword.length > 0;
+  }
+
+  resetNewPasswordRequirements() {
+    this.newPasswordRequirements = {
+      minLength: false,
+      hasUppercase: false,
+      hasLowercase: false,
+      hasNumber: false,
+      hasSpecial: false
+    };
+  }
+
+  confirmPasswordChange() {
+    if (!this.selectedUser || !this.isNewPasswordValid()) {
+      return;
     }
+
+    this.loading = true;
+    this.api.resetPassword(this.selectedUser.id, this.newPassword).subscribe({
+      next: (response: ApiResponse<any>) => {
+        if (response.success) {
+          this.success = response.message || 'Password changed successfully';
+          this.loading = false;
+          this.closePasswordModal();
+          // Update the user's mustChangePassword flag
+          const userIndex = this.users.findIndex(u => u.id === this.selectedUser!.id);
+          if (userIndex !== -1) {
+            this.users[userIndex].mustChangePassword = false;
+            this.applyFilters();
+          }
+        } else {
+          this.error = response.message || 'Failed to change password';
+          this.loading = false;
+        }
+      },
+      error: (error) => {
+        this.error = error.error?.message || 'Failed to change password';
+        this.loading = false;
+        console.error('Error changing password:', error);
+      }
+    });
   }
 
   isFormValid(): boolean {
