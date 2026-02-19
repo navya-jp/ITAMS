@@ -808,10 +808,11 @@ export class Users implements OnInit {
           this.success = response.message || 'Password changed successfully';
           this.loading = false;
           this.closePasswordModal();
-          // Update the user's mustChangePassword flag
+          // Update the user's mustChangePassword and passwordResetRequested flags
           const userIndex = this.users.findIndex(u => u.id === this.selectedUser!.id);
           if (userIndex !== -1) {
             this.users[userIndex].mustChangePassword = false;
+            this.users[userIndex].passwordResetRequested = false;
             this.applyFilters();
           }
         } else {

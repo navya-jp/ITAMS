@@ -94,7 +94,8 @@
                     </span>
                     <span *ngIf="user.isLocked" class="badge bg-danger ms-1">Locked</span>
                     <span *ngIf="!user.lastLoginAt" class="badge bg-warning ms-1">First Login Pending</span>
-                    <span *ngIf="user.mustChangePassword && user.lastLoginAt" class="badge bg-warning ms-1">Password Change Required</span>
+                    <span *ngIf="user.passwordResetRequested" class="badge bg-warning ms-1">Password Reset Requested</span>
+                    <span *ngIf="user.mustChangePassword && user.lastLoginAt && !user.passwordResetRequested" class="badge bg-warning ms-1">Password Change Required</span>
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
@@ -110,7 +111,7 @@
                               [disabled]="!user.isActive" title="Unlock">
                         <i class="fas fa-unlock"></i>
                       </button>
-                      <button *ngIf="user.mustChangePassword && user.lastLoginAt" 
+                      <button *ngIf="(user.mustChangePassword && user.lastLoginAt) || user.passwordResetRequested" 
                               class="btn btn-outline-info" (click)="resetPassword(user)" 
                               [disabled]="!user.isActive" title="Change Password">
                         <i class="fas fa-key"></i>

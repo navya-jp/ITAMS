@@ -32,6 +32,8 @@ export interface User {
   lastActivityAt?: string;
   mustChangePassword: boolean;
   isLocked: boolean;
+  passwordResetRequested?: boolean;
+  passwordResetRequestedAt?: string;
   projectId?: number;
   restrictedRegion?: string;
   restrictedState?: string;

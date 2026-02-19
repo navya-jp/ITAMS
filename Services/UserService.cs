@@ -338,7 +338,9 @@ public class UserService : IUserService
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         user.PasswordChangedAt = DateTime.UtcNow;
-        user.MustChangePassword = true; // Force password change on next login
+        user.MustChangePassword = false; // Password has been reset by admin
+        user.PasswordResetRequested = false; // Clear the reset request flag
+        user.PasswordResetRequestedAt = null;
         user.FailedLoginAttempts = 0;
         user.LockedUntil = null;
 

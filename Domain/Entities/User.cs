@@ -56,6 +56,11 @@ public class User
     
     public DateTime? LastActivityAt { get; set; }
     
+    // Password reset request
+    public bool PasswordResetRequested { get; set; } = false;
+    
+    public DateTime? PasswordResetRequestedAt { get; set; }
+    
     // Project and Location Access Control
     public int ProjectId { get; set; }
     

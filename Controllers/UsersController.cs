@@ -614,6 +614,8 @@ public class UsersController : BaseController
             LastActivityAt = user.LastActivityAt,
             MustChangePassword = user.MustChangePassword,
             IsLocked = user.LockedUntil.HasValue && user.LockedUntil > DateTime.UtcNow,
+            PasswordResetRequested = user.PasswordResetRequested,
+            PasswordResetRequestedAt = user.PasswordResetRequestedAt,
             ProjectId = user.ProjectId,
             RestrictedRegion = user.RestrictedRegion,
             RestrictedState = user.RestrictedState,

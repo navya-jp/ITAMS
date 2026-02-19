@@ -546,6 +546,45 @@ namespace ITAMS.Controllers
 
             return "Unknown";
         }
+        
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.Username))
+                {
+                    return BadRequest(new { success = false, message = "Username is required" });
+                }
+
+                // Get user by username
+                var users = await _userService.GetAllUsersAsync();
+                var user = users.FirstOrDefault(u => 
+                    u.Username.Equals(request.Username, StringComparison.OrdinalIgnoreCase) && 
+                    u.IsActive);
+
+                if (user == null)
+                {
+                    // Don't reveal if user exists or not for security
+                    return Ok(new { success = true, message = "If the username exists, a password reset request has been created" });
+                }
+
+                // Mark user as requesting password reset
+                user.PasswordResetRequested = true;
+                user.PasswordResetRequestedAt = DateTime.UtcNow;
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Password reset requested for user: {Username}", user.Username);
+
+                return Ok(new { success = true, message = "Password reset request has been created. Please contact your administrator." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing forgot password request");
+                return StatusCode(500, new { success = false, message = "An error occurred while processing your request" });
+            }
+        }
     }
 
     // DTOs for authentication
@@ -598,6 +637,11 @@ namespace ITAMS.Controllers
     public class HeartbeatRequest
     {
         public int UserId { get; set; }
+    }
+    
+    public class ForgotPasswordRequest
+    {
+        public string Username { get; set; } = string.Empty;
     }
 
     public class LockoutInfo

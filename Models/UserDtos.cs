@@ -19,6 +19,10 @@ public class UserDto
     public bool MustChangePassword { get; set; }
     public bool IsLocked { get; set; }
     
+    // Password reset request
+    public bool PasswordResetRequested { get; set; }
+    public DateTime? PasswordResetRequestedAt { get; set; }
+    
     // Project and Location Access Control
     public int? ProjectId { get; set; }
     public string? RestrictedRegion { get; set; }

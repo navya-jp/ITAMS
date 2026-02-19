@@ -66,6 +66,8 @@ public class SuperAdminController : BaseController
                 LastActivityAt = u.LastActivityAt,
                 MustChangePassword = u.MustChangePassword,
                 IsLocked = u.LockedUntil.HasValue && u.LockedUntil > DateTime.UtcNow,
+                PasswordResetRequested = u.PasswordResetRequested,
+                PasswordResetRequestedAt = u.PasswordResetRequestedAt,
                 ProjectId = u.ProjectId,
                 RestrictedRegion = u.RestrictedRegion,
                 RestrictedState = u.RestrictedState,
