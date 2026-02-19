@@ -70,10 +70,9 @@ export class ChangePassword implements OnInit {
       this.isRequired = params['required'] === 'true';
     });
 
-    // If not first login and not required, redirect to dashboard
-    if (!this.isFirstLogin && !this.isRequired) {
-      this.redirectBasedOnRole();
-    }
+    // Don't redirect - allow users to request password reset
+    // Only first-time users will see the password creation form
+    // Regular users will see the "Request Password Reset" button
   }
 
   onChangePassword() {
@@ -122,16 +121,14 @@ export class ChangePassword implements OnInit {
     this.authService.requestPasswordReset(user.username).subscribe({
       next: (response) => {
         this.loading = false;
-        this.success = 'Password reset request sent to your administrator. They will reset your password shortly.';
+        this.success = `Password reset request sent for "${user.username}". Your Super Admin has been notified and will reset your password shortly. You can continue using the system until then.`;
         
-        // Redirect after 3 seconds
-        setTimeout(() => {
-          this.redirectBasedOnRole();
-        }, 3000);
+        // Don't redirect immediately - let them read the message
+        // They can click Cancel or Logout
       },
       error: (error) => {
         this.loading = false;
-        this.error = 'Failed to send password reset request. Please try again or contact your administrator.';
+        this.error = 'Failed to send password reset request. Please try again or contact your administrator directly.';
       }
     });
   }

@@ -107,6 +107,8 @@ export class Navigation implements OnInit, OnDestroy {
   }
 
   onChangePassword() {
+    // Navigate to change password page without any query params
+    // This will show the "Request Password Reset" button for regular users
     this.router.navigate(['/change-password']);
   }
 
