@@ -70,9 +70,10 @@ export class ChangePassword implements OnInit {
       this.isRequired = params['required'] === 'true';
     });
 
-    // Don't redirect - allow users to request password reset
-    // Only first-time users will see the password creation form
-    // Regular users will see the "Request Password Reset" button
+    // For non-first-login users, automatically send password reset request
+    if (!this.isFirstLogin && !this.isRequired) {
+      this.onRequestPasswordReset();
+    }
   }
 
   onChangePassword() {
