@@ -660,20 +660,10 @@ public class SuperAdminController : BaseController
     {
         try
         {
-            var userId = GetCurrentUserId();
-            if (!userId.HasValue)
-            {
-                return Unauthorized(new { message = "User not authenticated" });
-            }
-
+            // For SuperAdmin, return all locations without access control filtering
             var locations = await _locationService.GetAllLocationsAsync();
             
-            // Apply location filtering based on user's access
-            var query = locations.AsQueryable();
-            var filteredQuery = await _accessControlService.ApplyLocationFilter(query, userId.Value);
-            var filteredLocations = filteredQuery.ToList();
-            
-            var locationDtos = filteredLocations.Select(l => new LocationSummaryDto
+            var locationDtos = locations.Select(l => new LocationSummaryDto
             {
                 Id = l.Id,
                 Name = l.Name,
@@ -701,26 +691,10 @@ public class SuperAdminController : BaseController
     {
         try
         {
-            var userId = GetCurrentUserId();
-            if (!userId.HasValue)
-            {
-                return Unauthorized(new { message = "User not authenticated" });
-            }
-
-            // Check if user can access this project
-            if (!await CanAccessProject(projectId, _accessControlService))
-            {
-                return Forbidden("You do not have access to this project");
-            }
-
+            // For SuperAdmin, return all locations for the project without access control filtering
             var locations = await _locationService.GetLocationsByProjectAsync(projectId);
             
-            // Apply location filtering based on user's access
-            var query = locations.AsQueryable();
-            var filteredQuery = await _accessControlService.ApplyLocationFilter(query, userId.Value);
-            var filteredLocations = filteredQuery.ToList();
-            
-            var locationDtos = filteredLocations.Select(l => new LocationSummaryDto
+            var locationDtos = locations.Select(l => new LocationSummaryDto
             {
                 Id = l.Id,
                 Name = l.Name,

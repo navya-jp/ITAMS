@@ -18,6 +18,7 @@ public interface IUserService
     Task UnlockUserAsync(int userId);
     Task<bool> ValidatePasswordPolicyAsync(string password);
     Task<bool> IsUsernameAvailableAsync(string username);
+    Task<bool> IsEmailAvailableAsync(string email);
     Task UpdateSessionAsync(int userId, string sessionId, DateTime sessionStartedAt);
     Task ClearSessionAsync(int userId);
     Task UpdateActivityAsync(int userId);

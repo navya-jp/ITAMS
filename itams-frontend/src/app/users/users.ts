@@ -76,6 +76,20 @@ export class Users implements OnInit {
   checkingUsername = false;
   private usernameCheckTimeout: any;
   userHasEditedUsername = false;
+  
+  // Email validation and availability
+  isEmailValid = false;
+  emailAvailable: boolean | null = null;
+  checkingEmail = false;
+  private emailCheckTimeout: any;
+  
+  // Dynamic location data based on selected project
+  availableLocations: any[] = [];
+  availableRegions: string[] = [];
+  availableStates: string[] = [];
+  availableOffices: string[] = [];
+  availableSites: string[] = [];
+  loadingLocations = false;
 
   constructor(private api: Api, private authService: AuthService) {}
 
@@ -101,6 +115,65 @@ export class Users implements OnInit {
         console.error('Error loading projects:', error);
       }
     });
+  }
+  
+  onProjectChange(isEditMode: boolean = false) {
+    const projectIdRaw = isEditMode ? this.editForm.projectId : this.createForm.projectId;
+    const projectId = Number(projectIdRaw);
+    
+    // Only load locations if the restrictions section is expanded
+    const sectionExpanded = isEditMode ? this.showEditLocationRestrictions : this.showLocationRestrictions;
+    
+    if (projectId && projectId > 0 && sectionExpanded) {
+      this.loadProjectLocations(projectId);
+    } else {
+      // Clear location data if no project selected
+      this.clearLocationData();
+    }
+  }
+  
+  loadProjectLocations(projectId: number) {
+    this.loadingLocations = true;
+    this.clearLocationData(); // Clear first
+    
+    this.api.getLocations().subscribe({
+      next: (locations) => {
+        // Filter locations for the selected project
+        this.availableLocations = locations.filter((loc: any) => loc.projectId === projectId);
+        
+        // Extract unique values for dropdowns
+        this.availableRegions = [...new Set(this.availableLocations.map((loc: any) => loc.region).filter(Boolean))];
+        this.availableStates = [...new Set(this.availableLocations.map((loc: any) => loc.state).filter(Boolean))];
+        this.availableOffices = [...new Set(this.availableLocations.filter((loc: any) => loc.office).map((loc: any) => loc.office))];
+        this.availableSites = [...new Set(this.availableLocations.filter((loc: any) => loc.site).map((loc: any) => loc.site))];
+        
+        this.loadingLocations = false;
+      },
+      error: (error) => {
+        console.error('Error loading locations:', error);
+        this.loadingLocations = false;
+        this.clearLocationData();
+      }
+    });
+  }
+  
+  clearLocationData() {
+    this.availableLocations = [];
+    this.availableRegions = [];
+    this.availableStates = [];
+    this.availableOffices = [];
+    this.availableSites = [];
+  }
+  
+  getLocationSummary(projectId: number): string {
+    if (!projectId || this.availableLocations.length === 0) {
+      return 'No locations found for this project';
+    }
+    
+    const officeCount = this.availableOffices.length;
+    const siteCount = this.availableSites.length;
+    
+    return `${this.availableLocations.length} location(s): ${officeCount} office(s), ${siteCount} site(s)`;
   }
 
   loadUsers() {
@@ -191,6 +264,7 @@ export class Users implements OnInit {
     };
     this.resetPasswordRequirements();
     this.resetUsernameValidation();
+    this.resetEmailValidation();
     this.userHasEditedUsername = false; // Reset the flag
     this.showCreateModal = true;
     this.error = '';
@@ -240,10 +314,20 @@ export class Users implements OnInit {
 
   toggleLocationRestrictions() {
     this.showLocationRestrictions = !this.showLocationRestrictions;
+    
+    // Load locations if expanding and project is selected
+    if (this.showLocationRestrictions && this.createForm.projectId && this.createForm.projectId > 0) {
+      this.loadProjectLocations(Number(this.createForm.projectId));
+    }
   }
-
+  
   toggleEditLocationRestrictions() {
     this.showEditLocationRestrictions = !this.showEditLocationRestrictions;
+    
+    // Load locations if expanding and project is selected
+    if (this.showEditLocationRestrictions && this.editForm.projectId && this.editForm.projectId > 0) {
+      this.loadProjectLocations(Number(this.editForm.projectId));
+    }
   }
 
   // Generate username from name (for button click)
@@ -384,6 +468,55 @@ export class Users implements OnInit {
     }
   }
 
+  // Email validation and availability checking
+  onEmailChange() {
+    this.validateEmail(this.createForm.email);
+    
+    // Clear previous timeout
+    if (this.emailCheckTimeout) {
+      clearTimeout(this.emailCheckTimeout);
+    }
+    
+    // Reset availability status
+    this.emailAvailable = null;
+    
+    // Only check availability if email is valid
+    if (this.isEmailValid && this.createForm.email.length >= 5) {
+      // Debounce the availability check
+      this.emailCheckTimeout = setTimeout(() => {
+        this.checkEmailAvailability();
+      }, 500);
+    }
+  }
+
+  checkEmailAvailability() {
+    if (!this.isEmailValid || !this.createForm.email) {
+      return;
+    }
+
+    this.checkingEmail = true;
+    this.api.checkEmailAvailability(this.createForm.email).subscribe({
+      next: (response: ApiResponse<boolean>) => {
+        this.emailAvailable = response.success && response.data === true;
+        this.checkingEmail = false;
+      },
+      error: (error) => {
+        console.error('Error checking email availability:', error);
+        this.emailAvailable = null;
+        this.checkingEmail = false;
+      }
+    });
+  }
+
+  resetEmailValidation() {
+    this.isEmailValid = false;
+    this.emailAvailable = null;
+    this.checkingEmail = false;
+    if (this.emailCheckTimeout) {
+      clearTimeout(this.emailCheckTimeout);
+    }
+  }
+
   validatePassword() {
     const password = this.createForm.password;
     this.passwordRequirements = {
@@ -402,7 +535,8 @@ export class Users implements OnInit {
 
   validateEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    this.isEmailValid = emailRegex.test(email);
+    return this.isEmailValid;
   }
 
   resetPasswordRequirements() {
@@ -630,7 +764,8 @@ export class Users implements OnInit {
     return this.createForm.username.length >= 3 &&
            this.isUsernameValid &&
            this.usernameAvailable === true &&
-           this.validateEmail(this.createForm.email) &&
+           this.isEmailValid &&
+           this.emailAvailable === true &&
            this.createForm.firstName.length > 0 &&
            this.createForm.lastName.length > 0 &&
            this.createForm.roleId > 0 &&

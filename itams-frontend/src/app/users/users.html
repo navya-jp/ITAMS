@@ -191,7 +191,22 @@
             <div class="col-6">
               <label class="form-label">Email *</label>
               <input type="email" class="form-control form-control-sm" [(ngModel)]="createForm.email" 
-                     name="email" placeholder="Enter email" required>
+                     name="email" placeholder="Enter email" required
+                     (input)="onEmailChange()">
+              
+              <!-- Email validation feedback -->
+              <div *ngIf="checkingEmail" class="text-info small mt-1">
+                <i class="fas fa-spinner fa-spin"></i> Checking...
+              </div>
+              <div *ngIf="!checkingEmail && emailAvailable === false" class="text-danger small mt-1">
+                <i class="fas fa-times-circle"></i> Email already exists
+              </div>
+              <div *ngIf="!checkingEmail && emailAvailable === true" class="text-success small mt-1">
+                <i class="fas fa-check-circle"></i> Available
+              </div>
+              <div *ngIf="!checkingEmail && createForm.email && !isEmailValid" class="text-danger small mt-1">
+                <i class="fas fa-times-circle"></i> Invalid email format
+              </div>
             </div>
           </div>
 
@@ -245,7 +260,8 @@
           <div class="row mb-3">
             <div class="col-12">
               <label class="form-label">Project Assignment *</label>
-              <select class="form-select form-select-sm" [(ngModel)]="createForm.projectId" name="projectId" required>
+              <select class="form-select form-select-sm" [(ngModel)]="createForm.projectId" name="projectId" required
+                      (change)="onProjectChange(false)">
                 <option [value]="0">Select project</option>
                 <option *ngFor="let project of projects" [value]="project.id">
                   {{ project.code }} - {{ project.name }}
@@ -261,33 +277,61 @@
               <i class="fas me-2" [class.fa-chevron-down]="showLocationRestrictions" [class.fa-chevron-right]="!showLocationRestrictions"></i>
               <label class="form-label mb-0">Location Restrictions (Optional)</label>
             </div>
+            
             <div *ngIf="showLocationRestrictions" class="location-fields ps-3">
-              <div class="row mb-2">
-                <div class="col-6">
-                  <label class="form-label form-label-sm">Region</label>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.restrictedRegion" 
-                         name="restrictedRegion" placeholder="e.g., North">
-                </div>
-                <div class="col-6">
-                  <label class="form-label form-label-sm">State</label>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.restrictedState" 
-                         name="restrictedState" placeholder="e.g., Haryana">
-                </div>
+              <!-- Show project selection message if no project selected -->
+              <div *ngIf="!createForm.projectId || createForm.projectId === 0" class="alert alert-info alert-sm mb-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <small>Please select a project first to see available locations</small>
               </div>
-              <div class="row">
-                <div class="col-6">
-                  <label class="form-label form-label-sm">Plaza</label>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.restrictedPlaza" 
-                         name="restrictedPlaza" placeholder="e.g., Plaza 1">
-                </div>
-                <div class="col-6">
-                  <label class="form-label form-label-sm">Office</label>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="createForm.restrictedOffice" 
-                         name="restrictedOffice" placeholder="e.g., Main Office">
-                </div>
+              
+              <!-- Show loading state -->
+              <div *ngIf="loadingLocations && createForm.projectId && createForm.projectId > 0" class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-primary"></div>
+                <p class="small text-muted mt-2">Loading locations...</p>
               </div>
-              <div class="form-text mt-2">
-                <small>Leave empty for full access within project. Hierarchy: Office → Plaza → State → Region</small>
+              
+              <!-- Show location summary and fields -->
+              <div *ngIf="!loadingLocations && createForm.projectId && createForm.projectId > 0">
+                <div class="alert alert-light alert-sm mb-3">
+                  <i class="fas fa-map-marker-alt me-2"></i>{{ getLocationSummary(createForm.projectId) }}
+                </div>
+                
+                <div class="row mb-2">
+                  <div class="col-6">
+                    <label class="form-label form-label-sm">Region</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="createForm.restrictedRegion" name="restrictedRegion">
+                      <option value="">All Regions</option>
+                      <option *ngFor="let region of availableRegions" [value]="region">{{ region }}</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label form-label-sm">State</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="createForm.restrictedState" name="restrictedState">
+                      <option value="">All States</option>
+                      <option *ngFor="let state of availableStates" [value]="state">{{ state }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-6">
+                    <label class="form-label form-label-sm">Site</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="createForm.restrictedPlaza" name="restrictedPlaza">
+                      <option value="">All Sites</option>
+                      <option *ngFor="let site of availableSites" [value]="site">{{ site }}</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label form-label-sm">Office</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="createForm.restrictedOffice" name="restrictedOffice">
+                      <option value="">All Offices</option>
+                      <option *ngFor="let office of availableOffices" [value]="office">{{ office }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-text mt-2">
+                  <small>Leave as "All" for full access within project. Hierarchy: Office → Site → State → Region</small>
+                </div>
               </div>
             </div>
           </div>
@@ -362,7 +406,8 @@
 
           <div class="mb-3">
             <label class="form-label">Project Assignment *</label>
-            <select class="form-select" [(ngModel)]="editForm.projectId" name="projectId" required>
+            <select class="form-select" [(ngModel)]="editForm.projectId" name="projectId" required
+                    (change)="onProjectChange(true)">
               <option [value]="0">Select project</option>
               <option *ngFor="let project of projects" [value]="project.id">
                 {{ project.code }} - {{ project.name }}
@@ -377,33 +422,61 @@
               <i class="fas me-2" [class.fa-chevron-down]="showEditLocationRestrictions" [class.fa-chevron-right]="!showEditLocationRestrictions"></i>
               <label class="form-label mb-0">Location Restrictions (Optional)</label>
             </div>
+            
             <div *ngIf="showEditLocationRestrictions" class="location-fields ps-3">
-              <div class="row mb-2">
-                <div class="col-6">
-                  <label class="form-label form-label-sm">Region</label>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="editForm.restrictedRegion" 
-                         name="restrictedRegion" placeholder="e.g., North">
-                </div>
-                <div class="col-6">
-                  <label class="form-label form-label-sm">State</label>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="editForm.restrictedState" 
-                         name="restrictedState" placeholder="e.g., Haryana">
-                </div>
+              <!-- Show project selection message if no project selected -->
+              <div *ngIf="!editForm.projectId || editForm.projectId === 0" class="alert alert-info alert-sm mb-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <small>Please select a project first to see available locations</small>
               </div>
-              <div class="row">
-                <div class="col-6">
-                  <label class="form-label form-label-sm">Plaza</label>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="editForm.restrictedPlaza" 
-                         name="restrictedPlaza" placeholder="e.g., Plaza 1">
-                </div>
-                <div class="col-6">
-                  <label class="form-label form-label-sm">Office</label>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="editForm.restrictedOffice" 
-                         name="restrictedOffice" placeholder="e.g., Main Office">
-                </div>
+              
+              <!-- Show loading state -->
+              <div *ngIf="loadingLocations && editForm.projectId && editForm.projectId > 0" class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-primary"></div>
+                <p class="small text-muted mt-2">Loading locations...</p>
               </div>
-              <div class="form-text mt-2">
-                <small>Leave empty for full access within project. Hierarchy: Office → Plaza → State → Region</small>
+              
+              <!-- Show location summary and fields -->
+              <div *ngIf="!loadingLocations && editForm.projectId && editForm.projectId > 0">
+                <div class="alert alert-light alert-sm mb-3">
+                  <i class="fas fa-map-marker-alt me-2"></i>{{ getLocationSummary(editForm.projectId) }}
+                </div>
+                
+                <div class="row mb-2">
+                  <div class="col-6">
+                    <label class="form-label form-label-sm">Region</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="editForm.restrictedRegion" name="restrictedRegion">
+                      <option value="">All Regions</option>
+                      <option *ngFor="let region of availableRegions" [value]="region">{{ region }}</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label form-label-sm">State</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="editForm.restrictedState" name="restrictedState">
+                      <option value="">All States</option>
+                      <option *ngFor="let state of availableStates" [value]="state">{{ state }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-6">
+                    <label class="form-label form-label-sm">Site</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="editForm.restrictedPlaza" name="restrictedPlaza">
+                      <option value="">All Sites</option>
+                      <option *ngFor="let site of availableSites" [value]="site">{{ site }}</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label form-label-sm">Office</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="editForm.restrictedOffice" name="restrictedOffice">
+                      <option value="">All Offices</option>
+                      <option *ngFor="let office of availableOffices" [value]="office">{{ office }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-text mt-2">
+                  <small>Leave as "All" for full access within project. Hierarchy: Office → Site → State → Region</small>
+                </div>
               </div>
             </div>
           </div>

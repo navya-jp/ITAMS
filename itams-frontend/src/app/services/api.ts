@@ -236,6 +236,10 @@ export class Api {
     return this.http.get<ApiResponse<boolean>>(`${this.baseUrl}/users/check-username/${encodeURIComponent(username)}`);
   }
 
+  checkEmailAvailability(email: string): Observable<ApiResponse<boolean>> {
+    return this.http.get<ApiResponse<boolean>>(`${this.baseUrl}/users/check-email/${encodeURIComponent(email)}`);
+  }
+
   getUsersByRole(roleId: number): Observable<ApiResponse<User[]>> {
     return this.http.get<ApiResponse<User[]>>(`${this.baseUrl}/users/by-role/${roleId}`);
   }

@@ -469,6 +469,43 @@ public class UsersController : BaseController
     }
 
     /// <summary>
+    /// Check if email is available
+    /// </summary>
+    [HttpGet("check-email/{email}")]
+    public async Task<ActionResult<ApiResponse<bool>>> CheckEmailAvailability(string email)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Email cannot be empty"
+                });
+            }
+
+            var isAvailable = await _userService.IsEmailAvailableAsync(email);
+
+            return Ok(new ApiResponse<bool>
+            {
+                Success = true,
+                Data = isAvailable,
+                Message = isAvailable ? "Email is available" : "Email is already taken"
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "An error occurred while checking email availability",
+                Error = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
     /// Get current user's assigned project
     /// </summary>
     [HttpGet("my-project")]

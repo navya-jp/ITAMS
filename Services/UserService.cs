@@ -400,6 +400,17 @@ public class UserService : IUserService
         return existingUser == null;
     }
 
+    public async Task<bool> IsEmailAvailableAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return false;
+        }
+
+        var existingUser = await _userRepository.GetByEmailAsync(email);
+        return existingUser == null;
+    }
+
     public async Task UpdateSessionAsync(int userId, string sessionId, DateTime sessionStartedAt)
     {
         var user = await _userRepository.GetByIdAsync(userId);

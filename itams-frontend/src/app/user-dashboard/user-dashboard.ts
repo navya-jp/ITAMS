@@ -67,21 +67,41 @@ export class UserDashboard implements OnInit {
   }
 
   loadMyProjects() {
-    // TODO: Implement actual API call for user's projects
-    // For now, show empty state since no projects exist yet
-    this.myProjects = [];
-    this.stats.totalProjects = 0;
-    
-    // Uncomment when user projects API is implemented:
-    // this.api.getUserProjects().subscribe({
-    //   next: (projects) => {
-    //     this.myProjects = projects;
-    //     this.stats.totalProjects = projects.length;
-    //   },
-    //   error: (error) => {
-    //     this.error = 'Failed to load projects';
-    //   }
-    // });
+    // Load user's assigned project
+    this.api.getMyProject().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const projectData = response.data as any;
+          // Map the API response to the format expected by the template
+          this.myProjects = [{
+            name: projectData.preferredName || projectData.name,
+            code: projectData.code,
+            role: projectData.userRole || 'User',
+            progress: 0, // TODO: Calculate actual progress when assets are implemented
+            status: projectData.isActive ? 'Active' : 'Inactive',
+            dueDate: 'N/A', // TODO: Add due date when project milestones are implemented
+            locationCount: projectData.locationCount || 0,
+            accessLevel: projectData.accessLevel?.level || 'Full Project Access',
+            spvName: projectData.spvName,
+            states: projectData.states,
+            description: projectData.description
+          }];
+          this.stats.totalProjects = 1;
+        } else {
+          this.myProjects = [];
+          this.stats.totalProjects = 0;
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load project:', error);
+        this.myProjects = [];
+        this.stats.totalProjects = 0;
+        // Don't show error for users without projects
+        if (error.status !== 404) {
+          this.error = 'Failed to load project information';
+        }
+      }
+    });
   }
 
   loadMyAssets() {
