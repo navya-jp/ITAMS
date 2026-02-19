@@ -21,6 +21,7 @@ public class ITAMSDbContext : DbContext
     public DbSet<Asset> Assets { get; set; }
     public DbSet<AuditEntry> AuditEntries { get; set; }
     public DbSet<LoginAudit> LoginAudits { get; set; }
+    public DbSet<SystemSetting> SystemSettings { get; set; }
 
     // RBAC entities - Temporarily disabled due to naming conflicts
     // public DbSet<RbacRole> RbacRoles { get; set; }
@@ -281,6 +282,30 @@ public class ITAMSDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // SystemSetting entity configuration
+        modelBuilder.Entity<SystemSetting>(entity =>
+        {
+            entity.ToTable("SystemSettings");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.SettingKey).IsUnique();
+            
+            entity.Property(e => e.SettingKey)
+                .IsRequired()
+                .HasMaxLength(100);
+                
+            entity.Property(e => e.SettingValue)
+                .IsRequired()
+                .HasMaxLength(500);
+                
+            entity.Property(e => e.Category)
+                .IsRequired()
+                .HasMaxLength(50);
+                
+            entity.Property(e => e.DataType)
+                .IsRequired()
+                .HasMaxLength(20);
         });
 
         // Seed default data

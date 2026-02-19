@@ -101,4 +101,10 @@ export class AuditTrail implements OnInit {
     }
     return `${minutes}m`;
   }
+
+  formatIpAddress(ipAddress: string | undefined): string {
+    if (!ipAddress) return 'Unknown';
+    // Remove (localhost) suffix for display
+    return ipAddress.replace(/\s*\(localhost\)\s*$/i, '').trim();
+  }
 }

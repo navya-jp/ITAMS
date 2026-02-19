@@ -31,7 +31,7 @@ public class ProjectAccessControlMiddleware
         if (context.User?.Identity?.IsAuthenticated == true)
         {
             var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier);
-            var roleIdClaim = context.User.FindFirst(ClaimTypes.Role);
+            var roleIdClaim = context.User.FindFirst("RoleId");
 
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {

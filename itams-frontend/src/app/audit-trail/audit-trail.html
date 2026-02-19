@@ -46,7 +46,7 @@
               <td>{{ calculateSessionDuration(audit.loginTime, audit.logoutTime) }}</td>
               <td>
                 <span class="badge bg-light text-dark">
-                  <i class="fas fa-network-wired me-1"></i>{{ audit.ipAddress || 'Unknown' }}
+                  <i class="fas fa-network-wired me-1"></i>{{ formatIpAddress(audit.ipAddress) }}
                 </span>
               </td>
               <td>

@@ -127,6 +127,7 @@ namespace ITAMS.Controllers
                     IpAddress = ipAddress,
                     BrowserType = browserType,
                     OperatingSystem = operatingSystem,
+                    SessionId = sessionId,
                     Status = "ACTIVE"
                 };
 
@@ -336,21 +337,66 @@ namespace ITAMS.Controllers
         }
 
         [HttpGet("security-settings")]
-        public IActionResult GetSecuritySettings()
+        public async Task<IActionResult> GetSecuritySettings()
         {
-            // TODO: Load from configuration or database
-            var settings = new SecuritySettings
+            try
             {
-                MaxLoginAttempts = 5,
-                LockoutDurationMinutes = 30,
-                SessionTimeoutMinutes = 30,
-                PasswordExpiryDays = 90,
-                RequirePasswordChange = true,
-                AllowMultipleSessions = false,
-                AutoLogoutWarningMinutes = 5
-            };
+                // Load settings from database
+                var settingsList = await _context.SystemSettings
+                    .Where(s => s.Category == "Security")
+                    .ToListAsync();
+                    
+                var settingsDict = settingsList.ToDictionary(s => s.SettingKey, s => s.SettingValue);
+                
+                var settings = new SecuritySettings
+                {
+                    MaxLoginAttempts = GetIntSetting(settingsDict, "MaxLoginAttempts", 5),
+                    LockoutDurationMinutes = GetIntSetting(settingsDict, "LockoutDurationMinutes", 30),
+                    SessionTimeoutMinutes = GetIntSetting(settingsDict, "SessionTimeoutMinutes", 30),
+                    PasswordExpiryDays = GetIntSetting(settingsDict, "PasswordExpiryDays", 90),
+                    RequirePasswordChange = GetBoolSetting(settingsDict, "RequirePasswordChange", true),
+                    AllowMultipleSessions = GetBoolSetting(settingsDict, "AllowMultipleSessions", false),
+                    AutoLogoutWarningMinutes = GetIntSetting(settingsDict, "SessionWarningMinutes", 5)
+                };
 
-            return Ok(settings);
+                return Ok(settings);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading security settings");
+                
+                // Return default settings if database read fails
+                var settings = new SecuritySettings
+                {
+                    MaxLoginAttempts = 5,
+                    LockoutDurationMinutes = 30,
+                    SessionTimeoutMinutes = 30,
+                    PasswordExpiryDays = 90,
+                    RequirePasswordChange = true,
+                    AllowMultipleSessions = false,
+                    AutoLogoutWarningMinutes = 5
+                };
+
+                return Ok(settings);
+            }
+        }
+        
+        private int GetIntSetting(Dictionary<string, string> settings, string key, int defaultValue)
+        {
+            if (settings.TryGetValue(key, out var value) && int.TryParse(value, out var result))
+            {
+                return result;
+            }
+            return defaultValue;
+        }
+        
+        private bool GetBoolSetting(Dictionary<string, string> settings, string key, bool defaultValue)
+        {
+            if (settings.TryGetValue(key, out var value) && bool.TryParse(value, out var result))
+            {
+                return result;
+            }
+            return defaultValue;
         }
 
         private string GenerateJwtToken(Domain.Entities.User user, string sessionId)
@@ -367,6 +413,7 @@ namespace ITAMS.Controllers
                     new Claim(ClaimTypes.Name, user.Username),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.Role, user.Role?.Name ?? "User"),
+                    new Claim("RoleId", user.RoleId.ToString()),
                     new Claim("SessionId", sessionId)
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(30),
@@ -434,18 +481,27 @@ namespace ITAMS.Controllers
             var remoteIp = HttpContext.Connection.RemoteIpAddress;
             if (remoteIp != null)
             {
-                // If it's localhost, get the actual network IP of the server
-                if (remoteIp.ToString() == "::1" || remoteIp.ToString() == "127.0.0.1")
+                // If it's IPv4-mapped IPv6, extract the IPv4 part
+                if (remoteIp.IsIPv4MappedToIPv6)
+                {
+                    remoteIp = remoteIp.MapToIPv4();
+                }
+                
+                var ipString = remoteIp.ToString();
+                
+                // If it's localhost, try to get the actual client IP from the local network
+                if (ipString == "::1" || ipString == "127.0.0.1")
                 {
                     try
                     {
+                        // Get the server's network IP
                         var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
-                        var localIp = host.AddressList
+                        var serverIp = host.AddressList
                             .FirstOrDefault(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
                         
-                        if (localIp != null)
+                        if (serverIp != null)
                         {
-                            return $"{localIp} (localhost)";
+                            return $"{serverIp} (localhost)";
                         }
                     }
                     catch
@@ -456,13 +512,7 @@ namespace ITAMS.Controllers
                     return "127.0.0.1 (localhost)";
                 }
                 
-                // If it's IPv4-mapped IPv6, extract the IPv4 part
-                if (remoteIp.IsIPv4MappedToIPv6)
-                {
-                    return remoteIp.MapToIPv4().ToString();
-                }
-                
-                return remoteIp.ToString();
+                return ipString;
             }
 
             return "Unknown";

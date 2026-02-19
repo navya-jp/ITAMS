@@ -37,6 +37,8 @@ export interface User {
   restrictedState?: string;
   restrictedPlaza?: string;
   restrictedOffice?: string;
+  activeSessionId?: string;
+  sessionStartedAt?: string;
 }
 
 export interface CreateUser {
@@ -338,6 +340,23 @@ export class Api {
   // Login Audit
   getLoginAudits(pageSize: number = 100): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/superadmin/login-audit?pageSize=${pageSize}`);
+  }
+
+  // System Settings
+  getSystemSettings(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/settings`, this.getAuthHeaders());
+  }
+
+  getSettingsByCategory(category: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/settings/category/${category}`, this.getAuthHeaders());
+  }
+
+  updateSetting(id: number, value: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/settings/${id}`, { id, settingValue: value }, this.getAuthHeaders());
+  }
+
+  bulkUpdateSettings(settings: Array<{id: number, settingValue: string}>): Observable<any> {
+    return this.http.post(`${this.baseUrl}/settings/bulk-update`, settings, this.getAuthHeaders());
   }
 
   // User Projects

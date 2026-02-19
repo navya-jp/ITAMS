@@ -26,6 +26,9 @@ public class LoginAudit
     
     public DateTime? LogoutTime { get; set; }
     
+    [StringLength(500)]
+    public string? SessionId { get; set; }
+    
     [StringLength(50)]
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, LOGGED_OUT, SESSION_TIMEOUT, FORCED_LOGOUT
     
