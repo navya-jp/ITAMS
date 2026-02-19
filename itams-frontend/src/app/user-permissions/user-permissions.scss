@@ -264,6 +264,123 @@
   height: 2rem;
 }
 
+// Custom collapsible dropdown styling
+.dropdown {
+  position: relative;
+  
+  .form-select {
+    cursor: pointer;
+    background-color: white;
+    border: 1px solid #ced4da;
+    
+    &:hover {
+      border-color: #86b7fe;
+    }
+    
+    &.show {
+      border-color: #86b7fe;
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    i {
+      font-size: 0.8rem;
+      transition: transform 0.2s;
+    }
+  }
+  
+  .dropdown-menu {
+    width: 100%;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+      
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+  }
+  
+  .permission-group {
+    border-bottom: 1px solid #e9ecef;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    .dropdown-header {
+      background-color: #f8f9fa;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      width: 100%;
+      text-align: left;
+      transition: background-color 0.2s;
+      
+      &:hover {
+        background-color: #e9ecef;
+      }
+      
+      i {
+        font-size: 0.8rem;
+        transition: transform 0.2s;
+      }
+    }
+    
+    .permission-items {
+      .dropdown-item {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        
+        &:hover:not(.disabled) {
+          background-color: #f8f9fa;
+        }
+        
+        &.active {
+          background-color: #0d6efd;
+          color: white;
+          
+          .text-muted {
+            color: rgba(255, 255, 255, 0.8) !important;
+          }
+          
+          .badge {
+            background-color: rgba(255, 255, 255, 0.3) !important;
+            color: white !important;
+          }
+        }
+        
+        &.disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        
+        small {
+          font-size: 0.8rem;
+          display: block;
+        }
+      }
+    }
+  }
+}
+
 // Alert styling
 .alert {
   border: none;

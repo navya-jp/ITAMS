@@ -322,12 +322,6 @@
             <label class="form-label">Show Permissions</label>
             <div class="btn-group w-100 mb-2" role="group">
               <button type="button" class="btn btn-sm" 
-                      [class.btn-primary]="overridePermissionFilter === 'all'"
-                      [class.btn-outline-primary]="overridePermissionFilter !== 'all'"
-                      (click)="overridePermissionFilter = 'all'; overrideForm.permissionId = 0">
-                All
-              </button>
-              <button type="button" class="btn btn-sm" 
                       [class.btn-success]="overridePermissionFilter === 'not-granted'"
                       [class.btn-outline-success]="overridePermissionFilter !== 'not-granted'"
                       (click)="overridePermissionFilter = 'not-granted'; overrideForm.permissionId = 0; overrideForm.allowed = true">
@@ -344,20 +338,46 @@
           
           <div class="mb-3">
             <label class="form-label">Permission *</label>
-            <select class="form-select" [(ngModel)]="overrideForm.permissionId" name="permissionId" required>
-              <option value="0">Select a permission...</option>
-              <ng-container *ngFor="let group of permissionGroups">
-                <optgroup [label]="group.module">
-                  <option *ngFor="let permission of getAvailablePermissionsForOverride()"
-                          [value]="permission.id"
-                          [disabled]="hasPermissionOverride(selectedUser, permission.id) !== null"
-                          [hidden]="permission.module !== group.module">
-                    {{ permission.name }}
-                    <span *ngIf="hasPermissionOverride(selectedUser, permission.id)"> (Already has override)</span>
-                  </option>
-                </optgroup>
-              </ng-container>
-            </select>
+            <div class="dropdown w-100">
+              <button class="form-select text-start d-flex justify-content-between align-items-center" 
+                      type="button" 
+                      (click)="togglePermissionDropdown()"
+                      [class.show]="showPermissionDropdown">
+                <span>{{ getSelectedPermissionName() || 'Select a permission...' }}</span>
+                <i class="fas fa-chevron-down"></i>
+              </button>
+              <div class="dropdown-menu w-100" 
+                   [class.show]="showPermissionDropdown"
+                   style="max-height: 400px; overflow-y: auto;">
+                <div class="permission-group" *ngFor="let group of permissionGroups; let i = index">
+                  <button class="dropdown-item dropdown-header d-flex justify-content-between align-items-center" 
+                          type="button"
+                          (click)="togglePermissionGroup(i); $event.stopPropagation()">
+                    <strong>{{ group.module }}</strong>
+                    <i class="fas" [class.fa-chevron-down]="!isGroupExpanded(i)" [class.fa-chevron-up]="isGroupExpanded(i)"></i>
+                  </button>
+                  <div *ngIf="isGroupExpanded(i)" class="permission-items">
+                    <button type="button" 
+                            class="dropdown-item ps-4"
+                            *ngFor="let permission of group.permissions"
+                            [class.active]="overrideForm.permissionId === permission.id"
+                            [class.disabled]="hasPermissionOverride(selectedUser!, permission.id) !== null && overridePermissionFilter !== 'granted'"
+                            [disabled]="hasPermissionOverride(selectedUser!, permission.id) !== null && overridePermissionFilter !== 'granted'"
+                            [hidden]="(overridePermissionFilter === 'granted' && !hasEffectivePermission(selectedUser!, permission.id)) || 
+                                     (overridePermissionFilter === 'not-granted' && hasEffectivePermission(selectedUser!, permission.id))"
+                            (click)="selectPermission(permission.id)">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>{{ permission.name }}</div>
+                        <span *ngIf="hasPermissionOverride(selectedUser!, permission.id)" 
+                              class="badge bg-secondary ms-2">
+                          Override
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="mb-3">

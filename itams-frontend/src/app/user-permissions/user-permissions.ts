@@ -61,7 +61,11 @@ export class UserPermissions implements OnInit {
   };
   
   // Permission filter mode for override modal
-  overridePermissionFilter: 'all' | 'granted' | 'not-granted' = 'all';
+  overridePermissionFilter: 'all' | 'granted' | 'not-granted' = 'not-granted';
+  
+  // Dropdown state
+  showPermissionDropdown = false;
+  expandedGroups: Set<number> = new Set();
 
   constructor(private api: Api) {}
 
@@ -235,7 +239,7 @@ export class UserPermissions implements OnInit {
       reason: '',
       expiresAt: ''
     };
-    this.overridePermissionFilter = 'all'; // Default to showing all permissions
+    this.overridePermissionFilter = 'not-granted'; // Default to showing not granted permissions
     this.showOverrideModal = true;
     this.error = '';
     this.success = '';
@@ -416,5 +420,32 @@ export class UserPermissions implements OnInit {
   exportUserPermissions() {
     // TODO: Implement export functionality
     console.log('Exporting user permissions...');
+  }
+  
+  togglePermissionDropdown() {
+    this.showPermissionDropdown = !this.showPermissionDropdown;
+  }
+  
+  togglePermissionGroup(index: number) {
+    if (this.expandedGroups.has(index)) {
+      this.expandedGroups.delete(index);
+    } else {
+      this.expandedGroups.add(index);
+    }
+  }
+  
+  isGroupExpanded(index: number): boolean {
+    return this.expandedGroups.has(index);
+  }
+  
+  selectPermission(permissionId: number) {
+    this.overrideForm.permissionId = permissionId;
+    this.showPermissionDropdown = false;
+  }
+  
+  getSelectedPermissionName(): string {
+    if (!this.overrideForm.permissionId) return '';
+    const permission = this.permissions.find(p => p.id === this.overrideForm.permissionId);
+    return permission ? permission.name : '';
   }
 }
