@@ -119,6 +119,9 @@ namespace ITAMS.Controllers
                 var browserType = ExtractBrowserType(userAgent);
                 var operatingSystem = ExtractOperatingSystem(userAgent);
 
+                _logger.LogInformation("Login audit capture - UserAgent: {UserAgent}, Browser: {Browser}, OS: {OS}", 
+                    userAgent, browserType, operatingSystem);
+
                 var loginAudit = new LoginAudit
                 {
                     UserId = authenticatedUser.Id,
@@ -381,6 +384,28 @@ namespace ITAMS.Controllers
             }
         }
         
+        [HttpPost("heartbeat")]
+        public async Task<IActionResult> Heartbeat([FromBody] HeartbeatRequest request)
+        {
+            try
+            {
+                if (request.UserId > 0)
+                {
+                    // Update user's last activity time
+                    await _userService.UpdateActivityAsync(request.UserId);
+                    _logger.LogDebug("Heartbeat received from UserId={UserId}", request.UserId);
+                    return Ok(new { success = true });
+                }
+                
+                return BadRequest(new { success = false, message = "Invalid user ID" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing heartbeat for UserId={UserId}", request.UserId);
+                return StatusCode(500, new { success = false, message = "Error processing heartbeat" });
+            }
+        }
+        
         private int GetIntSetting(Dictionary<string, string> settings, string key, int defaultValue)
         {
             if (settings.TryGetValue(key, out var value) && int.TryParse(value, out var result))
@@ -443,16 +468,20 @@ namespace ITAMS.Controllers
         {
             if (string.IsNullOrEmpty(userAgent)) return "Unknown";
 
+            // Check Windows FIRST (most specific to least specific)
             if (userAgent.Contains("Windows NT 10.0")) return "Windows 10/11";
             if (userAgent.Contains("Windows NT 6.3")) return "Windows 8.1";
             if (userAgent.Contains("Windows NT 6.2")) return "Windows 8";
             if (userAgent.Contains("Windows NT 6.1")) return "Windows 7";
             if (userAgent.Contains("Windows")) return "Windows";
             
-            if (userAgent.Contains("Mac OS X")) return "macOS";
-            if (userAgent.Contains("Linux")) return "Linux";
+            // Then check other OS (order matters!)
             if (userAgent.Contains("Android")) return "Android";
-            if (userAgent.Contains("iOS") || userAgent.Contains("iPhone") || userAgent.Contains("iPad")) return "iOS";
+            if (userAgent.Contains("iPhone") || userAgent.Contains("iPad") || userAgent.Contains("iPod")) return "iOS";
+            if (userAgent.Contains("Mac OS X") || userAgent.Contains("Macintosh")) return "macOS";
+            
+            // Check Linux LAST (because many user agents mention Linux for compatibility)
+            if (userAgent.Contains("Linux") && !userAgent.Contains("Android")) return "Linux";
 
             return "Other";
         }
@@ -564,6 +593,11 @@ namespace ITAMS.Controllers
         public string CurrentPassword { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
         public string ConfirmPassword { get; set; } = string.Empty;
+    }
+    
+    public class HeartbeatRequest
+    {
+        public int UserId { get; set; }
     }
 
     public class LockoutInfo

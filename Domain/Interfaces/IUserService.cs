@@ -20,6 +20,7 @@ public interface IUserService
     Task<bool> IsUsernameAvailableAsync(string username);
     Task UpdateSessionAsync(int userId, string sessionId, DateTime sessionStartedAt);
     Task ClearSessionAsync(int userId);
+    Task UpdateActivityAsync(int userId);
 }
 
 public class CreateUserRequest

@@ -75,6 +75,7 @@ export class AuthService {
   private sessionTimer: any;
   private warningTimer: any;
   private activityTimer: any;
+  private heartbeatTimer: any;
   private lastActivity = Date.now();
 
   // Security settings (loaded from backend)
@@ -100,6 +101,7 @@ export class AuthService {
   private setupBeforeUnloadHandler() {
     // Use beforeunload for browser/tab close detection
     window.addEventListener('beforeunload', (e) => {
+      console.log('beforeunload triggered, isAuthenticated:', this.isAuthenticated);
       if (this.isAuthenticated) {
         this.sendForcedLogout();
       }
@@ -107,7 +109,16 @@ export class AuthService {
     
     // Also use pagehide as a backup (more reliable on mobile)
     window.addEventListener('pagehide', (e) => {
+      console.log('pagehide triggered, isAuthenticated:', this.isAuthenticated);
       if (this.isAuthenticated) {
+        this.sendForcedLogout();
+      }
+    });
+    
+    // Also try visibilitychange as another backup
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && this.isAuthenticated) {
+        console.log('visibilitychange to hidden, sending forced logout');
         this.sendForcedLogout();
       }
     });
@@ -115,14 +126,40 @@ export class AuthService {
   
   private sendForcedLogout() {
     const currentUser = this.currentUser;
+    console.log('sendForcedLogout called, currentUser:', currentUser);
     if (currentUser && currentUser.id) {
-      // Use FormData for better compatibility with sendBeacon
+      const url = `${this.baseUrl}/logout`;
+      console.log('Sending beacon to:', url, 'userId:', currentUser.id);
+      
+      // Try sendBeacon first (preferred method)
       const formData = new FormData();
       formData.append('userId', currentUser.id.toString());
       formData.append('logoutType', 'FORCED_LOGOUT');
       
-      const sent = navigator.sendBeacon(`${this.baseUrl}/logout`, formData);
-      console.log('Forced logout beacon sent:', sent, 'for userId:', currentUser.id);
+      let sent = false;
+      try {
+        sent = navigator.sendBeacon(url, formData);
+        console.log('Beacon sent:', sent);
+      } catch (error) {
+        console.error('Beacon failed:', error);
+      }
+      
+      // If beacon fails, try synchronous XHR as fallback
+      if (!sent) {
+        try {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', url, false); // false = synchronous
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xhr.send(`userId=${currentUser.id}&logoutType=FORCED_LOGOUT`);
+          console.log('Synchronous XHR sent, status:', xhr.status);
+        } catch (error) {
+          console.error('Synchronous XHR failed:', error);
+        }
+      }
+      
+      // Clear local storage
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('current_user');
     }
   }
 
@@ -136,6 +173,7 @@ export class AuthService {
         this.currentUserSubject.next(userData);
         this.isAuthenticatedSubject.next(true);
         this.startSessionTimer();
+        this.startHeartbeat();
         this.validateSession();
       } catch (error) {
         this.logout();
@@ -193,6 +231,31 @@ export class AuthService {
     if (this.warningTimer) {
       clearTimeout(this.warningTimer);
     }
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+    }
+  }
+  
+  private startHeartbeat() {
+    // Send heartbeat every 30 seconds to keep session alive
+    this.heartbeatTimer = setInterval(() => {
+      if (this.isAuthenticated && this.currentUser) {
+        this.sendHeartbeat();
+      }
+    }, 30000); // 30 seconds
+  }
+  
+  private sendHeartbeat() {
+    const currentUser = this.currentUser;
+    if (currentUser && currentUser.id) {
+      this.http.post(`${this.baseUrl}/heartbeat`, 
+        { userId: currentUser.id },
+        this.getAuthHeaders()
+      ).subscribe({
+        next: () => console.log('Heartbeat sent'),
+        error: (err) => console.error('Heartbeat failed:', err)
+      });
+    }
   }
 
   // Public methods
@@ -212,6 +275,7 @@ export class AuthService {
               
               // Start session management
               this.startSessionTimer();
+              this.startHeartbeat();
               this.lastActivity = Date.now();
               
               // Load security settings

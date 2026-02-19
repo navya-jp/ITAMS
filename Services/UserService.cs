@@ -429,4 +429,16 @@ public class UserService : IUserService
         await _userRepository.UpdateAsync(user);
         await _auditService.LogAsync("SESSION_ENDED", "User", user.Id.ToString(), user.Id, user.Username);
     }
+    
+    public async Task UpdateActivityAsync(int userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            return;
+        }
+
+        user.LastActivityAt = DateTime.UtcNow;
+        await _userRepository.UpdateAsync(user);
+    }
 }

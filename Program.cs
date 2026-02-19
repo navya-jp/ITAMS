@@ -73,6 +73,9 @@ builder.Services.AddScoped<ITAMS.Services.RBAC.IPermissionResolver, ITAMS.Servic
 builder.Services.AddScoped<ITAMS.Services.RBAC.IRbacAuditService, ITAMS.Services.RBAC.RbacAuditService>();
 builder.Services.AddScoped<ITAMS.Services.RBAC.IRoleManagementService, ITAMS.Services.RBAC.RoleManagementService>();
 
+// Add background services
+builder.Services.AddHostedService<ITAMS.Services.SessionCleanupService>();
+
 // Add memory cache for permission caching
 builder.Services.AddMemoryCache();
 
