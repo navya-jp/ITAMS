@@ -158,31 +158,6 @@
                   </div>
                 </div>
 
-                <div class="row g-2 mb-2">
-                  <div class="col-6">
-                    <small class="text-muted d-block">Budget</small>
-                    <small class="fw-bold text-success">
-                      <i class="fas fa-rupee-sign me-1"></i>{{ formatCurrency(project.budget) }}
-                    </small>
-                  </div>
-                  <div class="col-6">
-                    <small class="text-muted d-block">Spent</small>
-                    <small class="fw-bold text-warning">
-                      <i class="fas fa-chart-line me-1"></i>{{ formatCurrency(project.spent) }}
-                    </small>
-                  </div>
-                </div>
-
-                <!-- Team Members -->
-                <div class="mb-2">
-                  <small class="text-muted d-block mb-1">Team Members</small>
-                  <div class="d-flex flex-wrap gap-1">
-                    <span *ngFor="let member of project.team" class="badge bg-light text-dark">
-                      <i class="fas fa-user me-1"></i>{{ member }}
-                    </span>
-                  </div>
-                </div>
-
                 <!-- Locations -->
                 <div class="mb-3">
                   <small class="text-muted d-block mb-1">Locations</small>

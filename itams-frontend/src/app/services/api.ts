@@ -374,6 +374,6 @@ export class Api {
 
   // User Projects
   getMyProject(): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/users/my-project`);
+    return this.http.get<any>(`${this.baseUrl}/users/my-project`, this.getAuthHeaders());
   }
 }
