@@ -99,68 +99,9 @@ export class AuthService {
   }
 
   private setupBeforeUnloadHandler() {
-    // Use beforeunload for browser/tab close detection
-    window.addEventListener('beforeunload', (e) => {
-      console.log('beforeunload triggered, isAuthenticated:', this.isAuthenticated);
-      if (this.isAuthenticated) {
-        this.sendForcedLogout();
-      }
-    });
-    
-    // Also use pagehide as a backup (more reliable on mobile)
-    window.addEventListener('pagehide', (e) => {
-      console.log('pagehide triggered, isAuthenticated:', this.isAuthenticated);
-      if (this.isAuthenticated) {
-        this.sendForcedLogout();
-      }
-    });
-    
-    // Also try visibilitychange as another backup
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden' && this.isAuthenticated) {
-        console.log('visibilitychange to hidden, sending forced logout');
-        this.sendForcedLogout();
-      }
-    });
-  }
-  
-  private sendForcedLogout() {
-    const currentUser = this.currentUser;
-    console.log('sendForcedLogout called, currentUser:', currentUser);
-    if (currentUser && currentUser.id) {
-      const url = `${this.baseUrl}/logout`;
-      console.log('Sending beacon to:', url, 'userId:', currentUser.id);
-      
-      // Try sendBeacon first (preferred method)
-      const formData = new FormData();
-      formData.append('userId', currentUser.id.toString());
-      formData.append('logoutType', 'FORCED_LOGOUT');
-      
-      let sent = false;
-      try {
-        sent = navigator.sendBeacon(url, formData);
-        console.log('Beacon sent:', sent);
-      } catch (error) {
-        console.error('Beacon failed:', error);
-      }
-      
-      // If beacon fails, try synchronous XHR as fallback
-      if (!sent) {
-        try {
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', url, false); // false = synchronous
-          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-          xhr.send(`userId=${currentUser.id}&logoutType=FORCED_LOGOUT`);
-          console.log('Synchronous XHR sent, status:', xhr.status);
-        } catch (error) {
-          console.error('Synchronous XHR failed:', error);
-        }
-      }
-      
-      // Clear local storage
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('current_user');
-    }
+    // Don't use beforeunload or pagehide - they fire on refresh too
+    // Instead, rely on the heartbeat mechanism and background cleanup service
+    // The background service will mark sessions as FORCED_LOGOUT after 2 minutes of no heartbeat
   }
 
   private initializeAuth() {
