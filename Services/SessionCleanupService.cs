@@ -47,19 +47,21 @@ namespace ITAMS.Services
 
             var now = DateTimeHelper.Now;
             var forcedLogoutCutoff = now.AddMinutes(-2); // No heartbeat for 2 minutes = browser closed
+            var sessionTimeoutCutoff = now.AddMinutes(-30); // Session started 30+ minutes ago = timeout
 
-            // Find users whose browser closed (no heartbeat for 2+ minutes)
-            var abandonedUsers = await context.Users
+            // Find users with active sessions
+            var activeUsers = await context.Users
                 .Where(u =>
                     !string.IsNullOrEmpty(u.ActiveSessionId) &&
-                    u.LastActivityAt.HasValue &&
-                    u.LastActivityAt <= forcedLogoutCutoff)
+                    u.SessionStartedAt.HasValue)
                 .ToListAsync();
 
-            if (!abandonedUsers.Any())
+            if (!activeUsers.Any())
                 return;
 
-            foreach (var user in abandonedUsers)
+            var cleanedCount = 0;
+
+            foreach (var user in activeUsers)
             {
                 // Find ACTIVE audit record
                 var activeAudit = await context.LoginAudits
@@ -67,24 +69,51 @@ namespace ITAMS.Services
                     .OrderByDescending(a => a.LoginTime)
                     .FirstOrDefaultAsync();
 
-                if (activeAudit != null)
+                if (activeAudit == null)
+                    continue;
+
+                var sessionDuration = now - user.SessionStartedAt.Value;
+                var timeSinceLastHeartbeat = user.LastActivityAt.HasValue 
+                    ? now - user.LastActivityAt.Value 
+                    : sessionDuration;
+
+                // Check for SESSION_TIMEOUT first (30 minutes from login)
+                if (sessionDuration.TotalMinutes >= 30)
+                {
+                    activeAudit.Status = "SESSION_TIMEOUT";
+                    activeAudit.LogoutTime = now;
+                    
+                    user.ActiveSessionId = null;
+                    user.SessionStartedAt = null;
+                    
+                    cleanedCount++;
+                    _logger.LogInformation(
+                        "Session timeout for user {Username} - session duration: {Minutes:F1} minutes",
+                        user.Username, sessionDuration.TotalMinutes
+                    );
+                }
+                // Check for FORCED_LOGOUT (browser closed - no heartbeat for 2+ minutes)
+                else if (timeSinceLastHeartbeat.TotalMinutes >= 2)
                 {
                     activeAudit.Status = "FORCED_LOGOUT";
                     activeAudit.LogoutTime = now;
+                    
+                    user.ActiveSessionId = null;
+                    user.SessionStartedAt = null;
+                    
+                    cleanedCount++;
+                    _logger.LogInformation(
+                        "Forced logout for user {Username} - no heartbeat for {Minutes:F1} minutes (browser closed)",
+                        user.Username, timeSinceLastHeartbeat.TotalMinutes
+                    );
                 }
-
-                // Clear session
-                user.ActiveSessionId = null;
-                user.SessionStartedAt = null;
-
-                _logger.LogInformation(
-                    "Forced logout for user {Username} - no heartbeat for 2+ minutes (browser closed)",
-                    user.Username
-                );
             }
 
-            await context.SaveChangesAsync();
-            _logger.LogInformation("Cleaned up {Count} abandoned sessions", abandonedUsers.Count);
+            if (cleanedCount > 0)
+            {
+                await context.SaveChangesAsync();
+                _logger.LogInformation("Cleaned up {Count} stale sessions", cleanedCount);
+            }
         }
     }
 }
