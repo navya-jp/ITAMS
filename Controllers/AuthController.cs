@@ -454,11 +454,12 @@ namespace ITAMS.Controllers
         {
             if (string.IsNullOrEmpty(userAgent)) return "Unknown";
 
+            // Check Opera FIRST (before Chrome, since Opera contains "Chrome" in user agent)
+            if (userAgent.Contains("Opera/") || userAgent.Contains("OPR/")) return "Opera";
             if (userAgent.Contains("Edg/")) return "Microsoft Edge";
             if (userAgent.Contains("Chrome/") && !userAgent.Contains("Edg/")) return "Google Chrome";
             if (userAgent.Contains("Firefox/")) return "Mozilla Firefox";
             if (userAgent.Contains("Safari/") && !userAgent.Contains("Chrome/")) return "Safari";
-            if (userAgent.Contains("Opera/") || userAgent.Contains("OPR/")) return "Opera";
             if (userAgent.Contains("MSIE") || userAgent.Contains("Trident/")) return "Internet Explorer";
 
             return "Other";
