@@ -9,7 +9,7 @@ namespace ITAMS.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<SessionCleanupService> _logger;
         private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1); // Check every minute
-        private readonly TimeSpan _sessionTimeout = TimeSpan.FromMinutes(2); // 2 minutes without heartbeat = forced logout
+        private readonly TimeSpan _sessionTimeout = TimeSpan.FromMinutes(35); // 35 minutes without heartbeat = forced logout (5 min buffer after 30 min session timeout)
 
         public SessionCleanupService(
             IServiceProvider serviceProvider,

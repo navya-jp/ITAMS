@@ -83,6 +83,7 @@ export class AuditTrail implements OnInit {
     // Calculate date range based on selected time range
     let startDate: Date;
     let endDate = new Date();
+    endDate.setHours(23, 59, 59, 999); // Always end of day for today
     
     if (this.selectedTimeRange === 'custom') {
       if (!this.customStartDate || !this.customEndDate) {
