@@ -8,6 +8,7 @@ using System.Text;
 using ITAMS.Data;
 using ITAMS.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using ITAMS.Utilities;
 
 namespace ITAMS.Controllers
 {
@@ -70,7 +71,7 @@ namespace ITAMS.Controllers
                 {
                     // Check if session is still valid based on last activity (within 30 minutes)
                     var lastActivity = user.LastActivityAt ?? user.SessionStartedAt.Value;
-                    var timeSinceActivity = DateTime.UtcNow - lastActivity;
+                    var timeSinceActivity = DateTimeHelper.Now - lastActivity;
                     
                     _logger.LogInformation("Session check: User {Username}, Time since activity: {Minutes} minutes", 
                         user.Username, timeSinceActivity.TotalMinutes);
@@ -111,7 +112,7 @@ namespace ITAMS.Controllers
 
                 // Generate session ID and update user
                 var sessionId = Guid.NewGuid().ToString();
-                await _userService.UpdateSessionAsync(authenticatedUser.Id, sessionId, DateTime.UtcNow);
+                await _userService.UpdateSessionAsync(authenticatedUser.Id, sessionId, DateTimeHelper.Now);
 
                 // Capture login audit details
                 var ipAddress = GetClientIpAddress();
@@ -126,7 +127,7 @@ namespace ITAMS.Controllers
                 {
                     UserId = authenticatedUser.Id,
                     Username = authenticatedUser.Username,
-                    LoginTime = DateTime.UtcNow,
+                    LoginTime = DateTimeHelper.Now,
                     IpAddress = ipAddress,
                     BrowserType = browserType,
                     OperatingSystem = operatingSystem,
@@ -222,7 +223,7 @@ namespace ITAMS.Controllers
 
                         if (loginAudit != null)
                         {
-                            loginAudit.LogoutTime = DateTime.UtcNow;
+                            loginAudit.LogoutTime = DateTimeHelper.Now;
                             // Set status based on logout type
                             loginAudit.Status = logoutType switch
                             {
@@ -572,7 +573,7 @@ namespace ITAMS.Controllers
 
                 // Mark user as requesting password reset
                 user.PasswordResetRequested = true;
-                user.PasswordResetRequestedAt = DateTime.UtcNow;
+                user.PasswordResetRequestedAt = DateTimeHelper.Now;
                 _context.Users.Update(user);
                 await _context.SaveChangesAsync();
 

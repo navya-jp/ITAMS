@@ -1,5 +1,6 @@
 using ITAMS.Data;
 using Microsoft.EntityFrameworkCore;
+using ITAMS.Utilities;
 
 namespace ITAMS.Services
 {
@@ -44,7 +45,7 @@ namespace ITAMS.Services
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ITAMSDbContext>();
 
-            var cutoffTime = DateTime.UtcNow.Subtract(_sessionTimeout);
+            var cutoffTime = DateTimeHelper.Now.Subtract(_sessionTimeout);
 
             // Find users with active sessions but no recent activity
             var staleUsers = await context.Users
@@ -67,7 +68,7 @@ namespace ITAMS.Services
 
                     if (loginAudit != null)
                     {
-                        loginAudit.LogoutTime = DateTime.UtcNow;
+                        loginAudit.LogoutTime = DateTimeHelper.Now;
                         loginAudit.Status = "FORCED_LOGOUT";
                         _logger.LogInformation("Marked session as FORCED_LOGOUT for user {Username} (UserId={UserId})", 
                             user.Username, user.Id);
