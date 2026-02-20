@@ -9,7 +9,8 @@ namespace ITAMS.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<SessionCleanupService> _logger;
         private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1); // Check every minute
-        private readonly TimeSpan _sessionTimeout = TimeSpan.FromMinutes(35); // 35 minutes without heartbeat = forced logout (5 min buffer after 30 min session timeout)
+        private readonly TimeSpan _sessionTimeout = TimeSpan.FromMinutes(30); // 30 minutes without activity = session timeout
+        private readonly TimeSpan _forcedLogoutThreshold = TimeSpan.FromMinutes(2); // 2 minutes without heartbeat = forced logout (browser closed without logout)
 
         public SessionCleanupService(
             IServiceProvider serviceProvider,
@@ -45,21 +46,28 @@ namespace ITAMS.Services
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ITAMSDbContext>();
 
-            var cutoffTime = DateTimeHelper.Now.Subtract(_sessionTimeout);
+            var now = DateTimeHelper.Now;
+            var sessionTimeoutCutoff = now.Subtract(_sessionTimeout);
+            var forcedLogoutCutoff = now.Subtract(_forcedLogoutThreshold);
 
             // Find users with active sessions but no recent activity
             var staleUsers = await context.Users
                 .Where(u => !string.IsNullOrEmpty(u.ActiveSessionId) &&
-                           u.LastActivityAt.HasValue &&
-                           u.LastActivityAt.Value < cutoffTime)
+                           u.LastActivityAt.HasValue)
                 .ToListAsync();
 
             if (staleUsers.Any())
             {
-                _logger.LogInformation("Found {Count} stale sessions to clean up", staleUsers.Count);
-
                 foreach (var user in staleUsers)
                 {
+                    var timeSinceActivity = now - user.LastActivityAt.Value;
+                    
+                    // Skip if session is still active (within 30 minutes)
+                    if (timeSinceActivity.TotalMinutes < 30)
+                    {
+                        continue;
+                    }
+
                     // Find the active login audit record
                     var loginAudit = await context.LoginAudits
                         .Where(la => la.UserId == user.Id && la.Status == "ACTIVE")
@@ -68,10 +76,25 @@ namespace ITAMS.Services
 
                     if (loginAudit != null)
                     {
-                        loginAudit.LogoutTime = DateTimeHelper.Now;
-                        loginAudit.Status = "FORCED_LOGOUT";
-                        _logger.LogInformation("Marked session as FORCED_LOGOUT for user {Username} (UserId={UserId})", 
-                            user.Username, user.Id);
+                        loginAudit.LogoutTime = now;
+                        
+                        // Determine logout type based on time since last activity:
+                        // - FORCED_LOGOUT: 2-5 minutes (browser closed without logout, heartbeat stopped)
+                        // - SESSION_TIMEOUT: 30+ minutes (automatic timeout due to inactivity)
+                        if (timeSinceActivity.TotalMinutes >= 2 && timeSinceActivity.TotalMinutes < 5)
+                        {
+                            // Browser closed without clicking logout (heartbeat stopped suddenly)
+                            loginAudit.Status = "FORCED_LOGOUT";
+                            _logger.LogInformation("Marked session as FORCED_LOGOUT for user {Username} (UserId={UserId}) - last activity {Minutes:F1} minutes ago", 
+                                user.Username, user.Id, timeSinceActivity.TotalMinutes);
+                        }
+                        else
+                        {
+                            // Session timeout due to 30 minutes of inactivity
+                            loginAudit.Status = "SESSION_TIMEOUT";
+                            _logger.LogInformation("Marked session as SESSION_TIMEOUT for user {Username} (UserId={UserId}) - last activity {Minutes:F1} minutes ago", 
+                                user.Username, user.Id, timeSinceActivity.TotalMinutes);
+                        }
                     }
 
                     // Clear the user's session
@@ -79,7 +102,12 @@ namespace ITAMS.Services
                     user.SessionStartedAt = null;
                 }
 
-                await context.SaveChangesAsync();
+                if (staleUsers.Any(u => u.ActiveSessionId == null))
+                {
+                    await context.SaveChangesAsync();
+                    _logger.LogInformation("Cleaned up {Count} stale sessions", 
+                        staleUsers.Count(u => u.ActiveSessionId == null));
+                }
             }
         }
     }

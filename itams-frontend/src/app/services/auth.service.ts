@@ -101,7 +101,13 @@ export class AuthService {
   private setupBeforeUnloadHandler() {
     // Don't use beforeunload or pagehide - they fire on refresh too
     // Instead, rely on the heartbeat mechanism and background cleanup service
-    // The background service will mark sessions as FORCED_LOGOUT after 2 minutes of no heartbeat
+    // 
+    // How it works:
+    // 1. Heartbeat sends every 30 seconds to update LastActivityAt
+    // 2. If browser closes without logout, heartbeat stops
+    // 3. Backend cleanup service detects no heartbeat for 2 minutes → marks as FORCED_LOGOUT
+    // 4. If no activity for 30 minutes → marks as SESSION_TIMEOUT
+    // 5. If user clicks logout button → marks as LOGGED_OUT
   }
 
   private initializeAuth() {
