@@ -63,35 +63,56 @@ namespace ITAMS.Controllers
                     });
                 }
 
-                _logger.LogInformation("Login attempt for user: {Username}, ActiveSessionId: {SessionId}, LastActivity: {LastActivity}", 
-                    user.Username, user.ActiveSessionId, user.LastActivityAt);
+                var now = DateTimeHelper.Now;
 
-                // Check if user already has an active session
-                if (!string.IsNullOrEmpty(user.ActiveSessionId) && user.SessionStartedAt.HasValue)
+                // If user already has active session
+                if (!string.IsNullOrEmpty(user.ActiveSessionId))
                 {
-                    // Check if session is still valid based on last activity (within 30 minutes)
-                    var lastActivity = user.LastActivityAt ?? user.SessionStartedAt.Value;
-                    var timeSinceActivity = DateTimeHelper.Now - lastActivity;
-                    
-                    _logger.LogInformation("Session check: User {Username}, Time since activity: {Minutes} minutes", 
-                        user.Username, timeSinceActivity.TotalMinutes);
-                    
-                    if (timeSinceActivity.TotalMinutes < 30)
+                    // Load configurable session timeout from database
+                    var timeoutSetting = await _context.SystemSettings
+                        .Where(s => s.SettingKey == "SessionTimeoutMinutes" && s.Category == "Security")
+                        .Select(s => s.SettingValue)
+                        .FirstOrDefaultAsync();
+
+                    int timeoutMinutes = 30;
+                    if (!string.IsNullOrEmpty(timeoutSetting) && int.TryParse(timeoutSetting, out var parsed))
                     {
-                        _logger.LogWarning("BLOCKING LOGIN: User {Username} attempted login with active session (last activity: {LastActivity})", 
-                            request.Username, lastActivity);
-                        return Unauthorized(new LoginResponse
+                        timeoutMinutes = parsed;
+                    }
+
+                    var lastActivity = user.LastActivityAt ?? user.SessionStartedAt ?? now;
+                    var inactiveMinutes = (now - lastActivity).TotalMinutes;
+
+                    var activeAudit = await _context.LoginAudits
+                        .Where(a => a.UserId == user.Id && a.Status == "ACTIVE")
+                        .OrderByDescending(a => a.LoginTime)
+                        .FirstOrDefaultAsync();
+
+                    if (inactiveMinutes >= timeoutMinutes)
+                    {
+                        // Old session expired
+                        if (activeAudit != null)
                         {
-                            Success = false,
-                            Message = "This account is currently logged in from another location. Please logout from the other session first."
-                        });
+                            activeAudit.Status = "SESSION_TIMEOUT";
+                            activeAudit.LogoutTime = now;
+                        }
+                        _logger.LogInformation("Marking expired session as SESSION_TIMEOUT for user {Username}", user.Username);
                     }
                     else
                     {
-                        // Session expired due to inactivity, clear it
-                        _logger.LogInformation("Clearing expired session for user {Username}", request.Username);
-                        await _userService.ClearSessionAsync(user.Id);
+                        // Browser was closed → forced logout
+                        if (activeAudit != null)
+                        {
+                            activeAudit.Status = "FORCED_LOGOUT";
+                            activeAudit.LogoutTime = now;
+                        }
+                        _logger.LogInformation("Marking previous session as FORCED_LOGOUT for user {Username}", user.Username);
                     }
+
+                    // Clear old session
+                    user.ActiveSessionId = null;
+                    user.SessionStartedAt = null;
+                    await _context.SaveChangesAsync();
                 }
 
                 // Check if this is the first login BEFORE authentication (which updates LastLoginAt)
@@ -187,13 +208,11 @@ namespace ITAMS.Controllers
             try
             {
                 int userId = 0;
-                string? logoutType = null;
                 
                 // Try to get data from JSON body first
                 if (request != null && request.UserId > 0)
                 {
                     userId = request.UserId;
-                    logoutType = request.LogoutType;
                 }
                 // If not in body, try form data (for sendBeacon)
                 else if (Request.HasFormContentType)
@@ -202,50 +221,37 @@ namespace ITAMS.Controllers
                     if (form.ContainsKey("userId") && int.TryParse(form["userId"], out int formUserId))
                     {
                         userId = formUserId;
-                        logoutType = form.ContainsKey("logoutType") ? form["logoutType"].ToString() : null;
                     }
                 }
                 
-                _logger.LogInformation("Logout request received: UserId={UserId}, LogoutType={LogoutType}", 
-                    userId, logoutType);
+                _logger.LogInformation("Logout request received: UserId={UserId}", userId);
                 
                 if (userId > 0)
                 {
-                    // Get user to find active session
-                    var user = await _userService.GetUserByIdAsync(userId);
-                    if (user != null)
-                    {
-                        // Update the most recent login audit record for this user (ACTIVE or FORCED_LOGOUT)
-                        var loginAudit = _context.LoginAudits
-                            .Where(la => la.UserId == user.Id && 
-                                   (la.Status == "ACTIVE" || la.Status == "FORCED_LOGOUT"))
-                            .OrderByDescending(la => la.LoginTime)
-                            .FirstOrDefault();
+                    var now = DateTimeHelper.Now;
+                    
+                    // Find ACTIVE audit record
+                    var activeAudit = await _context.LoginAudits
+                        .Where(a => a.UserId == userId && a.Status == "ACTIVE")
+                        .OrderByDescending(a => a.LoginTime)
+                        .FirstOrDefaultAsync();
 
-                        if (loginAudit != null)
-                        {
-                            loginAudit.LogoutTime = DateTimeHelper.Now;
-                            // Set status based on logout type (override FORCED_LOGOUT if user actually logged out)
-                            loginAudit.Status = logoutType switch
-                            {
-                                "SESSION_TIMEOUT" => "SESSION_TIMEOUT",
-                                "FORCED_LOGOUT" => "FORCED_LOGOUT",
-                                _ => "LOGGED_OUT"
-                            };
-                            await _context.SaveChangesAsync();
-                            
-                            _logger.LogInformation("Login audit updated: AuditId={AuditId}, Status={Status}", 
-                                loginAudit.Id, loginAudit.Status);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("No active login audit found for UserId={UserId}", user.Id);
-                        }
+                    if (activeAudit != null)
+                    {
+                        activeAudit.Status = "LOGGED_OUT";
+                        activeAudit.LogoutTime = now;
                     }
 
-                    // Clear the user's session
-                    await _userService.ClearSessionAsync(userId);
-                    _logger.LogInformation("User {UserId} logged out with type: {LogoutType}", userId, logoutType ?? "LOGGED_OUT");
+                    // Clear session
+                    var user = await _context.Users.FindAsync(userId);
+                    if (user != null)
+                    {
+                        user.ActiveSessionId = null;
+                        user.SessionStartedAt = null;
+                    }
+
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("User {UserId} logged out successfully", userId);
                 }
                 
                 return Ok(new { success = true, message = "Logged out successfully" });

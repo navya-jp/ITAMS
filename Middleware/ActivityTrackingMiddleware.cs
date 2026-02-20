@@ -1,45 +1,52 @@
 using System.Security.Claims;
 using ITAMS.Data;
+using ITAMS.Utilities;
 using Microsoft.EntityFrameworkCore;
 
-namespace ITAMS.Middleware;
-
-public class ActivityTrackingMiddleware
+namespace ITAMS.Middleware
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ActivityTrackingMiddleware> _logger;
-
-    public ActivityTrackingMiddleware(RequestDelegate next, ILogger<ActivityTrackingMiddleware> logger)
+    public class ActivityTrackingMiddleware
     {
-        _next = next;
-        _logger = logger;
-    }
+        private readonly RequestDelegate _next;
+        private readonly ILogger<ActivityTrackingMiddleware> _logger;
 
-    public async Task InvokeAsync(HttpContext context, ITAMSDbContext dbContext)
-    {
-        // Update user activity BEFORE processing the request if authenticated
-        if (context.User?.Identity?.IsAuthenticated == true)
+        public ActivityTrackingMiddleware(
+            RequestDelegate next,
+            ILogger<ActivityTrackingMiddleware> logger)
         {
-            try
-            {
-                var username = context.User.FindFirst(ClaimTypes.Name)?.Value;
-                if (!string.IsNullOrEmpty(username))
-                {
-                    // Update LastActivityAt synchronously
-                    await dbContext.Database.ExecuteSqlRawAsync(
-                        "UPDATE Users SET LastActivityAt = GETUTCDATE() WHERE Username = {0}",
-                        username
-                    );
-                    _logger.LogInformation("Updated LastActivityAt for user {Username}", username);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating LastActivityAt");
-            }
+            _next = next;
+            _logger = logger;
         }
 
-        // Call the next middleware
-        await _next(context);
+        public async Task InvokeAsync(HttpContext context, ITAMSDbContext dbContext)
+        {
+            if (context.User?.Identity?.IsAuthenticated == true)
+            {
+                try
+                {
+                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier);
+
+                    if (userIdClaim != null &&
+                        int.TryParse(userIdClaim.Value, out int userId))
+                    {
+                        var user = await dbContext.Users
+                            .Where(u => u.Id == userId && !string.IsNullOrEmpty(u.ActiveSessionId))
+                            .FirstOrDefaultAsync();
+
+                        if (user != null)
+                        {
+                            user.LastActivityAt = DateTimeHelper.Now;
+                            await dbContext.SaveChangesAsync();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error updating LastActivityAt");
+                }
+            }
+
+            await _next(context);
+        }
     }
 }

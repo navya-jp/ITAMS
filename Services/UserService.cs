@@ -1,5 +1,6 @@
 using ITAMS.Domain.Entities;
 using ITAMS.Domain.Interfaces;
+using ITAMS.Utilities;
 using System.Text.RegularExpressions;
 
 namespace ITAMS.Services;
@@ -423,6 +424,7 @@ public class UserService : IUserService
 
         user.ActiveSessionId = sessionId;
         user.SessionStartedAt = sessionStartedAt;
+        user.LastActivityAt = sessionStartedAt; // CRITICAL: Set initial activity time
         
         await _userRepository.UpdateAsync(user);
         await _auditService.LogAsync("SESSION_STARTED", "User", user.Id.ToString(), user.Id, user.Username);
@@ -451,7 +453,7 @@ public class UserService : IUserService
             return;
         }
 
-        user.LastActivityAt = DateTime.UtcNow;
+        user.LastActivityAt = DateTimeHelper.Now;
         await _userRepository.UpdateAsync(user);
     }
 }
