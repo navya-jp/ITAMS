@@ -93,13 +93,21 @@ export class AuditTrail implements OnInit {
       endDate = new Date(this.customEndDate);
       endDate.setHours(23, 59, 59, 999); // End of day
     } else {
-      startDate = new Date();
       const selectedRange = this.timeRanges.find(r => r.value === this.selectedTimeRange);
       
-      if (selectedRange && selectedRange.days > 0) {
+      if (this.selectedTimeRange === 'today') {
+        // For today, start from beginning of today
+        startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
+      } else if (selectedRange && selectedRange.days > 0) {
+        // For other ranges, go back N days from today
+        startDate = new Date();
         startDate.setDate(startDate.getDate() - selectedRange.days);
+        startDate.setHours(0, 0, 0, 0);
+      } else {
+        startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
       }
-      startDate.setHours(0, 0, 0, 0); // Start of day
     }
 
     this.api.getLoginAudits(1000, startDate, endDate)

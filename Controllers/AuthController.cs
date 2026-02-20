@@ -215,16 +215,17 @@ namespace ITAMS.Controllers
                     var user = await _userService.GetUserByIdAsync(userId);
                     if (user != null)
                     {
-                        // Update the most recent active login audit record for this user
+                        // Update the most recent login audit record for this user (ACTIVE or FORCED_LOGOUT)
                         var loginAudit = _context.LoginAudits
-                            .Where(la => la.UserId == user.Id && la.Status == "ACTIVE")
+                            .Where(la => la.UserId == user.Id && 
+                                   (la.Status == "ACTIVE" || la.Status == "FORCED_LOGOUT"))
                             .OrderByDescending(la => la.LoginTime)
                             .FirstOrDefault();
 
                         if (loginAudit != null)
                         {
                             loginAudit.LogoutTime = DateTimeHelper.Now;
-                            // Set status based on logout type
+                            // Set status based on logout type (override FORCED_LOGOUT if user actually logged out)
                             loginAudit.Status = logoutType switch
                             {
                                 "SESSION_TIMEOUT" => "SESSION_TIMEOUT",

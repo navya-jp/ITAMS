@@ -101,9 +101,9 @@
                   <i class="fas fa-network-wired me-1"></i>{{ formatIpAddress(audit.ipAddress) }}
                 </span>
               </td>
-              <td>
-                <span class="badge bg-info text-center" style="min-width: 120px;">
-                  <i class="fas fa-browser me-1"></i>{{ audit.browserType || 'Unknown' }}
+              <td class="text-center">
+                <span class="badge bg-info d-inline-block" style="min-width: 120px;">
+                  {{ audit.browserType || 'Unknown' }}
                 </span>
               </td>
               <td>
