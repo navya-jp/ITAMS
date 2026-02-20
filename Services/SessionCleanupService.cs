@@ -9,6 +9,7 @@ namespace ITAMS.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<SessionCleanupService> _logger;
         private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
+        private readonly TimeSpan _forcedLogoutThreshold = TimeSpan.FromMinutes(2); // If no heartbeat for 2 minutes, browser likely closed
 
         public SessionCleanupService(
             IServiceProvider serviceProvider,
@@ -26,7 +27,7 @@ namespace ITAMS.Services
             {
                 try
                 {
-                    await CleanupExpiredSessions();
+                    await CleanupAbandonedSessions();
                 }
                 catch (Exception ex)
                 {
@@ -39,41 +40,26 @@ namespace ITAMS.Services
             _logger.LogInformation("Session Cleanup Service stopped");
         }
 
-        private async Task CleanupExpiredSessions()
+        private async Task CleanupAbandonedSessions()
         {
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ITAMSDbContext>();
 
             var now = DateTimeHelper.Now;
+            var forcedLogoutCutoff = now.AddMinutes(-2); // No heartbeat for 2 minutes = browser closed
 
-            // Load timeout from DB
-            var timeoutSetting = await context.SystemSettings
-                .Where(s => s.SettingKey == "SessionTimeoutMinutes" && s.Category == "Security")
-                .Select(s => s.SettingValue)
-                .FirstOrDefaultAsync();
-
-            int timeoutMinutes = 30;
-
-            if (!string.IsNullOrEmpty(timeoutSetting) &&
-                int.TryParse(timeoutSetting, out var parsed))
-            {
-                timeoutMinutes = parsed;
-            }
-
-            var cutoffTime = now.AddMinutes(-timeoutMinutes);
-
-            // Get users whose session expired
-            var expiredUsers = await context.Users
+            // Find users whose browser closed (no heartbeat for 2+ minutes)
+            var abandonedUsers = await context.Users
                 .Where(u =>
                     !string.IsNullOrEmpty(u.ActiveSessionId) &&
                     u.LastActivityAt.HasValue &&
-                    u.LastActivityAt <= cutoffTime)
+                    u.LastActivityAt <= forcedLogoutCutoff)
                 .ToListAsync();
 
-            if (!expiredUsers.Any())
+            if (!abandonedUsers.Any())
                 return;
 
-            foreach (var user in expiredUsers)
+            foreach (var user in abandonedUsers)
             {
                 // Find ACTIVE audit record
                 var activeAudit = await context.LoginAudits
@@ -83,7 +69,7 @@ namespace ITAMS.Services
 
                 if (activeAudit != null)
                 {
-                    activeAudit.Status = "SESSION_TIMEOUT";
+                    activeAudit.Status = "FORCED_LOGOUT";
                     activeAudit.LogoutTime = now;
                 }
 
@@ -92,14 +78,13 @@ namespace ITAMS.Services
                 user.SessionStartedAt = null;
 
                 _logger.LogInformation(
-                    "Session timeout for user {Username} after {Timeout} minutes",
-                    user.Username,
-                    timeoutMinutes
+                    "Forced logout for user {Username} - no heartbeat for 2+ minutes (browser closed)",
+                    user.Username
                 );
             }
 
             await context.SaveChangesAsync();
-            _logger.LogInformation("Cleaned up {Count} expired sessions", expiredUsers.Count);
+            _logger.LogInformation("Cleaned up {Count} abandoned sessions", abandonedUsers.Count);
         }
     }
 }

@@ -65,51 +65,11 @@ namespace ITAMS.Controllers
 
                 var now = DateTimeHelper.Now;
 
-                // If user already has active session
+                // If user already has active session, clear it
+                // (SessionCleanupService will mark it as FORCED_LOGOUT if browser was closed)
                 if (!string.IsNullOrEmpty(user.ActiveSessionId))
                 {
-                    // Load configurable session timeout from database
-                    var timeoutSetting = await _context.SystemSettings
-                        .Where(s => s.SettingKey == "SessionTimeoutMinutes" && s.Category == "Security")
-                        .Select(s => s.SettingValue)
-                        .FirstOrDefaultAsync();
-
-                    int timeoutMinutes = 30;
-                    if (!string.IsNullOrEmpty(timeoutSetting) && int.TryParse(timeoutSetting, out var parsed))
-                    {
-                        timeoutMinutes = parsed;
-                    }
-
-                    var lastActivity = user.LastActivityAt ?? user.SessionStartedAt ?? now;
-                    var inactiveMinutes = (now - lastActivity).TotalMinutes;
-
-                    var activeAudit = await _context.LoginAudits
-                        .Where(a => a.UserId == user.Id && a.Status == "ACTIVE")
-                        .OrderByDescending(a => a.LoginTime)
-                        .FirstOrDefaultAsync();
-
-                    if (inactiveMinutes >= timeoutMinutes)
-                    {
-                        // Old session expired
-                        if (activeAudit != null)
-                        {
-                            activeAudit.Status = "SESSION_TIMEOUT";
-                            activeAudit.LogoutTime = now;
-                        }
-                        _logger.LogInformation("Marking expired session as SESSION_TIMEOUT for user {Username}", user.Username);
-                    }
-                    else
-                    {
-                        // Browser was closed → forced logout
-                        if (activeAudit != null)
-                        {
-                            activeAudit.Status = "FORCED_LOGOUT";
-                            activeAudit.LogoutTime = now;
-                        }
-                        _logger.LogInformation("Marking previous session as FORCED_LOGOUT for user {Username}", user.Username);
-                    }
-
-                    // Clear old session
+                    _logger.LogInformation("Clearing existing session for user {Username}", user.Username);
                     user.ActiveSessionId = null;
                     user.SessionStartedAt = null;
                     await _context.SaveChangesAsync();
@@ -208,11 +168,13 @@ namespace ITAMS.Controllers
             try
             {
                 int userId = 0;
+                string logoutType = "LOGGED_OUT"; // Default
                 
                 // Try to get data from JSON body first
                 if (request != null && request.UserId > 0)
                 {
                     userId = request.UserId;
+                    logoutType = request.LogoutType ?? "LOGGED_OUT";
                 }
                 // If not in body, try form data (for sendBeacon)
                 else if (Request.HasFormContentType)
@@ -221,10 +183,11 @@ namespace ITAMS.Controllers
                     if (form.ContainsKey("userId") && int.TryParse(form["userId"], out int formUserId))
                     {
                         userId = formUserId;
+                        logoutType = form.ContainsKey("logoutType") ? form["logoutType"].ToString() : "LOGGED_OUT";
                     }
                 }
                 
-                _logger.LogInformation("Logout request received: UserId={UserId}", userId);
+                _logger.LogInformation("Logout request received: UserId={UserId}, LogoutType={LogoutType}", userId, logoutType);
                 
                 if (userId > 0)
                 {
@@ -238,7 +201,8 @@ namespace ITAMS.Controllers
 
                     if (activeAudit != null)
                     {
-                        activeAudit.Status = "LOGGED_OUT";
+                        // Use the provided logout type (SESSION_TIMEOUT or LOGGED_OUT)
+                        activeAudit.Status = logoutType == "SESSION_TIMEOUT" ? "SESSION_TIMEOUT" : "LOGGED_OUT";
                         activeAudit.LogoutTime = now;
                     }
 
@@ -251,7 +215,7 @@ namespace ITAMS.Controllers
                     }
 
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation("User {UserId} logged out successfully", userId);
+                    _logger.LogInformation("User {UserId} logged out with type: {LogoutType}", userId, logoutType);
                 }
                 
                 return Ok(new { success = true, message = "Logged out successfully" });
