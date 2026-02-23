@@ -75,6 +75,7 @@ builder.Services.AddScoped<ITAMS.Services.RBAC.IRoleManagementService, ITAMS.Ser
 
 // Add background services
 builder.Services.AddHostedService<ITAMS.Services.SessionCleanupService>();
+builder.Services.AddHostedService<ITAMS.Services.ApprovalEscalationService>();
 
 // Add memory cache for permission caching
 builder.Services.AddMemoryCache();

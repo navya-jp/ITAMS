@@ -1,0 +1,166 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ITAMS.Data;
+using ITAMS.Models;
+using ITAMS.Domain.Entities.MasterData;
+using ITAMS.Utilities;
+
+namespace ITAMS.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class MasterDataController : BaseController
+{
+    private readonly ITAMSDbContext _context;
+    private readonly ILogger<MasterDataController> _logger;
+
+    public MasterDataController(
+        ITAMSDbContext context,
+        ILogger<MasterDataController> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    // =============================================
+    // VENDOR ENDPOINTS
+    // =============================================
+    
+    [HttpGet("vendors")]
+    public async Task<IActionResult> GetVendors([FromQuery] bool includeInactive = false)
+    {
+        try
+        {
+            var query = _context.Set<Vendor>()
+                .Where(v => !v.IsDeleted);
+            
+            if (!includeInactive)
+            {
+                query = query.Where(v => v.IsActive);
+            }
+            
+            var vendors = await query
+                .OrderBy(v => v.VendorName)
+                .Select(v => new VendorDto
+                {
+                    Id = v.Id,
+                    VendorName = v.VendorName,
+                    VendorCode = v.VendorCode,
+                    ContactPerson = v.ContactPerson,
+                    Email = v.Email,
+                    PhoneNumber = v.PhoneNumber,
+                    Address = v.Address,
+                    Website = v.Website,
+                    IsActive = v.IsActive,
+                    CreatedAt = v.CreatedAt
+                })
+                .ToListAsync();
+            
+            return Ok(vendors);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving vendors");
+            return StatusCode(500, new { message = "An error occurred while retrieving vendors" });
+        }
+    }
+    
+    [HttpGet("vendors/{id}")]
+    public async Task<IActionResult> GetVendor(int id)
+    {
+        try
+        {
+            var vendor = await _context.Set<Vendor>()
+                .Where(v => v.Id == id && !v.IsDeleted)
+                .Select(v => new VendorDto
+                {
+                    Id = v.Id,
+                    VendorName = v.VendorName,
+                    VendorCode = v.VendorCode,
+                    ContactPerson = v.ContactPerson,
+                    Email = v.Email,
+                    PhoneNumber = v.PhoneNumber,
+                    Address = v.Address,
+                    Website = v.Website,
+                    IsActive = v.IsActive,
+                    CreatedAt = v.CreatedAt
+                })
+                .FirstOrDefaultAsync();
+            
+            if (vendor == null)
+            {
+                return NotFound(new { message = "Vendor not found" });
+            }
+            
+            return Ok(vendor);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving vendor {VendorId}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving the vendor" });
+        }
+    }
+    
+    [HttpPost("vendors")]
+    public async Task<IActionResult> CreateVendor([FromBody] CreateVendorRequest request)
+    {
+        try
+        {
+            // Check for duplicate vendor code
+            var existingCode = await _context.Set<Vendor>()
+                .AnyAsync(v => v.VendorCode == request.VendorCode && !v.IsDeleted);
+            
+            if (existingCode)
+            {
+                return BadRequest(new { message = $"Vendor code '{request.VendorCode}' already exists" });
+            }
+            
+            // Check for duplicate vendor name
+            var existingName = await _context.Set<Vendor>()
+                .AnyAsync(v => v.VendorName == request.VendorName && !v.IsDeleted);
+            
+            if (existingName)
+            {
+                return BadRequest(new { message = $"Vendor name '{request.VendorName}' already exists" });
+            }
+            
+            var vendor = new Vendor
+            {
+                VendorName = request.VendorName,
+                VendorCode = request.VendorCode,
+                ContactPerson = request.ContactPerson,
+                Email = request.Email,
+                PhoneNumber = request.PhoneNumber,
+                Address = request.Address,
+                Website = request.Website,
+                IsActive = true,
+                CreatedAt = DateTimeHelper.Now,
+                CreatedBy = GetCurrentUserId()
+            };
+            
+            _context.Set<Vendor>().Add(vendor);
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("Vendor created: {VendorName} ({VendorCode}) by user {UserId}", 
+                vendor.VendorName, vendor.VendorCode, GetCurrentUserId());
+            
+            return CreatedAtAction(nameof(GetVendor), new { id = vendor.Id }, new VendorDto
+            {
+                Id = vendor.Id,
+                VendorName = vendor.VendorName,
+                VendorCode = vendor.VendorCode,
+                ContactPerson = vendor.ContactPerson,
+                Email = vendor.Email,
+                PhoneNumber = vendor.PhoneNumber,
+                Address = vendor.Address,
+                Website = vendor.Website,
+                IsActive = vendor.IsActive,
+                CreatedAt = vendor.CreatedAt
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating vendor");
+            return StatusCode(500, new { message = "An error occurred while creating the vendor" });
+        }
+    }

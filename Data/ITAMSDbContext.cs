@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using ITAMS.Domain.Entities;
 using ITAMS.Domain.Entities.RBAC;
+using ITAMS.Domain.Entities.MasterData;
+using ITAMS.Domain.Entities.Workflow;
 
 namespace ITAMS.Data;
 
@@ -22,6 +24,24 @@ public class ITAMSDbContext : DbContext
     public DbSet<AuditEntry> AuditEntries { get; set; }
     public DbSet<LoginAudit> LoginAudits { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
+    
+    // Master Data entities
+    public DbSet<Vendor> Vendors { get; set; }
+    public DbSet<Domain.Entities.MasterData.AssetStatus> AssetStatuses { get; set; }
+    public DbSet<CriticalityLevel> CriticalityLevels { get; set; }
+    public DbSet<AssetMasterField> AssetMasterFields { get; set; }
+    public DbSet<AssetCategory> AssetCategories { get; set; }
+    public DbSet<AssetType> AssetTypes { get; set; }
+    public DbSet<AssetSubType> AssetSubTypes { get; set; }
+    public DbSet<TypeFieldMapping> TypeFieldMappings { get; set; }
+    
+    // Workflow entities
+    public DbSet<ApprovalWorkflow> ApprovalWorkflows { get; set; }
+    public DbSet<ApprovalLevel> ApprovalLevels { get; set; }
+    public DbSet<ApprovalRequest> ApprovalRequests { get; set; }
+    public DbSet<ApprovalHistory> ApprovalHistories { get; set; }
+    public DbSet<EscalationRule> EscalationRules { get; set; }
+    public DbSet<EscalationLog> EscalationLogs { get; set; }
 
     // RBAC entities - Temporarily disabled due to naming conflicts
     // public DbSet<RbacRole> RbacRoles { get; set; }

@@ -1,0 +1,206 @@
+<div class="asset-statuses-container">
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" (click)="showAddForm()" *ngIf="!showForm">
+        <i class="fas fa-plus me-2"></i>Add Status
+      </button>
+      <div class="form-check">
+        <input 
+          class="form-check-input" 
+          type="checkbox" 
+          id="includeInactive"
+          [(ngModel)]="includeInactive"
+          (change)="toggleIncludeInactive()">
+        <label class="form-check-label" for="includeInactive">
+          Show Inactive
+        </label>
+      </div>
+    </div>
+    <div class="search-box">
+      <input 
+        type="text" 
+        class="form-control" 
+        placeholder="Search statuses..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()">
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div *ngIf="showForm" class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">{{ editMode ? 'Edit Asset Status' : 'Add New Asset Status' }}</h5>
+    </div>
+    <div class="card-body">
+      <form (ngSubmit)="saveStatus()">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Status Name <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="statusForm.statusName"
+              name="statusName"
+              required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Status Code <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="statusForm.statusCode"
+              name="statusCode"
+              [disabled]="editMode"
+              required>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea 
+            class="form-control" 
+            rows="2"
+            [(ngModel)]="statusForm.description"
+            name="description"></textarea>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Color <span class="text-danger">*</span></label>
+            <div class="d-flex gap-2 mb-2">
+              <div 
+                *ngFor="let color of colorOptions"
+                class="color-option"
+                [style.background-color]="color.value"
+                [class.selected]="statusForm.colorCode === color.value"
+                (click)="statusForm.colorCode = color.value"
+                [title]="color.name">
+              </div>
+            </div>
+            <input 
+              type="color" 
+              class="form-control form-control-color" 
+              [(ngModel)]="statusForm.colorCode"
+              name="colorCode"
+              required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Icon (Font Awesome class)</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="statusForm.icon"
+              name="icon"
+              placeholder="fas fa-check">
+            <small class="text-muted">Example: fas fa-check, fas fa-wrench</small>
+          </div>
+        </div>
+
+        <div class="mb-3" *ngIf="editMode">
+          <div class="form-check">
+            <input 
+              class="form-check-input" 
+              type="checkbox" 
+              id="isActive"
+              [(ngModel)]="statusForm.isActive"
+              name="isActive">
+            <label class="form-check-label" for="isActive">
+              Active
+            </label>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary" [disabled]="loading">
+            <i class="fas fa-save me-2"></i>{{ editMode ? 'Update' : 'Create' }}
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="cancelForm()">
+            <i class="fas fa-times me-2"></i>Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Statuses List -->
+  <div class="card">
+    <div class="card-body">
+      <div *ngIf="loading" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && filteredStatuses.length === 0" class="text-center py-4 text-muted">
+        <i class="fas fa-inbox fa-3x mb-3"></i>
+        <p>No asset statuses found</p>
+      </div>
+
+      <div *ngIf="!loading && filteredStatuses.length > 0" class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Status Name</th>
+              <th>Code</th>
+              <th>Color Preview</th>
+              <th>Icon</th>
+              <th>Description</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let status of filteredStatuses">
+              <td>{{ status.statusName }}</td>
+              <td><span class="badge bg-secondary">{{ status.statusCode }}</span></td>
+              <td>
+                <span class="status-preview" [style.background-color]="status.colorCode">
+                  {{ status.statusName }}
+                </span>
+              </td>
+              <td>
+                <i *ngIf="status.icon" [class]="status.icon"></i>
+                <span *ngIf="!status.icon" class="text-muted">-</span>
+              </td>
+              <td>{{ status.description || '-' }}</td>
+              <td>
+                <span class="badge" [class.bg-info]="status.isPredefined" [class.bg-secondary]="!status.isPredefined">
+                  {{ status.isPredefined ? 'Predefined' : 'Custom' }}
+                </span>
+              </td>
+              <td>
+                <span class="badge" [class.bg-success]="status.isActive" [class.bg-danger]="!status.isActive">
+                  {{ status.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <button 
+                  class="btn btn-sm btn-outline-primary me-2" 
+                  (click)="editStatus(status)"
+                  [disabled]="status.isPredefined">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button 
+                  class="btn btn-sm btn-outline-danger" 
+                  (click)="deleteStatus(status)"
+                  [disabled]="status.isPredefined">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
