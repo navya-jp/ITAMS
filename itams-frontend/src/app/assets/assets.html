@@ -39,7 +39,7 @@
             <th>Make/Model</th>
             <th>Location</th>
             <th>Status</th>
-            <th>Assigned To</th>
+            <th>Project</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -59,7 +59,7 @@
                 {{ asset.status }}
               </span>
             </td>
-            <td>{{ asset.assignedUserName || 'Unassigned' }}</td>
+            <td>{{ asset.projectName }}</td>
             <td>
               <div class="btn-group btn-group-sm" role="group">
                 <button class="btn btn-outline-info" (click)="openViewModal(asset)" title="View Details">
@@ -67,9 +67,6 @@
                 </button>
                 <button class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit Asset">
                   <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-outline-danger" (click)="deleteAsset(asset)" title="Delete Asset">
-                  <i class="fas fa-trash"></i>
                 </button>
               </div>
             </td>
@@ -307,3 +304,266 @@
 <div *ngIf="showCreateModal || showEditModal || showViewModal" 
      class="modal-backdrop fade show" 
      (click)="closeModals()"></div>
+
+<!-- View Asset Modal -->
+<div class="modal fade" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-eye me-2"></i>Asset Details
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body" *ngIf="selectedAsset">
+        <div class="row g-3">
+          <!-- Basic Information -->
+          <div class="col-12">
+            <h6 class="text-primary border-bottom pb-2">Basic Information</h6>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Asset ID</label>
+            <p class="fw-bold">{{ selectedAsset.assetId }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Asset Tag</label>
+            <p class="fw-bold">{{ selectedAsset.assetTag }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Project</label>
+            <p>{{ selectedAsset.projectName }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Location</label>
+            <p>{{ selectedAsset.locationName }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Usage Category</label>
+            <p>{{ selectedAsset.usageCategory }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Criticality</label>
+            <p>{{ selectedAsset.criticality }}</p>
+          </div>
+
+          <!-- Technical Details -->
+          <div class="col-12 mt-4">
+            <h6 class="text-primary border-bottom pb-2">Technical Details</h6>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Asset Type</label>
+            <p>{{ selectedAsset.assetType }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Sub Type</label>
+            <p>{{ selectedAsset.subType || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Make</label>
+            <p>{{ selectedAsset.make }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Model</label>
+            <p>{{ selectedAsset.model }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Serial Number</label>
+            <p>{{ selectedAsset.serialNumber || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Status</label>
+            <p>
+              <span class="badge" 
+                    [class.bg-success]="selectedAsset.status === 'InUse'"
+                    [class.bg-info]="selectedAsset.status === 'Spare'"
+                    [class.bg-warning]="selectedAsset.status === 'Repair'"
+                    [class.bg-secondary]="selectedAsset.status === 'Decommissioned'">
+                {{ selectedAsset.status }}
+              </span>
+            </p>
+          </div>
+
+          <!-- Procurement & Warranty -->
+          <div class="col-12 mt-4">
+            <h6 class="text-primary border-bottom pb-2">Procurement & Warranty</h6>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Procurement Date</label>
+            <p>{{ selectedAsset.procurementDate ? (selectedAsset.procurementDate | date:'mediumDate') : 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Procurement Cost</label>
+            <p>{{ selectedAsset.procurementCost ? ('₹' + selectedAsset.procurementCost) : 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Vendor</label>
+            <p>{{ selectedAsset.vendor || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Warranty Period</label>
+            <p>
+              {{ selectedAsset.warrantyStartDate ? (selectedAsset.warrantyStartDate | date:'mediumDate') : 'N/A' }}
+              to
+              {{ selectedAsset.warrantyEndDate ? (selectedAsset.warrantyEndDate | date:'mediumDate') : 'N/A' }}
+            </p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Commissioning Date</label>
+            <p>{{ selectedAsset.commissioningDate ? (selectedAsset.commissioningDate | date:'mediumDate') : 'N/A' }}</p>
+          </div>
+
+          <!-- Assignment -->
+          <div class="col-12 mt-4">
+            <h6 class="text-primary border-bottom pb-2">Assignment</h6>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Assigned User</label>
+            <p>{{ selectedAsset.assignedUserName || 'Unassigned' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Assigned Role</label>
+            <p>{{ selectedAsset.assignedUserRole || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Created At</label>
+            <p>{{ selectedAsset.createdAt | date:'medium' }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
+        <button type="button" class="btn btn-primary" (click)="closeModals(); openEditModal(selectedAsset!)">
+          <i class="fas fa-edit me-2"></i>Edit Asset
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Asset Modal -->
+<div class="modal fade" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-edit me-2"></i>Edit Asset
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body" *ngIf="selectedAsset">
+        <form>
+          <div class="row g-3">
+            <!-- Asset Tag -->
+            <div class="col-md-6">
+              <label class="form-label">Asset Tag</label>
+              <input type="text" class="form-control" [(ngModel)]="editForm.assetTag" name="assetTag">
+            </div>
+
+            <!-- Location -->
+            <div class="col-md-6">
+              <label class="form-label">Location</label>
+              <select class="form-select" [(ngModel)]="editForm.locationId" name="locationId">
+                <option [value]="null">Select Location</option>
+                <option [value]="location.id" *ngFor="let location of locations">
+                  {{ location.name }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Asset Type -->
+            <div class="col-md-6">
+              <label class="form-label">Asset Type</label>
+              <select class="form-select" [(ngModel)]="editForm.assetType" name="assetType">
+                <option value="">Select Asset Type</option>
+                <option value="Hardware">Hardware</option>
+                <option value="Software">Software</option>
+                <option value="Digital">Digital</option>
+              </select>
+            </div>
+
+            <!-- Sub Type -->
+            <div class="col-md-6">
+              <label class="form-label">Sub Type</label>
+              <input type="text" class="form-control" [(ngModel)]="editForm.subType" name="subType">
+            </div>
+
+            <!-- Make -->
+            <div class="col-md-6">
+              <label class="form-label">Make</label>
+              <input type="text" class="form-control" [(ngModel)]="editForm.make" name="make">
+            </div>
+
+            <!-- Model -->
+            <div class="col-md-6">
+              <label class="form-label">Model</label>
+              <input type="text" class="form-control" [(ngModel)]="editForm.model" name="model">
+            </div>
+
+            <!-- Serial Number -->
+            <div class="col-md-6">
+              <label class="form-label">Serial Number</label>
+              <input type="text" class="form-control" [(ngModel)]="editForm.serialNumber" name="serialNumber">
+            </div>
+
+            <!-- Status -->
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <select class="form-select" [(ngModel)]="editForm.status" name="status">
+                <option value="InUse">In Use</option>
+                <option value="Spare">Spare</option>
+                <option value="Repair">Repair</option>
+                <option value="Decommissioned">Decommissioned</option>
+              </select>
+            </div>
+
+            <!-- Procurement Date -->
+            <div class="col-md-6">
+              <label class="form-label">Procurement Date</label>
+              <input type="date" class="form-control" [(ngModel)]="editForm.procurementDate" name="procurementDate">
+            </div>
+
+            <!-- Procurement Cost -->
+            <div class="col-md-6">
+              <label class="form-label">Procurement Cost</label>
+              <input type="number" class="form-control" [(ngModel)]="editForm.procurementCost" name="procurementCost">
+            </div>
+
+            <!-- Vendor -->
+            <div class="col-md-6">
+              <label class="form-label">Vendor</label>
+              <input type="text" class="form-control" [(ngModel)]="editForm.vendor" name="vendor">
+            </div>
+
+            <!-- Warranty Start Date -->
+            <div class="col-md-6">
+              <label class="form-label">Warranty Start Date</label>
+              <input type="date" class="form-control" [(ngModel)]="editForm.warrantyStartDate" name="warrantyStartDate">
+            </div>
+
+            <!-- Warranty End Date -->
+            <div class="col-md-6">
+              <label class="form-label">Warranty End Date</label>
+              <input type="date" class="form-control" [(ngModel)]="editForm.warrantyEndDate" name="warrantyEndDate">
+            </div>
+
+            <!-- Commissioning Date -->
+            <div class="col-md-6">
+              <label class="form-label">Commissioning Date</label>
+              <input type="date" class="form-control" [(ngModel)]="editForm.commissioningDate" name="commissioningDate">
+            </div>
+          </div>
+
+          <div *ngIf="error" class="alert alert-danger mt-3">{{ error }}</div>
+          <div *ngIf="success" class="alert alert-success mt-3">{{ success }}</div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button type="button" class="btn btn-primary" [disabled]="loading" (click)="updateAsset()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!loading" class="fas fa-save me-2"></i>Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -13,6 +13,7 @@ export class Assets implements OnInit {
   assets: Asset[] = [];
   projects: Project[] = [];
   locations: Location[] = [];
+  projectUsers: any[] = []; // Users in the selected project
   loading = false;
   error = '';
   success = '';
@@ -138,8 +139,27 @@ export class Assets implements OnInit {
       assignedUserId: asset.assignedUserId,
       assignedUserRole: asset.assignedUserRole
     };
+    
+    // Load users from the asset's project
+    this.loadProjectUsers(asset.projectId);
+    
     this.showEditModal = true;
     this.clearMessages();
+  }
+
+  loadProjectUsers(projectId: number) {
+    this.api.getUsers().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Filter users by project
+          this.projectUsers = response.data.filter((user: any) => user.projectId === projectId);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading project users:', error);
+        this.projectUsers = [];
+      }
+    });
   }
 
   openViewModal(asset: Asset) {

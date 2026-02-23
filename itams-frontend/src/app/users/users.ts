@@ -834,7 +834,7 @@ export class Users implements OnInit {
 
   isFormValid(): boolean {
     const isSuperAdmin = this.isSuperAdminRole(this.createForm.roleId);
-    const projectValid = isSuperAdmin || this.createForm.projectId > 0;
+    const projectValid = isSuperAdmin || (this.createForm.projectId !== undefined && this.createForm.projectId > 0);
     
     return this.createForm.username.length >= 3 &&
            this.isUsernameValid &&
@@ -853,7 +853,8 @@ export class Users implements OnInit {
     return role ? role.name : 'Unknown';
   }
   
-  isSuperAdminRole(roleId: number): boolean {
+  isSuperAdminRole(roleId: number | undefined): boolean {
+    if (!roleId) return false;
     const role = this.roles.find(r => r.id === roleId);
     return role ? (role.name === 'SuperAdmin' || role.name === 'Super Admin') : false;
   }

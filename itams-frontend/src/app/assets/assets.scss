@@ -19,6 +19,23 @@
 
 .modal-content {
   max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-body {
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
+}
+
+.modal-dialog {
+  z-index: 1050;
+}
+
+.form-select {
+  position: relative;
+  z-index: 1;
 }
 
 .tab-content {
