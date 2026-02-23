@@ -428,23 +428,23 @@
             </div>
             
             <div class="col-md-6">
-              <label class="form-label">District *</label>
-              <div class="dropdown w-100">
+              <label class="form-label">State *</label>
+              <div class="dropdown w-100" style="position: relative;">
                 <input type="text" 
                        class="form-control" 
                        [(ngModel)]="locationForm.district" 
                        name="district"
                        (input)="onDistrictInput($event)"
                        (focus)="showDistrictDropdown = true"
-                       placeholder="Type or select district"
+                       placeholder="Type or select state"
                        autocomplete="off">
-                <ul class="dropdown-menu w-100" [class.show]="showDistrictDropdown" style="max-height: 200px; overflow-y: auto;">
+                <ul class="dropdown-menu w-100" [class.show]="showDistrictDropdown" style="max-height: 200px; overflow-y: auto; position: absolute; z-index: 1050;">
                   <li *ngFor="let district of filteredDistricts">
                     <a class="dropdown-item" href="#" (click)="selectDistrict(district); $event.preventDefault()">{{ district }}</a>
                   </li>
                 </ul>
               </div>
-              <div class="form-text">Districts filtered by selected states</div>
+              <div class="form-text">Enter the state name</div>
             </div>
           </div>
         </div>

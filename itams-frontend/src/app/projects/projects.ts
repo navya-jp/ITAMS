@@ -100,7 +100,7 @@ export class Projects implements OnInit {
   ) {
     this.filteredStates = [...this.indianStates];
     this.filteredLocationStates = [...this.indianStates];
-    this.filteredDistricts = [];
+    this.filteredDistricts = [...this.indianStates]; // Initialize with all states
   }
 
   ngOnInit() {
@@ -496,6 +496,7 @@ export class Projects implements OnInit {
     this.generatedLanes = [];
     this.selectedLane = 0;
     this.customLocation = '';
+    this.filteredDistricts = [...this.indianStates]; // Reset to all states
   }
 
   // Office form methods
@@ -531,23 +532,20 @@ export class Projects implements OnInit {
     const value = event.target.value;
     this.locationForm.district = value;
     this.filterDistricts(value);
+    
+    if (!this.showDistrictDropdown) {
+      this.showDistrictDropdown = true;
+      this.setupClickOutside(() => this.showDistrictDropdown = false);
+    }
   }
 
   filterDistricts(searchTerm: string) {
-    // Get districts from all selected states
-    let allDistricts: string[] = [];
-    this.createForm.states.forEach(state => {
-      const stateDistricts = this.districtsByState[state] || [];
-      allDistricts = [...allDistricts, ...stateDistricts];
-    });
-    // Remove duplicates
-    allDistricts = [...new Set(allDistricts)];
-    
+    // Show all Indian states for office location
     if (!searchTerm) {
-      this.filteredDistricts = [...allDistricts];
+      this.filteredDistricts = [...this.indianStates];
     } else {
-      this.filteredDistricts = allDistricts.filter(district => 
-        district.toLowerCase().includes(searchTerm.toLowerCase())
+      this.filteredDistricts = this.indianStates.filter(state => 
+        state.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
   }
