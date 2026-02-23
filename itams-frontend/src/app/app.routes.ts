@@ -14,6 +14,7 @@ import { MasterData } from './master-data/master-data';
 import { Vendors } from './master-data/vendors/vendors';
 import { AssetStatuses } from './master-data/asset-statuses/asset-statuses';
 import { CriticalityLevels } from './master-data/criticality-levels/criticality-levels';
+import { Assets } from './assets/assets';
 import { AuthGuard, AdminGuard, UserGuard, LoginGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -30,7 +31,7 @@ export const routes: Routes = [
   { path: 'admin/roles', component: Roles, canActivate: [AdminGuard] },
   { path: 'admin/user-permissions', component: UserPermissions, canActivate: [AdminGuard] },
   { path: 'admin/projects', component: Projects, canActivate: [AdminGuard] },
-  { path: 'admin/assets', component: Dashboard, canActivate: [AdminGuard] }, // Placeholder
+  { path: 'admin/assets', component: Assets, canActivate: [AdminGuard] },
   { path: 'admin/audit', component: AuditTrail, canActivate: [AdminGuard] },
   { path: 'admin/settings', component: Settings, canActivate: [AdminGuard] },
   

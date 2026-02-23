@@ -1,0 +1,309 @@
+<!-- Assets Main View -->
+<div class="assets-container h-100 d-flex flex-column">
+  <!-- Header Section -->
+  <div class="assets-header d-flex justify-content-between align-items-center p-3 border-bottom">
+    <h2 class="mb-0">Asset Management</h2>
+    <button class="btn btn-primary" (click)="openCreateModal()">
+      <i class="fas fa-plus me-2"></i>Create Asset
+    </button>
+  </div>
+
+  <!-- Messages Section -->
+  <div class="messages-section" *ngIf="success || error">
+    <div *ngIf="success" class="alert alert-success alert-dismissible fade show m-3 mb-0" role="alert">
+      {{ success }}
+      <button type="button" class="btn-close" (click)="clearMessages()"></button>
+    </div>
+    <div *ngIf="error" class="alert alert-danger alert-dismissible fade show m-3 mb-0" role="alert">
+      {{ error }}
+      <button type="button" class="btn-close" (click)="clearMessages()"></button>
+    </div>
+  </div>
+
+  <!-- Assets Content -->
+  <div class="assets-content flex-grow-1 p-3" style="overflow-y: auto;">
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Assets Table -->
+    <div *ngIf="!loading" class="table-responsive">
+      <table class="table table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Asset ID</th>
+            <th>Asset Tag</th>
+            <th>Type</th>
+            <th>Make/Model</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Assigned To</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let asset of assets">
+            <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
+            <td>{{ asset.assetTag }}</td>
+            <td>{{ asset.assetType }}</td>
+            <td>{{ asset.make }} {{ asset.model }}</td>
+            <td>{{ asset.locationName }}</td>
+            <td>
+              <span class="badge" 
+                    [class.bg-success]="asset.status === 'InUse'"
+                    [class.bg-info]="asset.status === 'Spare'"
+                    [class.bg-warning]="asset.status === 'Repair'"
+                    [class.bg-secondary]="asset.status === 'Decommissioned'">
+                {{ asset.status }}
+              </span>
+            </td>
+            <td>{{ asset.assignedUserName || 'Unassigned' }}</td>
+            <td>
+              <div class="btn-group btn-group-sm" role="group">
+                <button class="btn btn-outline-info" (click)="openViewModal(asset)" title="View Details">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit Asset">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-outline-danger" (click)="deleteAsset(asset)" title="Delete Asset">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="assets.length === 0">
+            <td colspan="8" class="text-center py-4 text-muted">
+              No assets found. <a href="#" (click)="openCreateModal(); $event.preventDefault()">Create your first asset</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Create Asset Modal -->
+<div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content h-75">
+      <div class="modal-header">
+        <h5 class="modal-title">Create New Asset</h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="modal-body p-0 d-flex flex-column">
+        <ul class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" 
+                    [class.active]="currentTab === 1"
+                    (click)="goToTab(1)"
+                    type="button">
+              <i class="fas fa-info-circle me-2"></i>Basic Details
+              <i *ngIf="isTabValid(1)" class="fas fa-check text-success ms-2"></i>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" 
+                    [class.active]="currentTab === 2"
+                    [class.disabled]="currentTab < 2"
+                    (click)="goToTab(2)"
+                    type="button">
+              <i class="fas fa-cogs me-2"></i>Asset Details
+              <i *ngIf="isTabValid(2)" class="fas fa-check text-success ms-2"></i>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" 
+                    [class.active]="currentTab === 3"
+                    [class.disabled]="currentTab < 3"
+                    (click)="goToTab(3)"
+                    type="button">
+              <i class="fas fa-calendar me-2"></i>Procurement & Warranty
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content flex-grow-1 p-3" style="overflow-y: auto;">
+          <!-- Tab 1: Basic Details -->
+          <div class="tab-pane fade" [class.show]="currentTab === 1" [class.active]="currentTab === 1">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Project *</label>
+                <select class="form-select" 
+                        [(ngModel)]="createForm.projectId" 
+                        (change)="onProjectChange()"
+                        [class.is-invalid]="hasValidationError('projectId')">
+                  <option value="0">Select Project</option>
+                  <option *ngFor="let project of projects" [value]="project.id">{{ project.name }}</option>
+                </select>
+                <div *ngIf="hasValidationError('projectId')" class="invalid-feedback d-block">
+                  {{ getValidationError('projectId') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Location *</label>
+                <select class="form-select" 
+                        [(ngModel)]="createForm.locationId"
+                        [class.is-invalid]="hasValidationError('locationId')">
+                  <option value="0">Select Location</option>
+                  <option *ngFor="let location of locations" [value]="location.id">{{ location.name }}</option>
+                </select>
+                <div *ngIf="hasValidationError('locationId')" class="invalid-feedback d-block">
+                  {{ getValidationError('locationId') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Asset Tag *</label>
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="createForm.assetTag"
+                       [class.is-invalid]="hasValidationError('assetTag')"
+                       placeholder="Enter asset tag">
+                <div *ngIf="hasValidationError('assetTag')" class="invalid-feedback">
+                  {{ getValidationError('assetTag') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Usage Category *</label>
+                <select class="form-select" [(ngModel)]="createForm.usageCategory">
+                  <option *ngFor="let category of usageCategories" [value]="category">{{ category }}</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Criticality *</label>
+                <select class="form-select" [(ngModel)]="createForm.criticality">
+                  <option *ngFor="let criticality of criticalities" [value]="criticality">{{ criticality }}</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Status *</label>
+                <select class="form-select" [(ngModel)]="createForm.status">
+                  <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Asset Details -->
+          <div class="tab-pane fade" [class.show]="currentTab === 2" [class.active]="currentTab === 2">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Asset Type *</label>
+                <select class="form-select" 
+                        [(ngModel)]="createForm.assetType"
+                        [class.is-invalid]="hasValidationError('assetType')">
+                  <option value="">Select Type</option>
+                  <option *ngFor="let type of assetTypes" [value]="type">{{ type }}</option>
+                </select>
+                <div *ngIf="hasValidationError('assetType')" class="invalid-feedback">
+                  {{ getValidationError('assetType') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Sub Type</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.subType" placeholder="Enter sub type">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Make *</label>
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="createForm.make"
+                       [class.is-invalid]="hasValidationError('make')"
+                       placeholder="Enter make">
+                <div *ngIf="hasValidationError('make')" class="invalid-feedback">
+                  {{ getValidationError('make') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Model *</label>
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="createForm.model"
+                       [class.is-invalid]="hasValidationError('model')"
+                       placeholder="Enter model">
+                <div *ngIf="hasValidationError('model')" class="invalid-feedback">
+                  {{ getValidationError('model') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Serial Number</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.serialNumber" placeholder="Enter serial number">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Vendor</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.vendor" placeholder="Enter vendor name">
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Procurement & Warranty -->
+          <div class="tab-pane fade" [class.show]="currentTab === 3" [class.active]="currentTab === 3">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Procurement Date</label>
+                <input type="date" class="form-control" [(ngModel)]="createForm.procurementDate">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Procurement Cost</label>
+                <input type="number" class="form-control" [(ngModel)]="createForm.procurementCost" placeholder="Enter cost">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Warranty Start Date</label>
+                <input type="date" class="form-control" [(ngModel)]="createForm.warrantyStartDate">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Warranty End Date</label>
+                <input type="date" class="form-control" [(ngModel)]="createForm.warrantyEndDate">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Commissioning Date</label>
+                <input type="date" class="form-control" [(ngModel)]="createForm.commissioningDate">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button *ngIf="currentTab > 1" type="button" class="btn btn-outline-primary" (click)="previousTab()">
+          <i class="fas fa-arrow-left me-2"></i>Previous
+        </button>
+        <button *ngIf="currentTab < 3" type="button" class="btn btn-primary" (click)="nextTab()">
+          Next<i class="fas fa-arrow-right ms-2"></i>
+        </button>
+        <button *ngIf="currentTab === 3" type="button" class="btn btn-success" 
+                [disabled]="loading" 
+                (click)="createAsset()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!loading" class="fas fa-save me-2"></i>Create Asset
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div *ngIf="showCreateModal || showEditModal || showViewModal" 
+     class="modal-backdrop fade show" 
+     (click)="closeModals()"></div>

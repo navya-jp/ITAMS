@@ -173,6 +173,56 @@ export interface CreateLocation {
   address?: string;
 }
 
+export interface Asset {
+  id: number;
+  assetId: string;
+  assetTag: string;
+  projectId: number;
+  projectName?: string;
+  locationId: number;
+  locationName?: string;
+  usageCategory: string;
+  criticality: string;
+  assetType: string;
+  subType?: string;
+  make: string;
+  model: string;
+  serialNumber?: string;
+  procurementDate?: Date;
+  procurementCost?: number;
+  vendor?: string;
+  warrantyStartDate?: Date;
+  warrantyEndDate?: Date;
+  commissioningDate?: Date;
+  status: string;
+  assignedUserId?: number;
+  assignedUserName?: string;
+  assignedUserRole?: string;
+  createdAt: Date;
+}
+
+export interface CreateAsset {
+  assetTag: string;
+  projectId: number;
+  locationId: number;
+  usageCategory: string;
+  criticality: string;
+  assetType: string;
+  subType?: string;
+  make: string;
+  model: string;
+  serialNumber?: string;
+  procurementDate?: Date;
+  procurementCost?: number;
+  vendor?: string;
+  warrantyStartDate?: Date;
+  warrantyEndDate?: Date;
+  commissioningDate?: Date;
+  status: string;
+  assignedUserId?: number;
+  assignedUserRole?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -377,5 +427,30 @@ export class Api {
   // User Projects
   getMyProject(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/users/my-project`, this.getAuthHeaders());
+  }
+
+  // Assets
+  getAssets(): Observable<Asset[]> {
+    return this.http.get<Asset[]>(`${this.baseUrl}/assets`, this.getAuthHeaders());
+  }
+
+  getMyAssets(): Observable<Asset[]> {
+    return this.http.get<Asset[]>(`${this.baseUrl}/assets/my-assets`, this.getAuthHeaders());
+  }
+
+  getAsset(id: number): Observable<Asset> {
+    return this.http.get<Asset>(`${this.baseUrl}/assets/${id}`, this.getAuthHeaders());
+  }
+
+  createAsset(asset: CreateAsset): Observable<Asset> {
+    return this.http.post<Asset>(`${this.baseUrl}/assets`, asset, this.getAuthHeaders());
+  }
+
+  updateAsset(id: number, asset: Partial<CreateAsset>): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/assets/${id}`, asset, this.getAuthHeaders());
+  }
+
+  deleteAsset(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/assets/${id}`, this.getAuthHeaders());
   }
 }

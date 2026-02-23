@@ -105,21 +105,21 @@ export class UserDashboard implements OnInit {
   }
 
   loadMyAssets() {
-    // TODO: Implement actual API call for user's assets
-    // For now, show empty state since no assets exist yet
-    this.myAssets = [];
-    this.stats.totalAssets = 0;
-    
-    // Uncomment when user assets API is implemented:
-    // this.api.getUserAssets().subscribe({
-    //   next: (assets) => {
-    //     this.myAssets = assets;
-    //     this.stats.totalAssets = assets.length;
-    //   },
-    //   error: (error) => {
-    //     this.error = 'Failed to load assets';
-    //   }
-    // });
+    this.api.getMyAssets().subscribe({
+      next: (assets) => {
+        this.myAssets = assets.slice(0, 5); // Show only first 5 assets
+        this.stats.totalAssets = assets.length;
+      },
+      error: (error) => {
+        console.error('Failed to load assets:', error);
+        this.myAssets = [];
+        this.stats.totalAssets = 0;
+        // Don't show error for users without assets
+        if (error.status !== 404) {
+          this.error = 'Failed to load assets';
+        }
+      }
+    });
   }
 
   loadRecentActivities() {

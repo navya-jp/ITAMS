@@ -581,7 +581,11 @@ export class Users implements OnInit {
     
     // Convert roleId and projectId to numbers (HTML forms return strings)
     this.createForm.roleId = Number(this.createForm.roleId);
-    if (this.createForm.projectId) {
+    
+    // SuperAdmins don't need project assignment
+    if (this.isSuperAdminRole(this.createForm.roleId)) {
+      this.createForm.projectId = 0; // Set to 0 for superadmins
+    } else if (this.createForm.projectId) {
       this.createForm.projectId = Number(this.createForm.projectId);
     }
     
@@ -829,6 +833,9 @@ export class Users implements OnInit {
   }
 
   isFormValid(): boolean {
+    const isSuperAdmin = this.isSuperAdminRole(this.createForm.roleId);
+    const projectValid = isSuperAdmin || this.createForm.projectId > 0;
+    
     return this.createForm.username.length >= 3 &&
            this.isUsernameValid &&
            this.usernameAvailable === true &&
@@ -837,12 +844,18 @@ export class Users implements OnInit {
            this.createForm.firstName.length > 0 &&
            this.createForm.lastName.length > 0 &&
            this.createForm.roleId > 0 &&
+           projectValid &&
            this.isPasswordValid();
   }
 
   getRoleName(roleId: number): string {
     const role = this.roles.find(r => r.id === roleId);
     return role ? role.name : 'Unknown';
+  }
+  
+  isSuperAdminRole(roleId: number): boolean {
+    const role = this.roles.find(r => r.id === roleId);
+    return role ? (role.name === 'SuperAdmin' || role.name === 'Super Admin') : false;
   }
 
   clearMessages() {

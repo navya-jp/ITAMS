@@ -1,0 +1,31 @@
+.assets-container {
+  background-color: #f8f9fa;
+}
+
+.assets-header {
+  background-color: white;
+}
+
+.assets-content {
+  background-color: white;
+  margin: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.modal-content {
+  max-height: 90vh;
+}
+
+.tab-content {
+  min-height: 300px;
+}
+
+.badge {
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
+}

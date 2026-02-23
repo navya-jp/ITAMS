@@ -129,8 +129,17 @@ public class UserService : IUserService
             throw new InvalidOperationException("Role not found");
         }
 
-        // Use projectId if provided, otherwise default to 1 (first project)
-        int finalProjectId = request.ProjectId ?? 1;
+        // SuperAdmins don't need project assignment (they have access to all projects)
+        // For other roles, projectId is required
+        int? finalProjectId = null;
+        if (role.Name != "Super Admin") // Note: Role name has a space
+        {
+            if (!request.ProjectId.HasValue || request.ProjectId.Value == 0)
+            {
+                throw new InvalidOperationException("Project assignment is required for non-SuperAdmin users");
+            }
+            finalProjectId = request.ProjectId.Value;
+        }
 
         // Generate UserId (alternate key) - get the next available number
         var lastUser = await _userRepository.GetAllAsync();

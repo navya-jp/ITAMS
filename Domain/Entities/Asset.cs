@@ -16,7 +16,13 @@ public class Asset
     
     public int ProjectId { get; set; }
     
+    [StringLength(50)]
+    public string? ProjectIdRef { get; set; }
+    
     public int LocationId { get; set; }
+    
+    [StringLength(50)]
+    public string? LocationIdRef { get; set; }
     
     [Required]
     public AssetUsageCategory UsageCategory { get; set; }
