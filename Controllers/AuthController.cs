@@ -95,9 +95,11 @@ namespace ITAMS.Controllers
                     });
                 }
 
-                // Generate session ID and update user
+                // Generate session ID and capture login time once
                 var sessionId = Guid.NewGuid().ToString();
-                await _userService.UpdateSessionAsync(authenticatedUser.Id, sessionId, DateTimeHelper.Now);
+                var loginTime = DateTimeHelper.Now;
+                
+                await _userService.UpdateSessionAsync(authenticatedUser.Id, sessionId, loginTime);
 
                 // Capture login audit details
                 var ipAddress = GetClientIpAddress();
@@ -112,7 +114,7 @@ namespace ITAMS.Controllers
                 {
                     UserId = authenticatedUser.Id,
                     Username = authenticatedUser.Username,
-                    LoginTime = DateTimeHelper.Now,
+                    LoginTime = loginTime,
                     IpAddress = ipAddress,
                     BrowserType = browserType,
                     OperatingSystem = operatingSystem,

@@ -174,10 +174,14 @@ export class AuditTrail implements OnInit {
 
   calculateSessionDuration(loginTime: string, logoutTime?: string): string {
     const login = new Date(loginTime);
-    const now = new Date();
-    const logout = logoutTime ? new Date(logoutTime) : now;
+    const logout = logoutTime ? new Date(logoutTime) : new Date();
     
     const diff = logout.getTime() - login.getTime();
+    
+    // Handle negative duration (data issue or timezone problem)
+    if (diff < 0) {
+      return '0m';
+    }
     
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
