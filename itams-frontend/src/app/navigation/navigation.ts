@@ -31,7 +31,6 @@ export class Navigation implements OnInit, OnDestroy {
     { path: '/admin/roles', icon: 'fas fa-user-shield', label: 'Roles & Permissions', title: 'Roles & Permissions' },
     { path: '/admin/user-permissions', icon: 'fas fa-user-cog', label: 'User Permissions', title: 'User Permissions' },
     { path: '/admin/projects', icon: 'fas fa-folder', label: 'Projects & Locations', title: 'Projects & Locations' },
-    { path: '/admin/master-data', icon: 'fas fa-database', label: 'Master Data', title: 'Master Data Configuration' },
     { path: '/admin/assets', icon: 'fas fa-server', label: 'Assets', title: 'Asset Management' },
     { path: '/admin/audit', icon: 'fas fa-history', label: 'Audit Trail', title: 'Audit Trail' },
     { path: '/admin/settings', icon: 'fas fa-cog', label: 'Settings', title: 'System Settings' }
