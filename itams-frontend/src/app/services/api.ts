@@ -248,106 +248,106 @@ export class Api {
 
   // Users - Using dedicated Users controller
   getUsers(): Observable<ApiResponse<User[]>> {
-    return this.http.get<ApiResponse<User[]>>(`${this.baseUrl}/users`);
+    return this.http.get<ApiResponse<User[]>>(`${this.baseUrl}/users`, this.getAuthHeaders());
   }
 
   getUser(id: number): Observable<ApiResponse<User>> {
-    return this.http.get<ApiResponse<User>>(`${this.baseUrl}/users/${id}`);
+    return this.http.get<ApiResponse<User>>(`${this.baseUrl}/users/${id}`, this.getAuthHeaders());
   }
 
   createUser(user: CreateUser): Observable<ApiResponse<User>> {
-    return this.http.post<ApiResponse<User>>(`${this.baseUrl}/users`, user, this.httpOptions);
+    return this.http.post<ApiResponse<User>>(`${this.baseUrl}/users`, user, this.getAuthHeaders());
   }
 
   updateUser(id: number, user: UpdateUser): Observable<ApiResponse<User>> {
-    return this.http.put<ApiResponse<User>>(`${this.baseUrl}/users/${id}`, user, this.httpOptions);
+    return this.http.put<ApiResponse<User>>(`${this.baseUrl}/users/${id}`, user, this.getAuthHeaders());
   }
 
   deactivateUser(id: number): Observable<ApiResponse<any>> {
-    return this.http.patch<ApiResponse<any>>(`${this.baseUrl}/users/${id}/deactivate`, {}, this.httpOptions);
+    return this.http.patch<ApiResponse<any>>(`${this.baseUrl}/users/${id}/deactivate`, {}, this.getAuthHeaders());
   }
 
   activateUser(id: number): Observable<ApiResponse<any>> {
-    return this.http.patch<ApiResponse<any>>(`${this.baseUrl}/users/${id}/activate`, {}, this.httpOptions);
+    return this.http.patch<ApiResponse<any>>(`${this.baseUrl}/users/${id}/activate`, {}, this.getAuthHeaders());
   }
 
   lockUser(id: number): Observable<ApiResponse<any>> {
-    return this.http.post<ApiResponse<any>>(`${this.baseUrl}/users/${id}/lock`, {}, this.httpOptions);
+    return this.http.post<ApiResponse<any>>(`${this.baseUrl}/users/${id}/lock`, {}, this.getAuthHeaders());
   }
 
   unlockUser(id: number): Observable<ApiResponse<any>> {
-    return this.http.post<ApiResponse<any>>(`${this.baseUrl}/users/${id}/unlock`, {}, this.httpOptions);
+    return this.http.post<ApiResponse<any>>(`${this.baseUrl}/users/${id}/unlock`, {}, this.getAuthHeaders());
   }
 
   resetPassword(id: number, newPassword: string): Observable<ApiResponse<any>> {
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}/users/${id}/reset-password`, 
-      { newPassword }, this.httpOptions);
+      { newPassword }, this.getAuthHeaders());
   }
 
   checkUsernameAvailability(username: string): Observable<ApiResponse<boolean>> {
-    return this.http.get<ApiResponse<boolean>>(`${this.baseUrl}/users/check-username/${encodeURIComponent(username)}`);
+    return this.http.get<ApiResponse<boolean>>(`${this.baseUrl}/users/check-username/${encodeURIComponent(username)}`, this.getAuthHeaders());
   }
 
   checkEmailAvailability(email: string): Observable<ApiResponse<boolean>> {
-    return this.http.get<ApiResponse<boolean>>(`${this.baseUrl}/users/check-email/${encodeURIComponent(email)}`);
+    return this.http.get<ApiResponse<boolean>>(`${this.baseUrl}/users/check-email/${encodeURIComponent(email)}`, this.getAuthHeaders());
   }
 
   getUsersByRole(roleId: number): Observable<ApiResponse<User[]>> {
-    return this.http.get<ApiResponse<User[]>>(`${this.baseUrl}/users/by-role/${roleId}`);
+    return this.http.get<ApiResponse<User[]>>(`${this.baseUrl}/users/by-role/${roleId}`, this.getAuthHeaders());
   }
 
   // RBAC - Using new RBAC controller endpoints
   getRbacRoles(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/rbac/roles`);
+    return this.http.get<any[]>(`${this.baseUrl}/rbac/roles`, this.getAuthHeaders());
   }
 
   getRbacPermissions(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/rbac/permissions`);
+    return this.http.get<any[]>(`${this.baseUrl}/rbac/permissions`, this.getAuthHeaders());
   }
 
   getRbacPermissionsGrouped(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/rbac/permissions/grouped`);
+    return this.http.get<any[]>(`${this.baseUrl}/rbac/permissions/grouped`, this.getAuthHeaders());
   }
 
   getRbacRolePermissions(roleId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/rbac/roles/${roleId}/permissions`);
+    return this.http.get<any[]>(`${this.baseUrl}/rbac/roles/${roleId}/permissions`, this.getAuthHeaders());
   }
 
   updateRbacRolePermissions(roleId: number, permissionIds: number[]): Observable<any> {
     return this.http.put(`${this.baseUrl}/rbac/roles/${roleId}/permissions`, 
-      { permissionIds }, this.httpOptions);
+      { permissionIds }, this.getAuthHeaders());
   }
 
   // Legacy roles (keeping for backward compatibility)
   getRoles(): Observable<Role[]> {
-    return this.http.get<Role[]>(`${this.baseUrl}/superadmin/roles`);
+    return this.http.get<Role[]>(`${this.baseUrl}/superadmin/roles`, this.getAuthHeaders());
   }
 
   createRole(role: CreateRole): Observable<Role> {
-    return this.http.post<Role>(`${this.baseUrl}/superadmin/roles`, role, this.httpOptions);
+    return this.http.post<Role>(`${this.baseUrl}/superadmin/roles`, role, this.getAuthHeaders());
   }
 
   updateRole(id: number, role: Partial<Role>): Observable<Role> {
-    return this.http.put<Role>(`${this.baseUrl}/superadmin/roles/${id}`, role, this.httpOptions);
+    return this.http.put<Role>(`${this.baseUrl}/superadmin/roles/${id}`, role, this.getAuthHeaders());
   }
 
   // Permissions
   getAllPermissions(): Observable<Permission[]> {
-    return this.http.get<Permission[]>(`${this.baseUrl}/superadmin/permissions`);
+    return this.http.get<Permission[]>(`${this.baseUrl}/superadmin/permissions`, this.getAuthHeaders());
   }
 
   getRolePermissions(roleId: number): Observable<Permission[]> {
-    return this.http.get<Permission[]>(`${this.baseUrl}/superadmin/roles/${roleId}/permissions`);
+    return this.http.get<Permission[]>(`${this.baseUrl}/superadmin/roles/${roleId}/permissions`, this.getAuthHeaders());
   }
 
   updateRolePermissions(roleId: number, permissionIds: number[]): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/superadmin/roles/${roleId}/permissions`, 
-      { permissionIds }, this.httpOptions);
+      { permissionIds }, this.getAuthHeaders());
   }
 
   // Projects
   getProjects(): Observable<Project[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/superadmin/projects`).pipe(
+    return this.http.get<any[]>(`${this.baseUrl}/superadmin/projects`, this.getAuthHeaders()).pipe(
       map(projects => projects.map(p => ({
         ...p,
         states: p.states ? (typeof p.states === 'string' ? p.states.split(',').map((s: string) => s.trim()).filter((s: string) => s) : p.states) : []
@@ -361,15 +361,15 @@ export class Api {
       ...project,
       states: project.states.join(',')
     };
-    return this.http.post<Project>(`${this.baseUrl}/superadmin/projects`, projectData, this.httpOptions);
+    return this.http.post<Project>(`${this.baseUrl}/superadmin/projects`, projectData, this.getAuthHeaders());
   }
 
   updateProject(id: number, project: Partial<Project>): Observable<Project> {
-    return this.http.put<Project>(`${this.baseUrl}/superadmin/projects/${id}`, project, this.httpOptions);
+    return this.http.put<Project>(`${this.baseUrl}/superadmin/projects/${id}`, project, this.getAuthHeaders());
   }
 
   deleteProject(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/superadmin/projects/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/superadmin/projects/${id}`, this.getAuthHeaders());
   }
 
   // Locations
@@ -404,7 +404,7 @@ export class Api {
       url += `&toDate=${endDate.toISOString()}`;
     }
     
-    return this.http.get<any[]>(url);
+    return this.http.get<any[]>(url, this.getAuthHeaders());
   }
 
   // System Settings
