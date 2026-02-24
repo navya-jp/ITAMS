@@ -186,10 +186,28 @@ export class AuthService {
         { userId: currentUser.id },
         this.getAuthHeaders()
       ).subscribe({
-        next: () => console.log('Heartbeat sent'),
+        next: () => {
+          console.log('Heartbeat sent');
+          // Check maintenance mode status
+          this.checkMaintenanceMode();
+        },
         error: (err) => console.error('Heartbeat failed:', err)
       });
     }
+  }
+
+  private checkMaintenanceMode() {
+    this.http.get<any>(`${this.baseUrl}/maintenance-status`, this.getAuthHeaders())
+      .subscribe({
+        next: (response) => {
+          if (response.shouldLogout) {
+            console.warn('Maintenance mode active - logging out non-SuperAdmin user');
+            alert('System is entering maintenance mode. You will be logged out.');
+            this.logout();
+          }
+        },
+        error: (err) => console.error('Maintenance check failed:', err)
+      });
   }
 
   // Public methods

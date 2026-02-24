@@ -356,6 +356,34 @@ namespace ITAMS.Controllers
                 return Ok(settings);
             }
         }
+
+        [HttpGet("maintenance-status")]
+        public async Task<IActionResult> GetMaintenanceStatus()
+        {
+            try
+            {
+                var isMaintenanceMode = await _settingsService.IsMaintenanceModeAsync();
+                var userRole = User?.FindFirst(ClaimTypes.Role)?.Value;
+                var isSuperAdmin = userRole == "Super Admin";
+
+                return Ok(new
+                {
+                    maintenanceMode = isMaintenanceMode,
+                    isSuperAdmin = isSuperAdmin,
+                    shouldLogout = isMaintenanceMode && !isSuperAdmin
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking maintenance status");
+                return Ok(new
+                {
+                    maintenanceMode = false,
+                    isSuperAdmin = false,
+                    shouldLogout = false
+                });
+            }
+        }
         
         [HttpPost("heartbeat")]
         public async Task<IActionResult> Heartbeat([FromBody] HeartbeatRequest request)
