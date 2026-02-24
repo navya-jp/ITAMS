@@ -51,6 +51,9 @@ namespace ITAMS.Controllers
                     });
                 }
 
+                // Check if maintenance mode is enabled
+                var isMaintenanceMode = await _settingsService.IsMaintenanceModeAsync();
+                
                 // First, get the user to check if it's their first login and session status
                 var users = await _userService.GetAllUsersAsync();
                 var user = users.FirstOrDefault(u => 
@@ -64,6 +67,17 @@ namespace ITAMS.Controllers
                     {
                         Success = false,
                         Message = "Invalid username or password"
+                    });
+                }
+
+                // Block non-Super Admin users during maintenance mode
+                if (isMaintenanceMode && user.Role?.Name != "Super Admin")
+                {
+                    _logger.LogWarning("Maintenance mode active - blocking login for user: {Username}", user.Username);
+                    return StatusCode(503, new LoginResponse
+                    {
+                        Success = false,
+                        Message = "System is currently under maintenance. Please try again later."
                     });
                 }
 
