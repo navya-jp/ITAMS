@@ -10,12 +10,18 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private readonly IRoleRepository _roleRepository;
     private readonly IAuditService _auditService;
+    private readonly ISettingsService _settingsService;
 
-    public UserService(IUserRepository userRepository, IRoleRepository roleRepository, IAuditService auditService)
+    public UserService(
+        IUserRepository userRepository, 
+        IRoleRepository roleRepository, 
+        IAuditService auditService,
+        ISettingsService settingsService)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
         _auditService = auditService;
+        _settingsService = settingsService;
     }
 
     public async Task<User?> AuthenticateAsync(string username, string password)
@@ -33,11 +39,23 @@ public class UserService : IUserService
             return null;
         }
 
+        // Check if password has expired
+        var settings = await _settingsService.GetSecuritySettingsAsync();
+        if (user.PasswordChangedAt.HasValue && settings.PasswordExpiryDays > 0)
+        {
+            var daysSincePasswordChange = (DateTime.UtcNow - user.PasswordChangedAt.Value).TotalDays;
+            if (daysSincePasswordChange > settings.PasswordExpiryDays)
+            {
+                user.MustChangePassword = true;
+                await _userRepository.UpdateAsync(user);
+            }
+        }
+
         // Verify password
         bool isPasswordValid = false;
         bool isFirstLogin = user.LastLoginAt == null;
         
-        if (user.MustChangePassword && isFirstLogin)
+        if (user.MustChangePassword && isFirstLogin && settings.RequirePasswordChange)
         {
             // For first-time users, accept any password and set it as their new password
             isPasswordValid = true;
@@ -58,10 +76,10 @@ public class UserService : IUserService
             // Increment failed login attempts
             user.FailedLoginAttempts++;
             
-            // Lock user after 5 failed attempts for 30 minutes
-            if (user.FailedLoginAttempts >= 5)
+            // Lock user after max attempts using dynamic setting
+            if (user.FailedLoginAttempts >= settings.MaxLoginAttempts)
             {
-                user.LockedUntil = DateTime.UtcNow.AddMinutes(30);
+                user.LockedUntil = DateTime.UtcNow.AddMinutes(settings.LockoutDurationMinutes);
             }
             
             await _userRepository.UpdateAsync(user);

@@ -67,6 +67,7 @@ builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAccessControlService, AccessControlService>();
+builder.Services.AddScoped<ISettingsService, SettingsService>();
 
 // Add RBAC services
 builder.Services.AddScoped<ITAMS.Services.RBAC.IPermissionResolver, ITAMS.Services.RBAC.PermissionResolver>();
@@ -75,7 +76,8 @@ builder.Services.AddScoped<ITAMS.Services.RBAC.IRoleManagementService, ITAMS.Ser
 
 // Add background services
 builder.Services.AddHostedService<ITAMS.Services.SessionCleanupService>();
-builder.Services.AddHostedService<ITAMS.Services.ApprovalEscalationService>();
+// Temporarily disabled due to missing column in ApprovalRequests table
+// builder.Services.AddHostedService<ITAMS.Services.ApprovalEscalationService>();
 
 // Add memory cache for permission caching
 builder.Services.AddMemoryCache();
@@ -110,6 +112,9 @@ app.UseCors("AllowAll");
 
 // Add authentication and authorization
 app.UseAuthentication();
+
+// Add maintenance mode middleware (must be after authentication)
+app.UseMiddleware<ITAMS.Middleware.MaintenanceModeMiddleware>();
 
 // Add activity tracking middleware (must be after authentication)
 app.UseMiddleware<ITAMS.Middleware.ActivityTrackingMiddleware>();

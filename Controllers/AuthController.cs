@@ -9,6 +9,7 @@ using ITAMS.Data;
 using ITAMS.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using ITAMS.Utilities;
+using ITAMS.Services;
 
 namespace ITAMS.Controllers
 {
@@ -20,17 +21,20 @@ namespace ITAMS.Controllers
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
         private readonly ITAMSDbContext _context;
+        private readonly ISettingsService _settingsService;
 
         public AuthController(
             IUserService userService,
             IConfiguration configuration,
             ILogger<AuthController> logger,
-            ITAMSDbContext context)
+            ITAMSDbContext context,
+            ISettingsService settingsService)
         {
             _userService = userService;
             _configuration = configuration;
             _logger = logger;
             _context = context;
+            _settingsService = settingsService;
         }
 
         [HttpPost("login")]
@@ -316,24 +320,7 @@ namespace ITAMS.Controllers
         {
             try
             {
-                // Load settings from database
-                var settingsList = await _context.SystemSettings
-                    .Where(s => s.Category == "Security")
-                    .ToListAsync();
-                    
-                var settingsDict = settingsList.ToDictionary(s => s.SettingKey, s => s.SettingValue);
-                
-                var settings = new SecuritySettings
-                {
-                    MaxLoginAttempts = GetIntSetting(settingsDict, "MaxLoginAttempts", 5),
-                    LockoutDurationMinutes = GetIntSetting(settingsDict, "LockoutDurationMinutes", 30),
-                    SessionTimeoutMinutes = GetIntSetting(settingsDict, "SessionTimeoutMinutes", 30),
-                    PasswordExpiryDays = GetIntSetting(settingsDict, "PasswordExpiryDays", 90),
-                    RequirePasswordChange = GetBoolSetting(settingsDict, "RequirePasswordChange", true),
-                    AllowMultipleSessions = GetBoolSetting(settingsDict, "AllowMultipleSessions", false),
-                    AutoLogoutWarningMinutes = GetIntSetting(settingsDict, "SessionWarningMinutes", 5)
-                };
-
+                var settings = await _settingsService.GetSecuritySettingsAsync();
                 return Ok(settings);
             }
             catch (Exception ex)
@@ -347,9 +334,7 @@ namespace ITAMS.Controllers
                     LockoutDurationMinutes = 30,
                     SessionTimeoutMinutes = 30,
                     PasswordExpiryDays = 90,
-                    RequirePasswordChange = true,
-                    AllowMultipleSessions = false,
-                    AutoLogoutWarningMinutes = 5
+                    RequirePasswordChange = true
                 };
 
                 return Ok(settings);
@@ -622,16 +607,5 @@ namespace ITAMS.Controllers
         public bool IsLocked { get; set; }
         public string? LockoutEnd { get; set; }
         public int? AttemptsRemaining { get; set; }
-    }
-
-    public class SecuritySettings
-    {
-        public int MaxLoginAttempts { get; set; }
-        public int LockoutDurationMinutes { get; set; }
-        public int SessionTimeoutMinutes { get; set; }
-        public int PasswordExpiryDays { get; set; }
-        public bool RequirePasswordChange { get; set; }
-        public bool AllowMultipleSessions { get; set; }
-        public int AutoLogoutWarningMinutes { get; set; }
     }
 }

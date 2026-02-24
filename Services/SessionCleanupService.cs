@@ -44,10 +44,14 @@ namespace ITAMS.Services
         {
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ITAMSDbContext>();
+            var settingsService = scope.ServiceProvider.GetRequiredService<ISettingsService>();
 
             var now = DateTimeHelper.Now;
             var forcedLogoutCutoff = now.AddMinutes(-2); // No heartbeat for 2 minutes = browser closed
-            var sessionTimeoutCutoff = now.AddMinutes(-30); // Session started 30+ minutes ago = timeout
+            
+            // Get dynamic session timeout from settings
+            var sessionTimeoutMinutes = await settingsService.GetIntSettingAsync("SessionTimeoutMinutes", 30);
+            var sessionTimeoutCutoff = now.AddMinutes(-sessionTimeoutMinutes); // Session started X+ minutes ago = timeout
 
             // Find users with active sessions
             var activeUsers = await context.Users
@@ -77,8 +81,8 @@ namespace ITAMS.Services
                     ? now - user.LastActivityAt.Value 
                     : sessionDuration;
 
-                // Check for SESSION_TIMEOUT first (30 minutes from login)
-                if (sessionDuration.TotalMinutes >= 30)
+                // Check for SESSION_TIMEOUT first (using dynamic timeout from settings)
+                if (sessionDuration.TotalMinutes >= sessionTimeoutMinutes)
                 {
                     activeAudit.Status = "SESSION_TIMEOUT";
                     activeAudit.LogoutTime = now;
@@ -88,8 +92,8 @@ namespace ITAMS.Services
                     
                     cleanedCount++;
                     _logger.LogInformation(
-                        "Session timeout for user {Username} - session duration: {Minutes:F1} minutes",
-                        user.Username, sessionDuration.TotalMinutes
+                        "Session timeout for user {Username} - session duration: {Minutes:F1} minutes (timeout: {Timeout} min)",
+                        user.Username, sessionDuration.TotalMinutes, sessionTimeoutMinutes
                     );
                 }
                 // Check for FORCED_LOGOUT (browser closed - no heartbeat for 2+ minutes)

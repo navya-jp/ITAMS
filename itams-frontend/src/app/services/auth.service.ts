@@ -49,8 +49,6 @@ export interface SecuritySettings {
   sessionTimeoutMinutes: number;
   passwordExpiryDays: number;
   requirePasswordChange: boolean;
-  allowMultipleSessions: boolean;
-  autoLogoutWarningMinutes: number;
 }
 
 @Injectable({
@@ -84,9 +82,7 @@ export class AuthService {
     lockoutDurationMinutes: 30,
     sessionTimeoutMinutes: 30,
     passwordExpiryDays: 90,
-    requirePasswordChange: true,
-    allowMultipleSessions: false,
-    autoLogoutWarningMinutes: 5
+    requirePasswordChange: true
   };
 
   constructor(
@@ -147,19 +143,10 @@ export class AuthService {
   private checkSessionTimeout() {
     const now = Date.now();
     const timeoutMs = this.securitySettings.sessionTimeoutMinutes * 60 * 1000;
-    const warningMs = this.securitySettings.autoLogoutWarningMinutes * 60 * 1000;
     
     if (this.isAuthenticated && (now - this.lastActivity) > timeoutMs) {
       this.logout('Session expired due to inactivity', 'SESSION_TIMEOUT');
-    } else if (this.isAuthenticated && (now - this.lastActivity) > (timeoutMs - warningMs)) {
-      this.showAutoLogoutWarning();
     }
-  }
-
-  private showAutoLogoutWarning() {
-    // TODO: Show warning modal/toast
-    const remainingMinutes = Math.ceil((this.securitySettings.sessionTimeoutMinutes * 60 * 1000 - (Date.now() - this.lastActivity)) / 60000);
-    console.warn(`Session will expire in ${remainingMinutes} minutes due to inactivity`);
   }
 
   private startSessionTimer() {

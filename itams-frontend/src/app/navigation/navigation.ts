@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -168,5 +168,16 @@ export class Navigation implements OnInit, OnDestroy {
 
   closeProfileDropdown() {
     this.showProfileDropdown = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    const clickedInside = target.closest('.user-header-avatar');
+    
+    // Close dropdown if clicked outside
+    if (!clickedInside && this.showProfileDropdown) {
+      this.showProfileDropdown = false;
+    }
   }
 }
