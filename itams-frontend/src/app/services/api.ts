@@ -181,6 +181,7 @@ export interface Asset {
   projectName?: string;
   locationId: number;
   locationName?: string;
+  region?: string;
   usageCategory: string;
   criticality: string;
   assetType: string;

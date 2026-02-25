@@ -306,13 +306,57 @@ public class BulkUploadService : IBulkUploadService
 
     private async Task<Asset?> MapToAssetAsync(AssetExcelRow row, int nextAssetIdNumber, int userId)
     {
-        // Get default project and location (first available)
-        var defaultProject = await _context.Projects.FirstOrDefaultAsync();
-        var defaultLocation = await _context.Locations.FirstOrDefaultAsync();
+        Project? project = null;
+        Location? location = null;
 
-        if (defaultProject == null || defaultLocation == null)
+        // Try to find location based on provided data
+        if (!string.IsNullOrWhiteSpace(row.Region) || 
+            !string.IsNullOrWhiteSpace(row.Plaza_Name) || 
+            !string.IsNullOrWhiteSpace(row.Location))
         {
-            _logger.LogWarning("No default project or location found");
+            var locationQuery = _context.Locations.AsQueryable();
+
+            // Filter by Region if provided
+            if (!string.IsNullOrWhiteSpace(row.Region))
+            {
+                locationQuery = locationQuery.Where(l => l.Region.Contains(row.Region));
+            }
+
+            // Filter by Plaza/Site name if provided
+            if (!string.IsNullOrWhiteSpace(row.Plaza_Name))
+            {
+                locationQuery = locationQuery.Where(l => 
+                    l.Site != null && l.Site.Contains(row.Plaza_Name) ||
+                    l.Name.Contains(row.Plaza_Name));
+            }
+
+            // Filter by Location/Office name if provided
+            if (!string.IsNullOrWhiteSpace(row.Location))
+            {
+                locationQuery = locationQuery.Where(l => 
+                    l.Office != null && l.Office.Contains(row.Location) ||
+                    l.Name.Contains(row.Location));
+            }
+
+            location = await locationQuery.FirstOrDefaultAsync();
+        }
+
+        // If no location found from provided data, use default
+        if (location == null)
+        {
+            location = await _context.Locations.FirstOrDefaultAsync();
+            if (location == null)
+            {
+                _logger.LogWarning("No location found for row {RowNumber}", row.RowNumber);
+                return null;
+            }
+        }
+
+        // Get project from the location
+        project = await _context.Projects.FindAsync(location.ProjectId);
+        if (project == null)
+        {
+            _logger.LogWarning("No project found for location {LocationId}", location.Id);
             return null;
         }
 
@@ -321,10 +365,10 @@ public class BulkUploadService : IBulkUploadService
             AssetId = $"AST{nextAssetIdNumber:D5}",
             AssetTag = row.Asset_Tag,
             SerialNumber = row.Serial_Number,
-            ProjectId = defaultProject.Id,
-            ProjectIdRef = defaultProject.ProjectId,
-            LocationId = defaultLocation.Id,
-            LocationIdRef = defaultLocation.LocationId,
+            ProjectId = project.Id,
+            ProjectIdRef = project.ProjectId,
+            LocationId = location.Id,
+            LocationIdRef = location.LocationId,
             AssetType = row.Asset_Type,
             SubType = row.Sub_Type,
             Make = row.Make,

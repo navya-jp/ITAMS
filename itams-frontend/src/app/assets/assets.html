@@ -39,22 +39,19 @@
         <thead class="table-light">
           <tr>
             <th>Asset ID</th>
-            <th>Asset Tag</th>
             <th>Type</th>
-            <th>Make/Model</th>
-            <th>Location</th>
+            <th>Criticality</th>
+            <th>Region</th>
             <th>Status</th>
-            <th>Project</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let asset of assets">
             <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
-            <td>{{ asset.assetTag }}</td>
             <td>{{ asset.assetType }}</td>
-            <td>{{ asset.make }} {{ asset.model }}</td>
-            <td>{{ asset.locationName }}</td>
+            <td>{{ asset.criticality }}</td>
+            <td>{{ asset.region }}</td>
             <td>
               <span class="badge" 
                     [class.bg-success]="asset.status === 'InUse'"
@@ -64,7 +61,6 @@
                 {{ asset.status }}
               </span>
             </td>
-            <td>{{ asset.projectName }}</td>
             <td>
               <div class="btn-group btn-group-sm" role="group">
                 <button class="btn btn-outline-info" (click)="openViewModal(asset)" title="View Details">
@@ -77,7 +73,7 @@
             </td>
           </tr>
           <tr *ngIf="assets.length === 0">
-            <td colspan="8" class="text-center py-4 text-muted">
+            <td colspan="6" class="text-center py-4 text-muted">
               No assets found. <a href="#" (click)="openCreateModal(); $event.preventDefault()">Create your first asset</a>
             </td>
           </tr>
@@ -437,6 +433,9 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
+        <button type="button" class="btn btn-warning" (click)="closeModals(); openEditStatusModal(selectedAsset!)">
+          <i class="fas fa-exchange-alt me-2"></i>Edit Status
+        </button>
         <button type="button" class="btn btn-primary" (click)="closeModals(); openEditModal(selectedAsset!)">
           <i class="fas fa-edit me-2"></i>Edit Asset
         </button>

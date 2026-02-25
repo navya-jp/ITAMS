@@ -9,6 +9,7 @@ public class AssetDto
     public string? ProjectName { get; set; }
     public int LocationId { get; set; }
     public string? LocationName { get; set; }
+    public string? Region { get; set; }
     public string UsageCategory { get; set; } = string.Empty;
     public string Criticality { get; set; } = string.Empty;
     public string AssetType { get; set; } = string.Empty;
