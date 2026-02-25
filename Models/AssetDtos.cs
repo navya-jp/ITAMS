@@ -9,7 +9,29 @@ public class AssetDto
     public string? ProjectName { get; set; }
     public int LocationId { get; set; }
     public string? LocationName { get; set; }
+    
+    // Location text fields (from Excel - display as-is)
     public string? Region { get; set; }
+    public string? State { get; set; }
+    public string? Site { get; set; }
+    public string? PlazaName { get; set; }
+    public string? LocationText { get; set; }
+    public string? Department { get; set; }
+    
+    // Extended asset fields
+    public string? Classification { get; set; }
+    public string? OSType { get; set; }
+    public string? OSVersion { get; set; }
+    public string? DBType { get; set; }
+    public string? DBVersion { get; set; }
+    public string? IPAddress { get; set; }
+    public string? AssignedUserText { get; set; }
+    public string? UserRole { get; set; }
+    public string? ProcuredBy { get; set; }
+    public string? PatchStatus { get; set; }
+    public string? USBBlockingStatus { get; set; }
+    public string? Remarks { get; set; }
+    
     public string UsageCategory { get; set; } = string.Empty;
     public string Criticality { get; set; } = string.Empty;
     public string AssetType { get; set; } = string.Empty;
@@ -28,6 +50,7 @@ public class AssetDto
     public string? AssignedUserName { get; set; }
     public string? AssignedUserRole { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }
 
 public class CreateAssetDto

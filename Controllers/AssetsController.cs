@@ -45,6 +45,23 @@ public class AssetsController : BaseController
                     ProjectName = a.Project.Name,
                     LocationId = a.LocationId,
                     LocationName = a.Location.Name,
+                    Region = a.Region,
+                    State = a.State,
+                    Site = a.Site,
+                    PlazaName = a.PlazaName,
+                    LocationText = a.LocationText,
+                    Department = a.Department,                    Classification = a.Classification,
+                    OSType = a.OSType,
+                    OSVersion = a.OSVersion,
+                    DBType = a.DBType,
+                    DBVersion = a.DBVersion,
+                    IPAddress = a.IPAddress,
+                    AssignedUserText = a.AssignedUserText,
+                    UserRole = a.UserRole,
+                    ProcuredBy = a.ProcuredBy,
+                    PatchStatus = a.PatchStatus,
+                    USBBlockingStatus = a.USBBlockingStatus,
+                    Remarks = a.Remarks,
                     UsageCategory = a.UsageCategory.ToString(),
                     Criticality = a.Criticality.ToString(),
                     AssetType = a.AssetType,
@@ -62,7 +79,8 @@ public class AssetsController : BaseController
                     AssignedUserId = a.AssignedUserId,
                     AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
                     AssignedUserRole = a.AssignedUserRole,
-                    CreatedAt = a.CreatedAt
+                    CreatedAt = a.CreatedAt,
+                    UpdatedAt = a.UpdatedAt
                 })
                 .ToListAsync();
 
@@ -110,7 +128,23 @@ public class AssetsController : BaseController
                         ProjectName = a.Project.Name,
                         LocationId = a.LocationId,
                         LocationName = a.Location.Name,
-                        Region = a.Location.Region,
+                        Region = a.Region,
+                        State = a.State,
+                        Site = a.Site,
+                        PlazaName = a.PlazaName,
+                        LocationText = a.LocationText,
+                        Department = a.Department,                    Classification = a.Classification,
+                    OSType = a.OSType,
+                    OSVersion = a.OSVersion,
+                    DBType = a.DBType,
+                    DBVersion = a.DBVersion,
+                    IPAddress = a.IPAddress,
+                    AssignedUserText = a.AssignedUserText,
+                    UserRole = a.UserRole,
+                    ProcuredBy = a.ProcuredBy,
+                    PatchStatus = a.PatchStatus,
+                    USBBlockingStatus = a.USBBlockingStatus,
+                    Remarks = a.Remarks,
                         UsageCategory = a.UsageCategory.ToString(),
                         Criticality = a.Criticality.ToString(),
                         AssetType = a.AssetType,
@@ -128,8 +162,9 @@ public class AssetsController : BaseController
                         AssignedUserId = a.AssignedUserId,
                         AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
                         AssignedUserRole = a.AssignedUserRole,
-                        CreatedAt = a.CreatedAt
-                    })
+                        CreatedAt = a.CreatedAt,
+                    UpdatedAt = a.UpdatedAt
+                })
                     .ToListAsync();
 
                 return Ok(allAssets);
@@ -155,7 +190,23 @@ public class AssetsController : BaseController
                     ProjectName = a.Project.Name,
                     LocationId = a.LocationId,
                     LocationName = a.Location.Name,
-                    Region = a.Location.Region,
+                    Region = a.Region,
+                    State = a.State,
+                    Site = a.Site,
+                    PlazaName = a.PlazaName,
+                    LocationText = a.LocationText,
+                    Department = a.Department,                    Classification = a.Classification,
+                    OSType = a.OSType,
+                    OSVersion = a.OSVersion,
+                    DBType = a.DBType,
+                    DBVersion = a.DBVersion,
+                    IPAddress = a.IPAddress,
+                    AssignedUserText = a.AssignedUserText,
+                    UserRole = a.UserRole,
+                    ProcuredBy = a.ProcuredBy,
+                    PatchStatus = a.PatchStatus,
+                    USBBlockingStatus = a.USBBlockingStatus,
+                    Remarks = a.Remarks,
                     UsageCategory = a.UsageCategory.ToString(),
                     Criticality = a.Criticality.ToString(),
                     AssetType = a.AssetType,
@@ -173,7 +224,8 @@ public class AssetsController : BaseController
                     AssignedUserId = a.AssignedUserId,
                     AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
                     AssignedUserRole = a.AssignedUserRole,
-                    CreatedAt = a.CreatedAt
+                    CreatedAt = a.CreatedAt,
+                    UpdatedAt = a.UpdatedAt
                 })
                 .ToListAsync();
 
@@ -206,6 +258,23 @@ public class AssetsController : BaseController
                     ProjectName = a.Project.Name,
                     LocationId = a.LocationId,
                     LocationName = a.Location.Name,
+                    Region = a.Region,
+                    State = a.State,
+                    Site = a.Site,
+                    PlazaName = a.PlazaName,
+                    LocationText = a.LocationText,
+                    Department = a.Department,                    Classification = a.Classification,
+                    OSType = a.OSType,
+                    OSVersion = a.OSVersion,
+                    DBType = a.DBType,
+                    DBVersion = a.DBVersion,
+                    IPAddress = a.IPAddress,
+                    AssignedUserText = a.AssignedUserText,
+                    UserRole = a.UserRole,
+                    ProcuredBy = a.ProcuredBy,
+                    PatchStatus = a.PatchStatus,
+                    USBBlockingStatus = a.USBBlockingStatus,
+                    Remarks = a.Remarks,
                     UsageCategory = a.UsageCategory.ToString(),
                     Criticality = a.Criticality.ToString(),
                     AssetType = a.AssetType,
@@ -223,7 +292,8 @@ public class AssetsController : BaseController
                     AssignedUserId = a.AssignedUserId,
                     AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
                     AssignedUserRole = a.AssignedUserRole,
-                    CreatedAt = a.CreatedAt
+                    CreatedAt = a.CreatedAt,
+                    UpdatedAt = a.UpdatedAt
                 })
                 .FirstOrDefaultAsync();
 
@@ -306,6 +376,12 @@ public class AssetsController : BaseController
                 AssetTag = asset.AssetTag,
                 ProjectId = asset.ProjectId,
                 LocationId = asset.LocationId,
+                Region = asset.Region,
+                State = asset.State,
+                Site = asset.Site,
+                PlazaName = asset.PlazaName,
+                LocationText = asset.LocationText,
+                Department = asset.Department,
                 UsageCategory = asset.UsageCategory.ToString(),
                 Criticality = asset.Criticality.ToString(),
                 AssetType = asset.AssetType,

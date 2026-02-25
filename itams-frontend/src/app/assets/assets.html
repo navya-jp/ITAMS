@@ -42,6 +42,7 @@
             <th>Type</th>
             <th>Criticality</th>
             <th>Region</th>
+            <th>Site</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -51,7 +52,8 @@
             <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
             <td>{{ asset.assetType }}</td>
             <td>{{ asset.criticality }}</td>
-            <td>{{ asset.region }}</td>
+            <td>{{ asset.region || 'N/A' }}</td>
+            <td>{{ asset.site || 'N/A' }}</td>
             <td>
               <span class="badge" 
                     [class.bg-success]="asset.status === 'InUse'"
@@ -73,7 +75,7 @@
             </td>
           </tr>
           <tr *ngIf="assets.length === 0">
-            <td colspan="6" class="text-center py-4 text-muted">
+            <td colspan="7" class="text-center py-4 text-muted">
               No assets found. <a href="#" (click)="openCreateModal(); $event.preventDefault()">Create your first asset</a>
             </td>
           </tr>
@@ -130,20 +132,6 @@
           <!-- Tab 1: Basic Details -->
           <div class="tab-pane fade" [class.show]="currentTab === 1" [class.active]="currentTab === 1">
             <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Project *</label>
-                <select class="form-select" 
-                        [(ngModel)]="createForm.projectId" 
-                        (change)="onProjectChange()"
-                        [class.is-invalid]="hasValidationError('projectId')">
-                  <option value="0">Select Project</option>
-                  <option *ngFor="let project of projects" [value]="project.id">{{ project.name }}</option>
-                </select>
-                <div *ngIf="hasValidationError('projectId')" class="invalid-feedback d-block">
-                  {{ getValidationError('projectId') }}
-                </div>
-              </div>
-
               <div class="col-md-6">
                 <label class="form-label">Location *</label>
                 <select class="form-select" 
@@ -330,9 +318,38 @@
             <label class="form-label text-muted">Asset Tag</label>
             <p class="fw-bold">{{ selectedAsset.assetTag }}</p>
           </div>
+          
+          <!-- Location Information -->
+          <div class="col-12 mt-3">
+            <h6 class="text-primary border-bottom pb-2">Location Information</h6>
+          </div>
           <div class="col-md-6">
-            <label class="form-label text-muted">Project</label>
-            <p>{{ selectedAsset.projectName }}</p>
+            <label class="form-label text-muted">Region</label>
+            <p>{{ selectedAsset.region || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">State</label>
+            <p>{{ selectedAsset.state || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Site</label>
+            <p>{{ selectedAsset.site || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Plaza Name</label>
+            <p>{{ selectedAsset.plazaName || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Location</label>
+            <p>{{ selectedAsset.locationText || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Department</label>
+            <p>{{ selectedAsset.department || 'N/A' }}</p>
+          </div>
+          
+          <div class="col-12 mt-3">
+            <h6 class="text-primary border-bottom pb-2">Asset Classification</h6>
           </div>
           <div class="col-md-6">
             <label class="form-label text-muted">Location</label>
@@ -372,7 +389,54 @@
             <p>{{ selectedAsset.serialNumber || 'N/A' }}</p>
           </div>
           <div class="col-md-6">
-            <label class="form-label text-muted">Status</label>
+            <label class="form-label text-muted">Classification</label>
+            <p>{{ selectedAsset.classification || 'N/A' }}</p>
+          </div>
+          
+          <!-- System Information -->
+          <div class="col-12 mt-4">
+            <h6 class="text-primary border-bottom pb-2">System Information</h6>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">OS Type</label>
+            <p>{{ selectedAsset.osType || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">OS Version</label>
+            <p>{{ selectedAsset.osVersion || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">DB Type</label>
+            <p>{{ selectedAsset.dbType || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">DB Version</label>
+            <p>{{ selectedAsset.dbVersion || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">IP Address</label>
+            <p>{{ selectedAsset.ipAddress || 'N/A' }}</p>
+          </div>
+          
+          <!-- User Assignment -->
+          <div class="col-12 mt-4">
+            <h6 class="text-primary border-bottom pb-2">User Assignment</h6>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Assigned User</label>
+            <p>{{ selectedAsset.assignedUserText || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">User Role</label>
+            <p>{{ selectedAsset.userRole || 'N/A' }}</p>
+          </div>
+          
+          <!-- Status Information -->
+          <div class="col-12 mt-4">
+            <h6 class="text-primary border-bottom pb-2">Status Information</h6>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Asset Status</label>
             <p>
               <span class="badge" 
                     [class.bg-success]="selectedAsset.status === 'InUse'"
@@ -383,10 +447,26 @@
               </span>
             </p>
           </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Patch Status</label>
+            <p>{{ selectedAsset.patchStatus || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">USB Blocking Status</label>
+            <p>{{ selectedAsset.usbBlockingStatus || 'N/A' }}</p>
+          </div>
 
           <!-- Procurement & Warranty -->
           <div class="col-12 mt-4">
             <h6 class="text-primary border-bottom pb-2">Procurement & Warranty</h6>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Procured By</label>
+            <p>{{ selectedAsset.procuredBy || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Commissioning Date</label>
+            <p>{{ selectedAsset.commissioningDate ? (selectedAsset.commissioningDate | date:'mediumDate') : 'N/A' }}</p>
           </div>
           <div class="col-md-6">
             <label class="form-label text-muted">Procurement Date</label>
@@ -408,34 +488,27 @@
               {{ selectedAsset.warrantyEndDate ? (selectedAsset.warrantyEndDate | date:'mediumDate') : 'N/A' }}
             </p>
           </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Commissioning Date</label>
-            <p>{{ selectedAsset.commissioningDate ? (selectedAsset.commissioningDate | date:'mediumDate') : 'N/A' }}</p>
-          </div>
-
-          <!-- Assignment -->
+          
+          <!-- Additional Information -->
           <div class="col-12 mt-4">
-            <h6 class="text-primary border-bottom pb-2">Assignment</h6>
+            <h6 class="text-primary border-bottom pb-2">Additional Information</h6>
           </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Assigned User</label>
-            <p>{{ selectedAsset.assignedUserName || 'Unassigned' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Assigned Role</label>
-            <p>{{ selectedAsset.assignedUserRole || 'N/A' }}</p>
+          <div class="col-12">
+            <label class="form-label text-muted">Remarks</label>
+            <p>{{ selectedAsset.remarks || 'N/A' }}</p>
           </div>
           <div class="col-md-6">
             <label class="form-label text-muted">Created At</label>
             <p>{{ selectedAsset.createdAt | date:'medium' }}</p>
           </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Updated At</label>
+            <p>{{ selectedAsset.updatedAt ? (selectedAsset.updatedAt | date:'medium') : 'N/A' }}</p>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
-        <button type="button" class="btn btn-warning" (click)="closeModals(); openEditStatusModal(selectedAsset!)">
-          <i class="fas fa-exchange-alt me-2"></i>Edit Status
-        </button>
         <button type="button" class="btn btn-primary" (click)="closeModals(); openEditModal(selectedAsset!)">
           <i class="fas fa-edit me-2"></i>Edit Asset
         </button>

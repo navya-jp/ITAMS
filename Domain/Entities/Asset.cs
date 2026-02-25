@@ -69,9 +69,68 @@ public class Asset
     [StringLength(100)]
     public string? AssignedUserRole { get; set; }
     
+    // Location text fields (from Excel import - display as-is)
+    [StringLength(100)]
+    public string? Region { get; set; }
+    
+    [StringLength(100)]
+    public string? State { get; set; }
+    
+    [StringLength(200)]
+    public string? Site { get; set; }
+    
+    [StringLength(200)]
+    public string? PlazaName { get; set; }
+    
+    [StringLength(200)]
+    public string? LocationText { get; set; }
+    
+    [StringLength(100)]
+    public string? Department { get; set; }
+    
+    // Extended asset fields
+    [StringLength(100)]
+    public string? Classification { get; set; }
+    
+    [StringLength(100)]
+    public string? OSType { get; set; }
+    
+    [StringLength(100)]
+    public string? OSVersion { get; set; }
+    
+    [StringLength(100)]
+    public string? DBType { get; set; }
+    
+    [StringLength(100)]
+    public string? DBVersion { get; set; }
+    
+    [StringLength(50)]
+    public string? IPAddress { get; set; }
+    
+    [StringLength(200)]
+    public string? AssignedUserText { get; set; }
+    
+    [StringLength(100)]
+    public string? UserRole { get; set; }
+    
+    [StringLength(200)]
+    public string? ProcuredBy { get; set; }
+    
+    [StringLength(100)]
+    public string? PatchStatus { get; set; }
+    
+    [StringLength(100)]
+    public string? USBBlockingStatus { get; set; }
+    
+    public string? Remarks { get; set; }
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     public int CreatedBy { get; set; }
+    
+    public DateTime? UpdatedAt { get; set; }
+    
+    public int? UpdatedBy { get; set; }
     
     // Navigation properties
     public virtual Project Project { get; set; } = null!;

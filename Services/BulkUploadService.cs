@@ -306,57 +306,13 @@ public class BulkUploadService : IBulkUploadService
 
     private async Task<Asset?> MapToAssetAsync(AssetExcelRow row, int nextAssetIdNumber, int userId)
     {
-        Project? project = null;
-        Location? location = null;
+        // Get default project and location for foreign key requirements
+        var defaultProject = await _context.Projects.FirstOrDefaultAsync();
+        var defaultLocation = await _context.Locations.FirstOrDefaultAsync();
 
-        // Try to find location based on provided data
-        if (!string.IsNullOrWhiteSpace(row.Region) || 
-            !string.IsNullOrWhiteSpace(row.Plaza_Name) || 
-            !string.IsNullOrWhiteSpace(row.Location))
+        if (defaultProject == null || defaultLocation == null)
         {
-            var locationQuery = _context.Locations.AsQueryable();
-
-            // Filter by Region if provided
-            if (!string.IsNullOrWhiteSpace(row.Region))
-            {
-                locationQuery = locationQuery.Where(l => l.Region.Contains(row.Region));
-            }
-
-            // Filter by Plaza/Site name if provided
-            if (!string.IsNullOrWhiteSpace(row.Plaza_Name))
-            {
-                locationQuery = locationQuery.Where(l => 
-                    l.Site != null && l.Site.Contains(row.Plaza_Name) ||
-                    l.Name.Contains(row.Plaza_Name));
-            }
-
-            // Filter by Location/Office name if provided
-            if (!string.IsNullOrWhiteSpace(row.Location))
-            {
-                locationQuery = locationQuery.Where(l => 
-                    l.Office != null && l.Office.Contains(row.Location) ||
-                    l.Name.Contains(row.Location));
-            }
-
-            location = await locationQuery.FirstOrDefaultAsync();
-        }
-
-        // If no location found from provided data, use default
-        if (location == null)
-        {
-            location = await _context.Locations.FirstOrDefaultAsync();
-            if (location == null)
-            {
-                _logger.LogWarning("No location found for row {RowNumber}", row.RowNumber);
-                return null;
-            }
-        }
-
-        // Get project from the location
-        project = await _context.Projects.FindAsync(location.ProjectId);
-        if (project == null)
-        {
-            _logger.LogWarning("No project found for location {LocationId}", location.Id);
+            _logger.LogWarning("No default project or location found");
             return null;
         }
 
@@ -365,10 +321,33 @@ public class BulkUploadService : IBulkUploadService
             AssetId = $"AST{nextAssetIdNumber:D5}",
             AssetTag = row.Asset_Tag,
             SerialNumber = row.Serial_Number,
-            ProjectId = project.Id,
-            ProjectIdRef = project.ProjectId,
-            LocationId = location.Id,
-            LocationIdRef = location.LocationId,
+            ProjectId = defaultProject.Id,
+            ProjectIdRef = defaultProject.ProjectId,
+            LocationId = defaultLocation.Id,
+            LocationIdRef = defaultLocation.LocationId,
+            
+            // Store location data as text from Excel (display as-is)
+            Region = string.IsNullOrWhiteSpace(row.Region) ? "N/A" : row.Region,
+            State = "N/A", // Not in current Excel mapping
+            Site = "N/A", // Not in current Excel mapping  
+            PlazaName = string.IsNullOrWhiteSpace(row.Plaza_Name) ? "N/A" : row.Plaza_Name,
+            LocationText = string.IsNullOrWhiteSpace(row.Location) ? "N/A" : row.Location,
+            Department = string.IsNullOrWhiteSpace(row.Department) ? "N/A" : row.Department,
+            
+            // Extended asset fields
+            Classification = string.IsNullOrWhiteSpace(row.Asset_Classification) ? "N/A" : row.Asset_Classification,
+            OSType = string.IsNullOrWhiteSpace(row.OS_Type) ? "N/A" : row.OS_Type,
+            OSVersion = string.IsNullOrWhiteSpace(row.OS_Version) ? "N/A" : row.OS_Version,
+            DBType = string.IsNullOrWhiteSpace(row.DB_Type) ? "N/A" : row.DB_Type,
+            DBVersion = string.IsNullOrWhiteSpace(row.DB_Version) ? "N/A" : row.DB_Version,
+            IPAddress = string.IsNullOrWhiteSpace(row.IP_Address) ? "N/A" : row.IP_Address,
+            AssignedUserText = string.IsNullOrWhiteSpace(row.Assigned_User_Name) ? "N/A" : row.Assigned_User_Name,
+            UserRole = string.IsNullOrWhiteSpace(row.User_Role) ? "N/A" : row.User_Role,
+            ProcuredBy = string.IsNullOrWhiteSpace(row.Procured_By) ? "N/A" : row.Procured_By,
+            PatchStatus = string.IsNullOrWhiteSpace(row.Patch_Status) ? "N/A" : row.Patch_Status,
+            USBBlockingStatus = string.IsNullOrWhiteSpace(row.USB_Blocking_Status) ? "N/A" : row.USB_Blocking_Status,
+            Remarks = string.IsNullOrWhiteSpace(row.Remarks) ? "N/A" : row.Remarks,
+            
             AssetType = row.Asset_Type,
             SubType = row.Sub_Type,
             Make = row.Make,

@@ -182,6 +182,23 @@ export interface Asset {
   locationId: number;
   locationName?: string;
   region?: string;
+  state?: string;
+  site?: string;
+  plazaName?: string;
+  locationText?: string;
+  department?: string;
+  classification?: string;
+  osType?: string;
+  osVersion?: string;
+  dbType?: string;
+  dbVersion?: string;
+  ipAddress?: string;
+  assignedUserText?: string;
+  userRole?: string;
+  procuredBy?: string;
+  patchStatus?: string;
+  usbBlockingStatus?: string;
+  remarks?: string;
   usageCategory: string;
   criticality: string;
   assetType: string;
@@ -200,6 +217,7 @@ export interface Asset {
   assignedUserName?: string;
   assignedUserRole?: string;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface CreateAsset {

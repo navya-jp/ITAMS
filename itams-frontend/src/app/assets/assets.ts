@@ -87,7 +87,7 @@ export class Assets implements OnInit {
 
   ngOnInit() {
     this.loadAssets();
-    this.loadProjects();
+    this.loadLocations();
   }
 
   loadAssets() {
@@ -105,25 +105,8 @@ export class Assets implements OnInit {
     });
   }
 
-  loadProjects() {
-    this.api.getProjects().subscribe({
-      next: (projects) => {
-        this.projects = projects;
-      },
-      error: (error) => {
-        console.error('Error loading projects:', error);
-      }
-    });
-  }
-
-  onProjectChange() {
-    if (this.createForm.projectId) {
-      this.loadProjectLocations(this.createForm.projectId);
-    }
-  }
-
-  loadProjectLocations(projectId: number) {
-    this.api.getProjectLocations(projectId).subscribe({
+  loadLocations() {
+    this.api.getLocations().subscribe({
       next: (locations) => {
         this.locations = locations;
       },
@@ -347,11 +330,6 @@ export class Assets implements OnInit {
   validateTab1(): boolean {
     let isValid = true;
 
-    if (!this.createForm.projectId) {
-      this.validationErrors['projectId'] = 'Project is required';
-      isValid = false;
-    }
-
     if (!this.createForm.locationId) {
       this.validationErrors['locationId'] = 'Location is required';
       isValid = false;
@@ -493,7 +471,7 @@ export class Assets implements OnInit {
 
   isTabValid(tabNumber: number): boolean {
     if (tabNumber === 1) {
-      return !!(this.createForm.projectId && this.createForm.locationId && this.createForm.assetTag);
+      return !!(this.createForm.locationId && this.createForm.assetTag);
     } else if (tabNumber === 2) {
       return !!(this.createForm.assetType && this.createForm.make && this.createForm.model);
     }
