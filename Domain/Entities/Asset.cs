@@ -98,5 +98,6 @@ public enum AssetStatus
     InUse = 1,
     Spare = 2,
     Repair = 3,
-    Decommissioned = 4
+    Decommissioned = 4,
+    Unknown = 5
 }

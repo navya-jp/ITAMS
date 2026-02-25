@@ -3,9 +3,14 @@
   <!-- Header Section -->
   <div class="assets-header d-flex justify-content-between align-items-center p-3 border-bottom">
     <h2 class="mb-0">Asset Management</h2>
-    <button class="btn btn-primary" (click)="openCreateModal()">
-      <i class="fas fa-plus me-2"></i>Create Asset
-    </button>
+    <div class="btn-group">
+      <button class="btn btn-outline-primary" (click)="openBulkUploadModal()">
+        <i class="fas fa-file-upload me-2"></i>Bulk Upload
+      </button>
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <i class="fas fa-plus me-2"></i>Create Asset
+      </button>
+    </div>
   </div>
 
   <!-- Messages Section -->
@@ -301,7 +306,7 @@
 </div>
 
 <!-- Modal Backdrop -->
-<div *ngIf="showCreateModal || showEditModal || showViewModal" 
+<div *ngIf="showCreateModal || showEditModal || showViewModal || showBulkUploadModal" 
      class="modal-backdrop fade show" 
      (click)="closeModals()"></div>
 
@@ -562,6 +567,135 @@
         <button type="button" class="btn btn-primary" [disabled]="loading" (click)="updateAsset()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!loading" class="fas fa-save me-2"></i>Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Bulk Upload Modal -->
+<div class="modal fade" [class.show]="showBulkUploadModal" [style.display]="showBulkUploadModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-file-upload me-2"></i>Bulk Asset Upload
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body">
+        <!-- File Requirements -->
+        <div class="d-flex justify-content-center align-items-center gap-4 mb-4 text-muted">
+          <small><i class="fas fa-file-excel me-1"></i> Excel files only (.xlsx)</small>
+          <small><i class="fas fa-weight-hanging me-1"></i> Max size: 50MB</small>
+        </div>
+
+        <!-- File Upload Area -->
+        <div class="upload-area mb-4" 
+             [class.drag-over]="dragOver"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave($event)"
+             (drop)="onDrop($event)">
+          <div class="upload-content text-center p-5">
+            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+            <h5>Drag & Drop Excel File Here</h5>
+            <p class="text-muted">or</p>
+            <input #fileInput 
+                   type="file" 
+                   accept=".xlsx" 
+                   (change)="onFileSelected($event)" 
+                   style="display: none;">
+            <button type="button" class="btn btn-primary" (click)="fileInput.click()">
+              <i class="fas fa-folder-open me-2"></i>Select File
+            </button>
+          </div>
+        </div>
+
+        <!-- Selected File Info -->
+        <div *ngIf="selectedFile" class="selected-file-info alert alert-success d-flex justify-content-between align-items-center">
+          <div>
+            <i class="fas fa-file-excel me-2"></i>
+            <strong>{{ getFileName() }}</strong>
+            <span class="text-muted ms-2">({{ getFileSize() }})</span>
+          </div>
+          <button class="btn btn-sm btn-outline-danger" (click)="clearFile()">
+            <i class="fas fa-times"></i> Remove
+          </button>
+        </div>
+
+        <!-- Upload Button -->
+        <div *ngIf="selectedFile && !uploadResult" class="text-center mb-4">
+          <button class="btn btn-success btn-lg" 
+                  [disabled]="uploading" 
+                  (click)="uploadFile()">
+            <span *ngIf="uploading" class="spinner-border spinner-border-sm me-2"></span>
+            <i *ngIf="!uploading" class="fas fa-upload me-2"></i>
+            {{ uploading ? 'Uploading...' : 'Upload Assets' }}
+          </button>
+        </div>
+
+        <!-- Upload Results -->
+        <div *ngIf="uploadResult" class="upload-results">
+          <div class="alert" 
+               [class.alert-success]="uploadResult.failedCount === 0"
+               [class.alert-warning]="uploadResult.failedCount > 0">
+            <h6 class="alert-heading">
+              <i class="fas" 
+                 [class.fa-check-circle]="uploadResult.failedCount === 0"
+                 [class.fa-exclamation-triangle]="uploadResult.failedCount > 0"
+                 class="me-2"></i>
+              Upload Results
+            </h6>
+            <div class="row text-center mt-3">
+              <div class="col-4">
+                <h3 class="mb-0">{{ uploadResult.totalRows }}</h3>
+                <small class="text-muted">Total Rows</small>
+              </div>
+              <div class="col-4">
+                <h3 class="mb-0 text-success">{{ uploadResult.successCount }}</h3>
+                <small class="text-muted">Success</small>
+              </div>
+              <div class="col-4">
+                <h3 class="mb-0 text-danger">{{ uploadResult.failedCount }}</h3>
+                <small class="text-muted">Failed</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error Details -->
+          <div *ngIf="uploadResult.errors && uploadResult.errors.length > 0" class="error-details mt-3">
+            <h6 class="text-danger">
+              <i class="fas fa-exclamation-circle me-2"></i>Failed Rows
+            </h6>
+            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+              <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                  <tr>
+                    <th>Row #</th>
+                    <th>Asset Tag</th>
+                    <th>Error Message</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let error of uploadResult.errors">
+                    <td>{{ error.rowNumber }}</td>
+                    <td>{{ error.assetTag || 'N/A' }}</td>
+                    <td class="text-danger">{{ error.errorMessage }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
+        <button *ngIf="uploadResult && uploadResult.successCount > 0" 
+                type="button" 
+                class="btn btn-primary" 
+                (click)="closeModals()">
+          <i class="fas fa-check me-2"></i>Done
         </button>
       </div>
     </div>

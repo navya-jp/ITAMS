@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ITAMS.Data;
 using ITAMS.Domain.Entities;
 using ITAMS.Models;
+using ITAMS.Services;
 
 namespace ITAMS.Controllers;
 
@@ -12,11 +13,17 @@ public class AssetsController : BaseController
 {
     private readonly ITAMSDbContext _context;
     private readonly ILogger<AssetsController> _logger;
+    private readonly IBulkUploadService _bulkUploadService;
+    private const long MaxFileSize = 50 * 1024 * 1024; // 50MB
 
-    public AssetsController(ITAMSDbContext context, ILogger<AssetsController> logger)
+    public AssetsController(
+        ITAMSDbContext context, 
+        ILogger<AssetsController> logger,
+        IBulkUploadService bulkUploadService)
     {
         _context = context;
         _logger = logger;
+        _bulkUploadService = bulkUploadService;
     }
 
     // GET: api/assets
@@ -414,5 +421,74 @@ public class AssetsController : BaseController
         var newNumber = lastNumber + 1;
 
         return $"AST{newNumber:D5}";
+    }
+
+    // POST: api/assets/bulk-upload
+    [HttpPost("bulk-upload")]
+    [DisableRequestSizeLimit]
+    [RequestFormLimits(MultipartBodyLengthLimit = 52428800)] // 50MB
+    public async Task<IActionResult> BulkUpload([FromForm] IFormFile file)
+    {
+        try
+        {
+            _logger.LogWarning("=== BULK UPLOAD ENDPOINT HIT ===");
+            _logger.LogInformation("Bulk upload request received. File: {FileName}, Size: {Size}", 
+                file?.FileName ?? "null", file?.Length ?? 0);
+            
+            // Validate file
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No file uploaded" });
+            }
+
+            // Check file extension
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            if (extension != ".xlsx")
+            {
+                return BadRequest(new { message = "Only .xlsx files are allowed" });
+            }
+
+            // Check file size
+            if (file.Length > MaxFileSize)
+            {
+                return BadRequest(new { message = $"File size exceeds maximum limit of {MaxFileSize / (1024 * 1024)}MB" });
+            }
+
+            // Get user ID
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { message = "User not authenticated" });
+            }
+
+            // Process file
+            using var stream = file.OpenReadStream();
+            var result = await _bulkUploadService.ProcessAssetExcelAsync(stream, userId.Value);
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during bulk upload");
+            return StatusCode(500, new { message = "An error occurred during upload", error = ex.Message });
+        }
+    }
+
+    // GET: api/assets/download-template
+    [HttpGet("download-template")]
+    public IActionResult DownloadTemplate()
+    {
+        try
+        {
+            _logger.LogInformation("Template download requested");
+            var fileBytes = _bulkUploadService.GenerateSampleTemplate();
+            var fileName = $"Asset_Upload_Template_{DateTime.Now:yyyyMMdd}.xlsx";
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating template");
+            return StatusCode(500, new { message = "Error generating template" });
+        }
     }
 }

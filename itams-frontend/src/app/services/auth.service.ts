@@ -55,7 +55,7 @@ export interface SecuritySettings {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly baseUrl = 'http://localhost:5066/api/auth';
+  private readonly baseUrl = '/api/auth'; // Use relative URL with proxy
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'

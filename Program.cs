@@ -20,6 +20,13 @@ builder.Host.UseSerilog();
 
 // Add services to the container
 builder.Services.AddControllers();
+
+// Configure Kestrel to accept large files
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 52428800; // 50MB
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -68,6 +75,7 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAccessControlService, AccessControlService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
+builder.Services.AddScoped<IBulkUploadService, BulkUploadService>();
 
 // Add RBAC services
 builder.Services.AddScoped<ITAMS.Services.RBAC.IPermissionResolver, ITAMS.Services.RBAC.PermissionResolver>();
@@ -90,9 +98,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:4200")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials()
+              .WithExposedHeaders("*");
     });
 });
 
@@ -106,9 +116,11 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
+// CORS must be before other middleware
+app.UseCors("AllowAll");
+
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Enable static files
-app.UseCors("AllowAll");
 
 // Add authentication and authorization
 app.UseAuthentication();

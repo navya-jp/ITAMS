@@ -1,0 +1,149 @@
+<div class="bulk-upload-container p-4">
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">
+        <i class="fas fa-file-upload me-2"></i>
+        Bulk Asset Upload
+      </h4>
+    </div>
+    
+    <div class="card-body">
+      <!-- Instructions -->
+      <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Instructions:</strong>
+        <ol class="mb-0 mt-2">
+          <li>Download the sample template below</li>
+          <li>Fill in your asset data following the template format</li>
+          <li>Upload the completed Excel file (.xlsx only)</li>
+          <li>Maximum file size: 50MB</li>
+        </ol>
+      </div>
+
+      <!-- Download Template Button -->
+      <div class="mb-4">
+        <button class="btn btn-outline-primary" (click)="downloadTemplate()">
+          <i class="fas fa-download me-2"></i>
+          Download Sample Template
+        </button>
+      </div>
+
+      <!-- File Upload Area -->
+      <div 
+        class="upload-area mb-4"
+        [class.drag-over]="dragOver"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+      >
+        <div class="text-center p-5">
+          <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+          
+          <div *ngIf="!selectedFile">
+            <p class="mb-2">Drag and drop your Excel file here, or</p>
+            <label class="btn btn-primary">
+              <i class="fas fa-folder-open me-2"></i>
+              Browse Files
+              <input 
+                type="file" 
+                accept=".xlsx" 
+                (change)="onFileSelected($event)"
+                style="display: none;"
+              />
+            </label>
+          </div>
+
+          <div *ngIf="selectedFile" class="selected-file">
+            <div class="alert alert-success">
+              <i class="fas fa-file-excel fa-2x mb-2"></i>
+              <p class="mb-1"><strong>{{ getFileName() }}</strong></p>
+              <p class="mb-2 text-muted">{{ getFileSize() }}</p>
+              <button class="btn btn-sm btn-outline-danger" (click)="clearFile()">
+                <i class="fas fa-times me-1"></i>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Button -->
+      <div class="text-center mb-4">
+        <button 
+          class="btn btn-success btn-lg"
+          [disabled]="!selectedFile || uploading"
+          (click)="uploadFile()"
+        >
+          <span *ngIf="!uploading">
+            <i class="fas fa-upload me-2"></i>
+            Upload Assets
+          </span>
+          <span *ngIf="uploading">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Uploading...
+          </span>
+        </button>
+      </div>
+
+      <!-- Upload Result -->
+      <div *ngIf="uploadResult" class="upload-result">
+        <div class="alert" [class.alert-success]="uploadResult.failedCount === 0" [class.alert-warning]="uploadResult.failedCount > 0">
+          <h5>
+            <i class="fas fa-check-circle me-2" *ngIf="uploadResult.failedCount === 0"></i>
+            <i class="fas fa-exclamation-triangle me-2" *ngIf="uploadResult.failedCount > 0"></i>
+            Upload Complete
+          </h5>
+          <p class="mb-2">{{ uploadResult.message }}</p>
+          
+          <div class="row text-center mt-3">
+            <div class="col-md-4">
+              <div class="stat-box">
+                <h3 class="text-primary">{{ uploadResult.totalRows }}</h3>
+                <p class="text-muted mb-0">Total Rows</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="stat-box">
+                <h3 class="text-success">{{ uploadResult.successCount }}</h3>
+                <p class="text-muted mb-0">Success</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="stat-box">
+                <h3 class="text-danger">{{ uploadResult.failedCount }}</h3>
+                <p class="text-muted mb-0">Failed</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error Details -->
+        <div *ngIf="uploadResult.errors.length > 0" class="mt-4">
+          <h5 class="text-danger">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            Failed Rows ({{ uploadResult.errors.length }})
+          </h5>
+          
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+              <thead class="table-danger">
+                <tr>
+                  <th>Row Number</th>
+                  <th>Asset Tag</th>
+                  <th>Error Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let error of uploadResult.errors">
+                  <td>{{ error.rowNumber }}</td>
+                  <td>{{ error.assetTag || '-' }}</td>
+                  <td>{{ error.errorMessage }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

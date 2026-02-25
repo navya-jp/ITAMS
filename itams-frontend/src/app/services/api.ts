@@ -227,7 +227,7 @@ export interface CreateAsset {
   providedIn: 'root',
 })
 export class Api {
-  private readonly baseUrl = 'http://localhost:5066/api';
+  private readonly baseUrl = '/api'; // Use relative URL with proxy
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'

@@ -19,6 +19,9 @@ public class ProjectAccessControlMiddleware
 
     public async Task InvokeAsync(HttpContext context, IAccessControlService accessControlService)
     {
+        _logger.LogDebug("ProjectAccessControlMiddleware: Path={Path}, Method={Method}", 
+            context.Request.Path, context.Request.Method);
+            
         // Skip access control for authentication endpoints
         if (context.Request.Path.StartsWithSegments("/api/auth") || 
             context.Request.Path.StartsWithSegments("/api/superadmin/login"))
