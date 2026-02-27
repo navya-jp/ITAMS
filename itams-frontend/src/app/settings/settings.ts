@@ -176,4 +176,13 @@ export class Settings implements OnInit {
         return 'badge bg-secondary';
     }
   }
+
+  // Format camelCase setting names with spaces
+  formatSettingName(settingKey: string): string {
+    // Add space before capital letters and capitalize first letter
+    return settingKey
+      .replace(/([A-Z])/g, ' $1')
+      .trim()
+      .replace(/^./, str => str.toUpperCase());
+  }
 }

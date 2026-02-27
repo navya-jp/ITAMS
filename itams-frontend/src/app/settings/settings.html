@@ -69,7 +69,7 @@
             <tbody>
               <tr *ngFor="let setting of filteredSettings" [class.table-warning]="editedSettings.has(setting.id)">
                 <td>
-                  <strong>{{ setting.settingKey }}</strong>
+                  <strong>{{ formatSettingName(setting.settingKey) }}</strong>
                   <span *ngIf="editedSettings.has(setting.id)" class="badge bg-warning ms-2">Modified</span>
                 </td>
                 <td>
