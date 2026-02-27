@@ -39,6 +39,7 @@ public class BulkUploadService : IBulkUploadService
             
             if (worksheet == null || worksheet.Dimension == null)
             {
+                _logger.LogWarning("Excel file is empty or has no worksheet");
                 result.Message = "Excel file is empty or invalid";
                 return result;
             }
@@ -46,8 +47,11 @@ public class BulkUploadService : IBulkUploadService
             var rowCount = worksheet.Dimension.Rows;
             var colCount = worksheet.Dimension.Columns;
 
+            _logger.LogInformation("Excel file has {RowCount} rows and {ColCount} columns", rowCount, colCount);
+
             if (rowCount < 2)
             {
+                _logger.LogWarning("Excel file has less than 2 rows (header + data)");
                 result.Message = "Excel file must contain at least a header row and one data row";
                 return result;
             }
@@ -55,10 +59,17 @@ public class BulkUploadService : IBulkUploadService
             // Build column mapping from header row
             var columnMapping = BuildColumnMapping(worksheet, colCount);
             
+            _logger.LogInformation("Column mapping built. Found {Count} columns", columnMapping.Count);
+            foreach (var col in columnMapping)
+            {
+                _logger.LogInformation("  Column: {Name} at position {Position}", col.Key, col.Value);
+            }
+            
             // Validate required columns exist
             var missingColumns = ValidateRequiredColumns(columnMapping);
             if (missingColumns.Any())
             {
+                _logger.LogWarning("Missing required columns: {Columns}", string.Join(", ", missingColumns));
                 result.Message = $"Missing required columns: {string.Join(", ", missingColumns)}";
                 return result;
             }
@@ -85,6 +96,15 @@ public class BulkUploadService : IBulkUploadService
                 try
                 {
                     var excelRow = ReadExcelRow(worksheet, row, columnMapping);
+                    
+                    // Skip completely empty rows (common in Excel files with formatting)
+                    if (IsRowEmpty(excelRow))
+                    {
+                        _logger.LogDebug("Skipping empty row {Row}", row);
+                        result.TotalRows--; // Adjust total count
+                        continue;
+                    }
+                    
                     var validationError = ValidateRow(excelRow, existingAssetTags, existingSerialNumbers);
 
                     if (!string.IsNullOrEmpty(validationError))
@@ -157,13 +177,13 @@ public class BulkUploadService : IBulkUploadService
             { "Serial_Number", new[] { "Serial_Number", "SerialNumber", "Serial Number", "Serial No", "SN" } },
             { "Region", new[] { "Region" } },
             { "Plaza_Name", new[] { "Plaza_Name", "PlazaName", "Plaza Name", "Plaza", "Site Name", "Site" } },
-            { "Location", new[] { "Location", "Site Location" } },
+            { "Location", new[] { "Location", "Site Location", "State", "District" } },
             { "Department", new[] { "Department", "Dept" } },
             { "Asset_Type", new[] { "Asset_Type", "AssetType", "Asset Type", "Type" } },
             { "Sub_Type", new[] { "Sub_Type", "SubType", "Sub Type", "Subtype" } },
             { "Make", new[] { "Make", "Manufacturer", "Brand" } },
             { "Model", new[] { "Model", "Model Number" } },
-            { "Asset_Classification", new[] { "Asset_Classification", "AssetClassification", "Asset Classification", "Classification" } },
+            { "Asset_Classification", new[] { "Asset_Classification", "AssetClassification", "Asset Classification", "Classification", "Criticality" } },
             { "OS_Type", new[] { "OS_Type", "OSType", "OS Type", "Operating System", "OS" } },
             { "OS_Version", new[] { "OS_Version", "OSVersion", "OS Version" } },
             { "DB_Type", new[] { "DB_Type", "DBType", "DB Type", "Database Type", "Database" } },
@@ -174,6 +194,8 @@ public class BulkUploadService : IBulkUploadService
             { "Procured_By", new[] { "Procured_By", "ProcuredBy", "Procured By", "Vendor" } },
             { "Commissioning_Date", new[] { "Commissioning_Date", "CommissioningDate", "Commissioning Date", "Commission Date", "Date" } },
             { "Status", new[] { "Status", "Asset Status" } },
+            { "Criticality", new[] { "Criticality", "Critical Level", "Priority" } },
+            { "Placing", new[] { "Placing", "Placement", "Area", "Location Area" } },
             { "Patch_Status", new[] { "Patch_Status", "PatchStatus", "Patch Status" } },
             { "USB_Blocking_Status", new[] { "USB_Blocking_Status", "USBBlockingStatus", "USB Blocking Status", "USB Status" } },
             { "Remarks", new[] { "Remarks", "Notes", "Comments", "Description" } }
@@ -202,7 +224,7 @@ public class BulkUploadService : IBulkUploadService
 
     private List<string> ValidateRequiredColumns(Dictionary<string, int> columnMapping)
     {
-        var requiredColumns = new[] { "Asset_Tag", "Asset_Type", "Make", "Model", "Status" };
+        var requiredColumns = new[] { "Asset_Tag", "Asset_Type", "Make", "Model", "Status", "Placing" };
         var missingColumns = new List<string>();
 
         foreach (var required in requiredColumns)
@@ -242,6 +264,8 @@ public class BulkUploadService : IBulkUploadService
             Procured_By = GetMappedCellValue(worksheet, row, columnMapping, "Procured_By"),
             Commissioning_Date = GetMappedCellValue(worksheet, row, columnMapping, "Commissioning_Date"),
             Status = GetMappedCellValue(worksheet, row, columnMapping, "Status"),
+            Criticality = GetMappedCellValue(worksheet, row, columnMapping, "Criticality"),
+            Placing = GetMappedCellValue(worksheet, row, columnMapping, "Placing"),
             Patch_Status = GetMappedCellValue(worksheet, row, columnMapping, "Patch_Status"),
             USB_Blocking_Status = GetMappedCellValue(worksheet, row, columnMapping, "USB_Blocking_Status"),
             Remarks = GetMappedCellValue(worksheet, row, columnMapping, "Remarks")
@@ -263,6 +287,16 @@ public class BulkUploadService : IBulkUploadService
         return cell.Value?.ToString()?.Trim() ?? string.Empty;
     }
 
+    private bool IsRowEmpty(AssetExcelRow row)
+    {
+        // A row is considered empty if all critical fields are empty
+        return string.IsNullOrWhiteSpace(row.Asset_Tag) &&
+               string.IsNullOrWhiteSpace(row.Make) &&
+               string.IsNullOrWhiteSpace(row.Model) &&
+               string.IsNullOrWhiteSpace(row.Asset_Type) &&
+               string.IsNullOrWhiteSpace(row.Status);
+    }
+
     private string ValidateRow(AssetExcelRow row, List<string> existingAssetTags, List<string> existingSerialNumbers)
     {
         // Required fields
@@ -281,6 +315,9 @@ public class BulkUploadService : IBulkUploadService
         if (string.IsNullOrWhiteSpace(row.Status))
             return "Status is required";
 
+        if (string.IsNullOrWhiteSpace(row.Placing))
+            return "Placing is required";
+
         // Duplicate check
         if (existingAssetTags.Contains(row.Asset_Tag.ToLower()))
             return "Asset_Tag already exists";
@@ -289,9 +326,25 @@ public class BulkUploadService : IBulkUploadService
             existingSerialNumbers.Contains(row.Serial_Number.ToLower()))
             return "Serial_Number already exists";
 
-        // Status validation - just check if not empty
-        if (string.IsNullOrWhiteSpace(row.Status))
-            return "Status is required";
+        // Status validation - strict validation using AssetEnumHelpers
+        try
+        {
+            AssetEnumHelpers.ParseStatus(row.Status);
+        }
+        catch (ArgumentException ex)
+        {
+            return $"Invalid Status: {ex.Message}";
+        }
+
+                // Placing validation - strict validation
+        try
+        {
+            AssetEnumHelpers.ValidatePlacing(row.Placing);
+        }
+        catch (ArgumentException ex)
+        {
+            return $"Invalid Placing: {ex.Message}";
+        }
 
         // Date validation
         if (!string.IsNullOrWhiteSpace(row.Commissioning_Date) && !IsValidDate(row.Commissioning_Date))
@@ -314,6 +367,30 @@ public class BulkUploadService : IBulkUploadService
         {
             _logger.LogWarning("No default project or location found");
             return null;
+        }
+
+        // Parse and validate status using AssetEnumHelpers
+        AssetStatus status;
+        try
+        {
+            status = AssetEnumHelpers.ParseStatus(row.Status);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogError("Failed to parse status '{Status}': {Error}", row.Status, ex.Message);
+            throw; // Re-throw to be caught by caller
+        }
+
+                // Validate placing using AssetEnumHelpers
+        string placing;
+        try
+        {
+            placing = AssetEnumHelpers.ValidatePlacing(row.Placing);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogError("Failed to validate placing '{Placing}': {Error}", row.Placing, ex.Message);
+            throw; // Re-throw to be caught by caller
         }
 
         return new Asset
@@ -353,19 +430,13 @@ public class BulkUploadService : IBulkUploadService
             Make = row.Make,
             Model = row.Model,
             UsageCategory = AssetUsageCategory.ITNonTMS, // Default
-            Criticality = AssetCriticality.ITGeneral, // Default
-            Status = ParseStatus(row.Status),
+                        Status = status,
+            Placing = placing,
             CommissioningDate = ParseDate(row.Commissioning_Date),
             AssignedUserRole = row.User_Role,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
         };
-    }
-
-    private bool IsValidStatus(string status)
-    {
-        // Accept any non-empty status - unknown values will be defaulted to InUse
-        return !string.IsNullOrWhiteSpace(status);
     }
 
     private bool IsValidDate(string dateStr)
@@ -376,33 +447,6 @@ public class BulkUploadService : IBulkUploadService
     private bool IsValidIPv4(string ipAddress)
     {
         return IPAddress.TryParse(ipAddress, out var ip) && ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork;
-    }
-
-    private AssetStatus ParseStatus(string status)
-    {
-        if (string.IsNullOrWhiteSpace(status))
-            return AssetStatus.Unknown;
-
-        var normalizedStatus = status.Trim().ToLower().Replace(" ", "").Replace("-", "").Replace("_", "");
-        
-        // InUse variations
-        if (new[] { "inuse", "active", "working", "operational", "deployed" }.Contains(normalizedStatus))
-            return AssetStatus.InUse;
-        
-        // Spare variations
-        if (new[] { "spare", "available", "standby", "reserve" }.Contains(normalizedStatus))
-            return AssetStatus.Spare;
-        
-        // Repair variations
-        if (new[] { "repair", "maintenance", "underrepair", "undermaintenance", "faulty", "broken" }.Contains(normalizedStatus))
-            return AssetStatus.Repair;
-        
-        // Decommissioned variations
-        if (new[] { "decommissioned", "retired", "disposed", "scrapped", "obsolete" }.Contains(normalizedStatus))
-            return AssetStatus.Decommissioned;
-        
-        // Default to Unknown for unrecognized values
-        return AssetStatus.Unknown;
     }
 
     private DateTime? ParseDate(string? dateStr)
@@ -425,7 +469,8 @@ public class BulkUploadService : IBulkUploadService
             "Department", "Asset_Type", "Sub_Type", "Make", "Model",
             "Asset_Classification", "OS_Type", "OS_Version", "DB_Type", "DB_Version",
             "IP_Address", "Assigned_User_Name", "User_Role", "Procured_By",
-            "Commissioning_Date", "Status", "Patch_Status", "USB_Blocking_Status", "Remarks"
+            "Commissioning_Date", "Status", "Criticality", "Placing", 
+            "Patch_Status", "USB_Blocking_Status", "Remarks"
         };
 
         for (int i = 0; i < headers.Length; i++)
@@ -437,11 +482,18 @@ public class BulkUploadService : IBulkUploadService
         // Sample data
         worksheet.Cells[2, 1].Value = "ASSET001";
         worksheet.Cells[2, 2].Value = "SN123456";
+        worksheet.Cells[2, 3].Value = "North";
+        worksheet.Cells[2, 4].Value = "Plaza A";
+        worksheet.Cells[2, 5].Value = "Maharashtra";
+        worksheet.Cells[2, 6].Value = "IT";
         worksheet.Cells[2, 7].Value = "Laptop";
+        worksheet.Cells[2, 8].Value = "Business";
         worksheet.Cells[2, 9].Value = "Dell";
         worksheet.Cells[2, 10].Value = "Latitude 5420";
         worksheet.Cells[2, 20].Value = "2024-01-15";
-        worksheet.Cells[2, 21].Value = "InUse";
+        worksheet.Cells[2, 21].Value = "inuse";
+        worksheet.Cells[2, 22].Value = "IT general";
+        worksheet.Cells[2, 23].Value = "server room";
 
         worksheet.Cells.AutoFitColumns();
 

@@ -40,7 +40,7 @@
           <tr>
             <th>Asset ID</th>
             <th>Type</th>
-            <th>Criticality</th>
+            <th>Classification</th>
             <th>Region</th>
             <th>Site</th>
             <th>Status</th>
@@ -51,12 +51,12 @@
           <tr *ngFor="let asset of assets">
             <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
             <td>{{ asset.assetType }}</td>
-            <td>{{ asset.criticality }}</td>
+            <td>{{ asset.classification || 'N/A' }}</td>
             <td>{{ asset.region || 'N/A' }}</td>
             <td>{{ asset.site || 'N/A' }}</td>
             <td>
               <span class="badge" 
-                    [class.bg-success]="asset.status === 'InUse'"
+                    [class.bg-success]="asset.status === 'In Use'"
                     [class.bg-info]="asset.status === 'Spare'"
                     [class.bg-warning]="asset.status === 'Repair'"
                     [class.bg-secondary]="asset.status === 'Decommissioned'">
@@ -165,10 +165,8 @@
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Criticality *</label>
-                <select class="form-select" [(ngModel)]="createForm.criticality">
-                  <option *ngFor="let criticality of criticalities" [value]="criticality">{{ criticality }}</option>
-                </select>
+                <label class="form-label">Classification</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.classification" placeholder="e.g., TMS Critical, IT General">
               </div>
 
               <div class="col-md-6">
@@ -176,6 +174,20 @@
                 <select class="form-select" [(ngModel)]="createForm.status">
                   <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
                 </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Placing *</label>
+                <select class="form-select" 
+                        [(ngModel)]="createForm.placing"
+                        [class.is-invalid]="hasValidationError('placing')">
+                  <option value="">Select Placing</option>
+                  <option *ngFor="let placing of placingOptions" [value]="placing">{{ placing }}</option>
+                </select>
+                <div *ngIf="hasValidationError('placing')" class="invalid-feedback">
+                  {{ getValidationError('placing') }}
+                </div>
+                <small class="form-text text-muted">Select the physical placement area of the asset</small>
               </div>
             </div>
           </div>
@@ -347,9 +359,13 @@
             <label class="form-label text-muted">Department</label>
             <p>{{ selectedAsset.department || 'N/A' }}</p>
           </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted">Placing</label>
+            <p>{{ selectedAsset.placing || 'N/A' }}</p>
+          </div>
           
           <div class="col-12 mt-3">
-            <h6 class="text-primary border-bottom pb-2">Asset Classification</h6>
+            <h6 class="text-primary border-bottom pb-2">Asset Information</h6>
           </div>
           <div class="col-md-6">
             <label class="form-label text-muted">Location</label>
@@ -360,8 +376,8 @@
             <p>{{ selectedAsset.usageCategory }}</p>
           </div>
           <div class="col-md-6">
-            <label class="form-label text-muted">Criticality</label>
-            <p>{{ selectedAsset.criticality }}</p>
+            <label class="form-label text-muted">Classification</label>
+            <p>{{ selectedAsset.classification || 'N/A' }}</p>
           </div>
 
           <!-- Technical Details -->
@@ -439,7 +455,7 @@
             <label class="form-label text-muted">Asset Status</label>
             <p>
               <span class="badge" 
-                    [class.bg-success]="selectedAsset.status === 'InUse'"
+                    [class.bg-success]="selectedAsset.status === 'In Use'"
                     [class.bg-info]="selectedAsset.status === 'Spare'"
                     [class.bg-warning]="selectedAsset.status === 'Repair'"
                     [class.bg-secondary]="selectedAsset.status === 'Decommissioned'">
@@ -586,10 +602,19 @@
             <div class="col-md-6">
               <label class="form-label">Status</label>
               <select class="form-select" [(ngModel)]="editForm.status" name="status">
-                <option value="InUse">In Use</option>
+                <option value="In Use">In Use</option>
                 <option value="Spare">Spare</option>
                 <option value="Repair">Repair</option>
                 <option value="Decommissioned">Decommissioned</option>
+              </select>
+            </div>
+
+            <!-- Placing -->
+            <div class="col-md-6">
+              <label class="form-label">Placing</label>
+              <select class="form-select" [(ngModel)]="editForm.placing" name="placing">
+                <option value="">Select Placing</option>
+                <option *ngFor="let placing of placingOptions" [value]="placing">{{ placing }}</option>
               </select>
             </div>
 

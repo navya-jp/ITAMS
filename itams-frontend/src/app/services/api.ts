@@ -199,9 +199,9 @@ export interface Asset {
   patchStatus?: string;
   usbBlockingStatus?: string;
   remarks?: string;
+  placing: string;
   usageCategory: string;
-  criticality: string;
-  assetType: string;
+    assetType: string;
   subType?: string;
   make: string;
   model: string;
@@ -225,7 +225,7 @@ export interface CreateAsset {
   projectId: number;
   locationId: number;
   usageCategory: string;
-  criticality: string;
+  classification?: string;
   assetType: string;
   subType?: string;
   make: string;
@@ -238,6 +238,7 @@ export interface CreateAsset {
   warrantyEndDate?: Date;
   commissioningDate?: Date;
   status: string;
+  placing: string;
   assignedUserId?: number;
   assignedUserRole?: string;
 }

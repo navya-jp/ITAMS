@@ -63,8 +63,7 @@ public class AssetsController : BaseController
                     USBBlockingStatus = a.USBBlockingStatus,
                     Remarks = a.Remarks,
                     UsageCategory = a.UsageCategory.ToString(),
-                    Criticality = a.Criticality.ToString(),
-                    AssetType = a.AssetType,
+                                        AssetType = a.AssetType,
                     SubType = a.SubType,
                     Make = a.Make,
                     Model = a.Model,
@@ -75,7 +74,8 @@ public class AssetsController : BaseController
                     WarrantyStartDate = a.WarrantyStartDate,
                     WarrantyEndDate = a.WarrantyEndDate,
                     CommissioningDate = a.CommissioningDate,
-                    Status = a.Status.ToString(),
+                    Status = a.Status.ToDisplayString(),
+                    Placing = a.Placing,
                     AssignedUserId = a.AssignedUserId,
                     AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
                     AssignedUserRole = a.AssignedUserRole,
@@ -133,20 +133,20 @@ public class AssetsController : BaseController
                         Site = a.Site,
                         PlazaName = a.PlazaName,
                         LocationText = a.LocationText,
-                        Department = a.Department,                    Classification = a.Classification,
-                    OSType = a.OSType,
-                    OSVersion = a.OSVersion,
-                    DBType = a.DBType,
-                    DBVersion = a.DBVersion,
-                    IPAddress = a.IPAddress,
-                    AssignedUserText = a.AssignedUserText,
-                    UserRole = a.UserRole,
-                    ProcuredBy = a.ProcuredBy,
-                    PatchStatus = a.PatchStatus,
-                    USBBlockingStatus = a.USBBlockingStatus,
-                    Remarks = a.Remarks,
+                        Department = a.Department,
+                        Classification = a.Classification,
+                        OSType = a.OSType,
+                        OSVersion = a.OSVersion,
+                        DBType = a.DBType,
+                        DBVersion = a.DBVersion,
+                        IPAddress = a.IPAddress,
+                        AssignedUserText = a.AssignedUserText,
+                        UserRole = a.UserRole,
+                        ProcuredBy = a.ProcuredBy,
+                        PatchStatus = a.PatchStatus,
+                        USBBlockingStatus = a.USBBlockingStatus,
+                        Remarks = a.Remarks,
                         UsageCategory = a.UsageCategory.ToString(),
-                        Criticality = a.Criticality.ToString(),
                         AssetType = a.AssetType,
                         SubType = a.SubType,
                         Make = a.Make,
@@ -158,7 +158,8 @@ public class AssetsController : BaseController
                         WarrantyStartDate = a.WarrantyStartDate,
                         WarrantyEndDate = a.WarrantyEndDate,
                         CommissioningDate = a.CommissioningDate,
-                        Status = a.Status.ToString(),
+                        Status = a.Status.ToDisplayString(),
+                    Placing = a.Placing,
                         AssignedUserId = a.AssignedUserId,
                         AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
                         AssignedUserRole = a.AssignedUserRole,
@@ -208,8 +209,7 @@ public class AssetsController : BaseController
                     USBBlockingStatus = a.USBBlockingStatus,
                     Remarks = a.Remarks,
                     UsageCategory = a.UsageCategory.ToString(),
-                    Criticality = a.Criticality.ToString(),
-                    AssetType = a.AssetType,
+                                        AssetType = a.AssetType,
                     SubType = a.SubType,
                     Make = a.Make,
                     Model = a.Model,
@@ -220,7 +220,8 @@ public class AssetsController : BaseController
                     WarrantyStartDate = a.WarrantyStartDate,
                     WarrantyEndDate = a.WarrantyEndDate,
                     CommissioningDate = a.CommissioningDate,
-                    Status = a.Status.ToString(),
+                    Status = a.Status.ToDisplayString(),
+                    Placing = a.Placing,
                     AssignedUserId = a.AssignedUserId,
                     AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
                     AssignedUserRole = a.AssignedUserRole,
@@ -276,8 +277,7 @@ public class AssetsController : BaseController
                     USBBlockingStatus = a.USBBlockingStatus,
                     Remarks = a.Remarks,
                     UsageCategory = a.UsageCategory.ToString(),
-                    Criticality = a.Criticality.ToString(),
-                    AssetType = a.AssetType,
+                                        AssetType = a.AssetType,
                     SubType = a.SubType,
                     Make = a.Make,
                     Model = a.Model,
@@ -288,7 +288,8 @@ public class AssetsController : BaseController
                     WarrantyStartDate = a.WarrantyStartDate,
                     WarrantyEndDate = a.WarrantyEndDate,
                     CommissioningDate = a.CommissioningDate,
-                    Status = a.Status.ToString(),
+                    Status = a.Status.ToDisplayString(),
+                    Placing = a.Placing,
                     AssignedUserId = a.AssignedUserId,
                     AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
                     AssignedUserRole = a.AssignedUserRole,
@@ -317,6 +318,28 @@ public class AssetsController : BaseController
     {
         try
         {
+            // Validate and parse Status
+            AssetStatus status;
+            try
+            {
+                status = AssetEnumHelpers.ParseStatusFromDisplay(createDto.Status);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = $"Invalid status: {ex.Message}" });
+            }
+
+            // Validate Placing
+            string placing;
+            try
+            {
+                placing = AssetEnumHelpers.ValidatePlacing(createDto.Placing);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = $"Invalid placing: {ex.Message}" });
+            }
+
             // Generate Asset ID
             var assetId = await GenerateAssetId();
 
@@ -343,8 +366,7 @@ public class AssetsController : BaseController
                 LocationId = createDto.LocationId,
                 LocationIdRef = location.LocationId, // Use location alternate key (LocationId is required string)
                 UsageCategory = Enum.Parse<AssetUsageCategory>(createDto.UsageCategory),
-                Criticality = Enum.Parse<AssetCriticality>(createDto.Criticality),
-                AssetType = createDto.AssetType,
+                                AssetType = createDto.AssetType,
                 SubType = createDto.SubType,
                 Make = createDto.Make,
                 Model = createDto.Model,
@@ -355,7 +377,8 @@ public class AssetsController : BaseController
                 WarrantyStartDate = createDto.WarrantyStartDate,
                 WarrantyEndDate = createDto.WarrantyEndDate,
                 CommissioningDate = createDto.CommissioningDate,
-                Status = Enum.Parse<AssetStatus>(createDto.Status),
+                Status = status,
+                Placing = placing,
                 AssignedUserId = createDto.AssignedUserId,
                 AssignedUserRole = createDto.AssignedUserRole,
                 CreatedAt = DateTime.UtcNow,
@@ -383,8 +406,7 @@ public class AssetsController : BaseController
                 LocationText = asset.LocationText,
                 Department = asset.Department,
                 UsageCategory = asset.UsageCategory.ToString(),
-                Criticality = asset.Criticality.ToString(),
-                AssetType = asset.AssetType,
+                                AssetType = asset.AssetType,
                 SubType = asset.SubType,
                 Make = asset.Make,
                 Model = asset.Model,
@@ -395,7 +417,8 @@ public class AssetsController : BaseController
                 WarrantyStartDate = asset.WarrantyStartDate,
                 WarrantyEndDate = asset.WarrantyEndDate,
                 CommissioningDate = asset.CommissioningDate,
-                Status = asset.Status.ToString(),
+                Status = asset.Status.ToCanonicalString(),
+                Placing = asset.Placing,
                 AssignedUserId = asset.AssignedUserId,
                 AssignedUserRole = asset.AssignedUserRole,
                 CreatedAt = asset.CreatedAt
@@ -437,7 +460,26 @@ public class AssetsController : BaseController
             
             if (updateDto.Status != null)
             {
-                asset.Status = Enum.Parse<AssetStatus>(updateDto.Status);
+                try
+                {
+                    asset.Status = AssetEnumHelpers.ParseStatusFromDisplay(updateDto.Status);
+                }
+                catch (ArgumentException ex)
+                {
+                    return BadRequest(new { message = $"Invalid status: {ex.Message}" });
+                }
+            }
+
+            if (updateDto.Placing != null)
+            {
+                try
+                {
+                    asset.Placing = AssetEnumHelpers.ValidatePlacing(updateDto.Placing);
+                }
+                catch (ArgumentException ex)
+                {
+                    return BadRequest(new { message = $"Invalid placing: {ex.Message}" });
+                }
             }
             
             asset.AssignedUserId = updateDto.AssignedUserId ?? asset.AssignedUserId;
@@ -570,3 +612,5 @@ public class AssetsController : BaseController
         }
     }
 }
+
+

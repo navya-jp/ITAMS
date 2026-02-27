@@ -241,10 +241,6 @@ public class ITAMSDbContext : DbContext
                 .IsRequired()
                 .HasConversion<int>();
                 
-            entity.Property(e => e.Criticality)
-                .IsRequired()
-                .HasConversion<int>();
-                
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasConversion<int>();

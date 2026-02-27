@@ -28,9 +28,6 @@ public class Asset
     public AssetUsageCategory UsageCategory { get; set; }
     
     [Required]
-    public AssetCriticality Criticality { get; set; }
-    
-    [Required]
     [StringLength(100)]
     public string AssetType { get; set; } = string.Empty;
     
@@ -124,6 +121,10 @@ public class Asset
     
     public string? Remarks { get; set; }
     
+    [Required]
+    [StringLength(50)]
+    public string Placing { get; set; } = string.Empty; // lane area, booth area, plaza area, server room, control room, admin building
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     public int CreatedBy { get; set; }
@@ -144,19 +145,100 @@ public enum AssetUsageCategory
     ITNonTMS = 2
 }
 
-public enum AssetCriticality
-{
-    TMSCritical = 1,
-    TMSGeneral = 2,
-    ITCritical = 3,
-    ITGeneral = 4
-}
-
 public enum AssetStatus
 {
-    InUse = 1,
-    Spare = 2,
-    Repair = 3,
-    Decommissioned = 4,
-    Unknown = 5
+    InUse = 1,           // Canonical: "inuse"
+    Spare = 2,           // Canonical: "spare"
+    Repair = 3,          // Canonical: "repair"
+    Decommissioned = 4   // Canonical: "decommissioned"
+}
+
+// Helper class for enum conversions
+public static class AssetEnumHelpers
+{
+    // Status conversions
+    public static string ToCanonicalString(this AssetStatus status)
+    {
+        return status switch
+        {
+            AssetStatus.InUse => "inuse",
+            AssetStatus.Spare => "spare",
+            AssetStatus.Repair => "repair",
+            AssetStatus.Decommissioned => "decommissioned",
+            _ => throw new ArgumentException($"Unknown status: {status}")
+        };
+    }
+
+    public static string ToDisplayString(this AssetStatus status)
+    {
+        return status switch
+        {
+            AssetStatus.InUse => "In Use",
+            AssetStatus.Spare => "Spare",
+            AssetStatus.Repair => "Repair",
+            AssetStatus.Decommissioned => "Decommissioned",
+            _ => throw new ArgumentException($"Unknown status: {status}")
+        };
+    }
+
+    public static AssetStatus ParseStatus(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            throw new ArgumentException("Status cannot be empty");
+
+        var normalized = status.Trim().ToLower().Replace(" ", "").Replace("-", "").Replace("_", "");
+        
+        return normalized switch
+        {
+            "inuse" or "active" or "working" or "operational" or "deployed" => AssetStatus.InUse,
+            "spare" or "available" or "standby" or "reserve" => AssetStatus.Spare,
+            "repair" or "maintenance" or "underrepair" or "undermaintenance" or "faulty" or "broken" => AssetStatus.Repair,
+            "decommissioned" or "decommitioned" or "retired" or "disposed" or "scrapped" or "obsolete" => AssetStatus.Decommissioned,
+            _ => throw new ArgumentException($"Invalid status value: '{status}'. Expected: In Use, Spare, Repair, or Decommissioned")
+        };
+    }
+
+    public static AssetStatus ParseStatusFromDisplay(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            throw new ArgumentException("Status cannot be empty");
+
+        return status.Trim() switch
+        {
+            "In Use" => AssetStatus.InUse,
+            "Spare" => AssetStatus.Spare,
+            "Repair" => AssetStatus.Repair,
+            "Decommissioned" => AssetStatus.Decommissioned,
+            _ => ParseStatus(status) // Fall back to flexible parsing
+        };
+    }
+
+    // Placing validation
+    private static readonly string[] ValidPlacingValues = new[]
+    {
+        "Lane Area",
+        "Booth Area",
+        "Plaza Area",
+        "Server Room",
+        "Control Room",
+        "Admin Building"
+    };
+
+    public static string ValidatePlacing(string? placing)
+    {
+        if (string.IsNullOrWhiteSpace(placing))
+            throw new ArgumentException("Placing cannot be empty");
+
+        // Normalize to title case for comparison
+        var normalized = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(placing.Trim().ToLower());
+        
+        if (!ValidPlacingValues.Contains(normalized))
+        {
+            throw new ArgumentException($"Invalid placing value: '{placing}'. Expected one of: {string.Join(", ", ValidPlacingValues)}");
+        }
+
+        return normalized;
+    }
+
+    public static string[] GetValidPlacingValues() => ValidPlacingValues;
 }

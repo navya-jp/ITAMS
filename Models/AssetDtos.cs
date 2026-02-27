@@ -31,9 +31,9 @@ public class AssetDto
     public string? PatchStatus { get; set; }
     public string? USBBlockingStatus { get; set; }
     public string? Remarks { get; set; }
+    public string Placing { get; set; } = string.Empty; // Required: lane area, booth area, plaza area, server room, control room, admin building
     
     public string UsageCategory { get; set; } = string.Empty;
-    public string Criticality { get; set; } = string.Empty;
     public string AssetType { get; set; } = string.Empty;
     public string? SubType { get; set; }
     public string Make { get; set; } = string.Empty;
@@ -59,7 +59,6 @@ public class CreateAssetDto
     public int ProjectId { get; set; }
     public int LocationId { get; set; }
     public string UsageCategory { get; set; } = string.Empty; // TMS, ITNonTMS
-    public string Criticality { get; set; } = string.Empty; // TMSCritical, TMSGeneral, ITCritical, ITGeneral
     public string AssetType { get; set; } = string.Empty;
     public string? SubType { get; set; }
     public string Make { get; set; } = string.Empty;
@@ -71,7 +70,8 @@ public class CreateAssetDto
     public DateTime? WarrantyStartDate { get; set; }
     public DateTime? WarrantyEndDate { get; set; }
     public DateTime? CommissioningDate { get; set; }
-    public string Status { get; set; } = "InUse"; // InUse, Spare, Repair, Decommissioned
+    public string Status { get; set; } = "In Use"; // Display: In Use, Spare, Repair, Decommissioned
+    public string Placing { get; set; } = string.Empty; // Required: lane area, booth area, plaza area, server room, control room, admin building
     public int? AssignedUserId { get; set; }
     public string? AssignedUserRole { get; set; }
 }
@@ -92,6 +92,7 @@ public class UpdateAssetDto
     public DateTime? WarrantyEndDate { get; set; }
     public DateTime? CommissioningDate { get; set; }
     public string? Status { get; set; }
+    public string? Placing { get; set; }
     public int? AssignedUserId { get; set; }
     public string? AssignedUserRole { get; set; }
 }

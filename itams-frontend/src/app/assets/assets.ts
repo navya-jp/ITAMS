@@ -55,7 +55,7 @@ export class Assets implements OnInit {
     projectId: 0,
     locationId: 0,
     usageCategory: 'TMS',
-    criticality: 'TMSCritical',
+    classification: '',
     assetType: '',
     subType: '',
     make: '',
@@ -67,7 +67,8 @@ export class Assets implements OnInit {
     warrantyStartDate: undefined,
     warrantyEndDate: undefined,
     commissioningDate: undefined,
-    status: 'InUse',
+    status: 'In Use',
+    placing: '',
     assignedUserId: undefined,
     assignedUserRole: ''
   };
@@ -76,8 +77,9 @@ export class Assets implements OnInit {
 
   // Constants
   usageCategories = ['TMS', 'ITNonTMS'];
-  criticalities = ['TMSCritical', 'TMSGeneral', 'ITCritical', 'ITGeneral'];
-  statuses = ['InUse', 'Spare', 'Repair', 'Decommissioned', 'Unknown'];
+  
+  statuses = ['In Use', 'Spare', 'Repair', 'Decommissioned'];
+  placingOptions = ['Lane Area', 'Booth Area', 'Plaza Area', 'Server Room', 'Control Room', 'Admin Building'];
   assetTypes = ['Hardware', 'Software', 'Digital'];
 
   // Validation
@@ -142,6 +144,7 @@ export class Assets implements OnInit {
       warrantyEndDate: asset.warrantyEndDate,
       commissioningDate: asset.commissioningDate,
       status: asset.status,
+      placing: asset.placing,
       assignedUserId: asset.assignedUserId,
       assignedUserRole: asset.assignedUserRole
     };
@@ -340,6 +343,11 @@ export class Assets implements OnInit {
       isValid = false;
     }
 
+    if (!this.createForm.placing) {
+      this.validationErrors['placing'] = 'Placing is required';
+      isValid = false;
+    }
+
     return isValid;
   }
 
@@ -430,7 +438,7 @@ export class Assets implements OnInit {
       projectId: 0,
       locationId: 0,
       usageCategory: 'TMS',
-      criticality: 'TMSCritical',
+      classification: '',
       assetType: '',
       subType: '',
       make: '',
@@ -442,7 +450,8 @@ export class Assets implements OnInit {
       warrantyStartDate: undefined,
       warrantyEndDate: undefined,
       commissioningDate: undefined,
-      status: 'InUse',
+      status: 'In Use',
+      placing: '',
       assignedUserId: undefined,
       assignedUserRole: ''
     };
@@ -471,7 +480,7 @@ export class Assets implements OnInit {
 
   isTabValid(tabNumber: number): boolean {
     if (tabNumber === 1) {
-      return !!(this.createForm.locationId && this.createForm.assetTag);
+      return !!(this.createForm.locationId && this.createForm.assetTag && this.createForm.placing);
     } else if (tabNumber === 2) {
       return !!(this.createForm.assetType && this.createForm.make && this.createForm.model);
     }

@@ -39,7 +39,9 @@ public class AssetExcelRow
     public string? User_Role { get; set; }
     public string? Procured_By { get; set; }
     public string? Commissioning_Date { get; set; }
-    public string Status { get; set; } = "InUse";
+    public string Status { get; set; } = string.Empty;
+    public string? Criticality { get; set; }
+    public string Placing { get; set; } = string.Empty;
     public string? Patch_Status { get; set; }
     public string? USB_Blocking_Status { get; set; }
     public string? Remarks { get; set; }
