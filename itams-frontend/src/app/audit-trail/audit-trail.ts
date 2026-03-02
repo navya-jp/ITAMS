@@ -30,8 +30,9 @@ export class AuditTrail implements OnInit {
   error: string | null = null;
   
   // Time range filter
-  selectedTimeRange: 'today' | 'week' | 'month' | 'year' | 'custom' = 'today';
+  selectedTimeRange: 'all' | 'today' | 'week' | 'month' | 'year' | 'custom' = 'today';
   timeRanges = [
+    { value: 'all', label: 'View All', days: 0 },
     { value: 'today', label: 'Today', days: 1 },
     { value: 'week', label: 'Last Week', days: 7 },
     { value: 'month', label: 'Last Month', days: 30 },
@@ -81,11 +82,14 @@ export class AuditTrail implements OnInit {
     this.error = null;
 
     // Calculate date range based on selected time range
-    let startDate: Date;
-    let endDate = new Date();
-    endDate.setHours(23, 59, 59, 999); // Always end of day for today
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
     
-    if (this.selectedTimeRange === 'custom') {
+    if (this.selectedTimeRange === 'all') {
+      // For "View All", don't pass any date filters
+      startDate = undefined;
+      endDate = undefined;
+    } else if (this.selectedTimeRange === 'custom') {
       if (!this.customStartDate || !this.customEndDate) {
         this.loading = false;
         return;
@@ -94,6 +98,9 @@ export class AuditTrail implements OnInit {
       endDate = new Date(this.customEndDate);
       endDate.setHours(23, 59, 59, 999); // End of day
     } else {
+      endDate = new Date();
+      endDate.setHours(23, 59, 59, 999); // Always end of day for today
+      
       const selectedRange = this.timeRanges.find(r => r.value === this.selectedTimeRange);
       
       if (this.selectedTimeRange === 'today') {
