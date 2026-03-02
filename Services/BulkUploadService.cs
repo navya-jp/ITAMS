@@ -79,9 +79,18 @@ public class BulkUploadService : IBulkUploadService
                 .Select(a => a.SerialNumber!.ToLower())
                 .ToListAsync();
 
-            // Get the last AssetId to generate new ones
-            var lastAsset = await _context.Assets.OrderByDescending(a => a.Id).FirstOrDefaultAsync();
-            var nextAssetIdNumber = lastAsset != null ? lastAsset.Id + 1 : 1;
+            // Get the last AssetId to generate new ones (parse the numeric part from AssetId like "AST00365")
+            var lastAsset = await _context.Assets.OrderByDescending(a => a.AssetId).FirstOrDefaultAsync();
+            var nextAssetIdNumber = 1;
+            if (lastAsset != null && !string.IsNullOrEmpty(lastAsset.AssetId))
+            {
+                // Extract numeric part from AssetId (e.g., "AST00365" -> 365)
+                var numericPart = lastAsset.AssetId.Substring(3); // Skip "AST" prefix
+                if (int.TryParse(numericPart, out int lastNumber))
+                {
+                    nextAssetIdNumber = lastNumber + 1;
+                }
+            }
 
             // Process each row (skip header)
             for (int row = 2; row <= rowCount; row++)

@@ -292,28 +292,41 @@ export class Assets implements OnInit {
   }
 
   async uploadFile() {
+    console.log('uploadFile() called');
+    console.log('selectedFile:', this.selectedFile);
+    
     if (!this.selectedFile) {
+      console.log('No file selected');
       alert('Please select a file first');
       return;
     }
 
+    console.log('Starting upload...');
     this.uploading = true;
     this.uploadResult = null;
 
     try {
       const formData = new FormData();
       formData.append('file', this.selectedFile);
+      console.log('FormData created with file:', this.selectedFile.name);
 
-      const token = localStorage.getItem('auth_token'); // Fixed: use 'auth_token' not 'token'
+      const token = localStorage.getItem('auth_token');
+      console.log('Token retrieved:', token ? 'exists' : 'missing');
+      
       const headers = new HttpHeaders({
         'Authorization': `Bearer ${token}`
       });
 
+      const url = `${this.baseUrl}/assets/bulk-upload`;
+      console.log('Posting to URL:', url);
+
       const result = await this.http.post<BulkUploadResult>(
-        `${this.baseUrl}/assets/bulk-upload`, 
+        url, 
         formData,
         { headers }
       ).toPromise();
+      
+      console.log('Upload result:', result);
       
       if (result) {
         this.uploadResult = result;
@@ -330,8 +343,10 @@ export class Assets implements OnInit {
       }
     } catch (error: any) {
       console.error('Upload error:', error);
+      console.error('Error details:', error.error);
       this.error = error.error?.message || 'An error occurred during upload';
     } finally {
+      console.log('Upload finished, uploading flag set to false');
       this.uploading = false;
     }
   }
