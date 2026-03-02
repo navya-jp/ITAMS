@@ -253,8 +253,26 @@ export class Assets implements OnInit {
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.selectedFile = input.files[0];
+      const file = input.files[0];
+      
+      // Validate file extension
+      if (!file.name.toLowerCase().endsWith('.xlsx')) {
+        this.error = 'Invalid file format. Please upload an Excel file (.xlsx)';
+        this.selectedFile = null;
+        return;
+      }
+      
+      // Validate file size (50MB)
+      const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+      if (file.size > maxSize) {
+        this.error = 'File size exceeds maximum limit of 50MB';
+        this.selectedFile = null;
+        return;
+      }
+      
+      this.selectedFile = file;
       this.uploadResult = null;
+      this.clearMessages();
     }
   }
 
@@ -277,12 +295,23 @@ export class Assets implements OnInit {
 
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
       const file = event.dataTransfer.files[0];
-      if (file.name.endsWith('.xlsx')) {
-        this.selectedFile = file;
-        this.uploadResult = null;
-      } else {
-        alert('Please select an Excel file (.xlsx)');
+      
+      // Validate file extension
+      if (!file.name.toLowerCase().endsWith('.xlsx')) {
+        this.error = 'Invalid file format. Please upload an Excel file (.xlsx)';
+        return;
       }
+      
+      // Validate file size (50MB)
+      const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+      if (file.size > maxSize) {
+        this.error = 'File size exceeds maximum limit of 50MB';
+        return;
+      }
+      
+      this.selectedFile = file;
+      this.uploadResult = null;
+      this.clearMessages();
     }
   }
 
@@ -292,48 +321,41 @@ export class Assets implements OnInit {
   }
 
   async uploadFile() {
-    console.log('uploadFile() called');
-    console.log('selectedFile:', this.selectedFile);
-    
     if (!this.selectedFile) {
-      console.log('No file selected');
-      alert('Please select a file first');
+      this.error = 'Please select a file first';
       return;
     }
 
-    console.log('Starting upload...');
     this.uploading = true;
     this.uploadResult = null;
+    this.clearMessages();
 
     try {
       const formData = new FormData();
       formData.append('file', this.selectedFile);
-      console.log('FormData created with file:', this.selectedFile.name);
 
       const token = localStorage.getItem('auth_token');
-      console.log('Token retrieved:', token ? 'exists' : 'missing');
-      
       const headers = new HttpHeaders({
         'Authorization': `Bearer ${token}`
       });
 
-      const url = `${this.baseUrl}/assets/bulk-upload`;
-      console.log('Posting to URL:', url);
-
       const result = await this.http.post<BulkUploadResult>(
-        url, 
+        `${this.baseUrl}/assets/bulk-upload`, 
         formData,
         { headers }
       ).toPromise();
       
-      console.log('Upload result:', result);
-      
       if (result) {
         this.uploadResult = result;
         
+        // Check if there's an error message from backend (like missing columns)
+        if (result.message && result.totalRows === 0 && result.successCount === 0) {
+          this.error = result.message;
+          return;
+        }
+        
         if (result.successCount > 0) {
           this.success = `Successfully uploaded ${result.successCount} assets!`;
-          // Reload assets to show new ones
           this.loadAssets();
         }
         
@@ -343,10 +365,18 @@ export class Assets implements OnInit {
       }
     } catch (error: any) {
       console.error('Upload error:', error);
-      console.error('Error details:', error.error);
-      this.error = error.error?.message || 'An error occurred during upload';
+      
+      // Handle different error types
+      if (error.status === 400) {
+        this.error = error.error?.message || 'Invalid file or data format';
+      } else if (error.status === 413) {
+        this.error = 'File size exceeds maximum limit of 50MB';
+      } else if (error.status === 415) {
+        this.error = 'Invalid file format. Please upload an Excel file (.xlsx)';
+      } else {
+        this.error = error.error?.message || 'An error occurred during upload. Please try again.';
+      }
     } finally {
-      console.log('Upload finished, uploading flag set to false');
       this.uploading = false;
     }
   }

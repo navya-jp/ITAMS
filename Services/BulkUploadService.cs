@@ -99,10 +99,13 @@ public class BulkUploadService : IBulkUploadService
                 {
                     var excelRow = ReadExcelRow(worksheet, row, columnMapping);
                     
+                    _logger.LogInformation("Row {Row}: AssetTag={AssetTag}, Make={Make}, Model={Model}, Type={Type}, Status={Status}", 
+                        row, excelRow.Asset_Tag, excelRow.Make, excelRow.Model, excelRow.Asset_Type, excelRow.Status);
+                    
                     // Skip completely empty rows (common in Excel files with formatting)
                     if (IsRowEmpty(excelRow))
                     {
-                        _logger.LogDebug("Skipping empty row {Row}", row);
+                        _logger.LogWarning("Skipping empty row {Row}", row);
                         result.TotalRows--; // Adjust total count
                         continue;
                     }
