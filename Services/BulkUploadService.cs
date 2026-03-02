@@ -4,15 +4,8 @@ using ITAMS.Models;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using System.Net;
-using System.Text.RegularExpressions;
 
 namespace ITAMS.Services;
-
-public interface IBulkUploadService
-{
-    Task<BulkUploadResult> ProcessAssetExcelAsync(Stream fileStream, int userId);
-    byte[] GenerateSampleTemplate();
-}
 
 public class BulkUploadService : IBulkUploadService
 {

@@ -226,11 +226,21 @@ export interface CreateAsset {
   locationId: number;
   usageCategory: string;
   classification?: string;
+  region?: string;
+  state?: string;
+  plazaName?: string;
   assetType: string;
   subType?: string;
   make: string;
   model: string;
   serialNumber?: string;
+  osType?: string;
+  osVersion?: string;
+  dbType?: string;
+  dbVersion?: string;
+  ipAddress?: string;
+  assignedUserText?: string;
+  userRole?: string;
   procurementDate?: Date;
   procurementCost?: number;
   vendor?: string;
@@ -239,6 +249,10 @@ export interface CreateAsset {
   commissioningDate?: Date;
   status: string;
   placing: string;
+  patchStatus?: string;
+  usbBlockingStatus?: string;
+  procuredBy?: string;
+  remarks?: string;
   assignedUserId?: number;
   assignedUserRole?: string;
 }

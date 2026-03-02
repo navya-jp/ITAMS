@@ -26,12 +26,18 @@ interface BulkUploadError {
 })
 export class Assets implements OnInit {
   assets: Asset[] = [];
+  filteredAssets: Asset[] = [];
   projects: Project[] = [];
   locations: Location[] = [];
   projectUsers: any[] = []; // Users in the selected project
   loading = false;
   error = '';
   success = '';
+
+  // Search and filter
+  searchTerm = '';
+  filterStatus = 'all';
+  filterType = 'all';
 
   // Modal states
   showCreateModal = false;
@@ -41,6 +47,10 @@ export class Assets implements OnInit {
   selectedAsset: Asset | null = null;
   currentTab = 1;
   maxTab = 1;
+  
+  // View/Edit modal tabs
+  viewTab = 1;
+  editTab = 1;
 
   // Bulk upload
   selectedFile: File | null = null;
@@ -73,12 +83,36 @@ export class Assets implements OnInit {
     assignedUserRole: ''
   };
 
-  editForm: Partial<CreateAsset> = {};
+  editForm: Partial<CreateAsset> & {
+    region?: string;
+    state?: string;
+    plazaName?: string;
+    osType?: string;
+    osVersion?: string;
+    dbType?: string;
+    dbVersion?: string;
+    ipAddress?: string;
+    assignedUserText?: string;
+    userRole?: string;
+    patchStatus?: string;
+    usbBlockingStatus?: string;
+    procuredBy?: string;
+    remarks?: string;
+  } = {};
 
   // Constants
-  usageCategories = ['TMS', 'ITNonTMS'];
+  usageCategories = [
+    { value: 'TMS', label: 'TMS' },
+    { value: 'ITNonTMS', label: 'IT (Non-TMS)' }
+  ];
   
-  statuses = ['In Use', 'Spare', 'Repair', 'Decommissioned'];
+  statuses = [
+    { value: 'InUse', label: 'In Use' },
+    { value: 'Spare', label: 'Spare' },
+    { value: 'Repair', label: 'Repair' },
+    { value: 'Decommissioned', label: 'Decommissioned' }
+  ];
+  
   placingOptions = ['Lane Area', 'Booth Area', 'Plaza Area', 'Server Room', 'Control Room', 'Admin Building'];
   assetTypes = ['Hardware', 'Software', 'Digital'];
 
@@ -97,6 +131,8 @@ export class Assets implements OnInit {
     this.api.getAssets().subscribe({
       next: (assets) => {
         this.assets = assets;
+        this.filteredAssets = assets;
+        this.applyFilters();
         this.loading = false;
       },
       error: (error) => {
@@ -132,11 +168,22 @@ export class Assets implements OnInit {
     this.editForm = {
       assetTag: asset.assetTag,
       locationId: asset.locationId,
+      classification: asset.classification,
+      region: asset.region,
+      state: asset.state,
+      plazaName: asset.plazaName,
       assetType: asset.assetType,
       subType: asset.subType,
       make: asset.make,
       model: asset.model,
       serialNumber: asset.serialNumber,
+      osType: asset.osType,
+      osVersion: asset.osVersion,
+      dbType: asset.dbType,
+      dbVersion: asset.dbVersion,
+      ipAddress: asset.ipAddress,
+      assignedUserText: asset.assignedUserText,
+      userRole: asset.userRole,
       procurementDate: asset.procurementDate,
       procurementCost: asset.procurementCost,
       vendor: asset.vendor,
@@ -145,6 +192,10 @@ export class Assets implements OnInit {
       commissioningDate: asset.commissioningDate,
       status: asset.status,
       placing: asset.placing,
+      patchStatus: asset.patchStatus,
+      usbBlockingStatus: asset.usbBlockingStatus,
+      procuredBy: asset.procuredBy,
+      remarks: asset.remarks,
       assignedUserId: asset.assignedUserId,
       assignedUserRole: asset.assignedUserRole
     };
@@ -153,6 +204,7 @@ export class Assets implements OnInit {
     this.loadProjectUsers(asset.projectId);
     
     this.showEditModal = true;
+    this.editTab = 1; // Reset to first tab
     this.clearMessages();
   }
 
@@ -174,6 +226,7 @@ export class Assets implements OnInit {
   openViewModal(asset: Asset) {
     this.selectedAsset = asset;
     this.showViewModal = true;
+    this.viewTab = 1; // Reset to first tab
     this.clearMessages();
   }
 
@@ -333,11 +386,6 @@ export class Assets implements OnInit {
   validateTab1(): boolean {
     let isValid = true;
 
-    if (!this.createForm.locationId) {
-      this.validationErrors['locationId'] = 'Location is required';
-      isValid = false;
-    }
-
     if (!this.createForm.assetTag) {
       this.validationErrors['assetTag'] = 'Asset tag is required';
       isValid = false;
@@ -460,6 +508,56 @@ export class Assets implements OnInit {
   clearMessages() {
     this.error = '';
     this.success = '';
+  }
+
+  // Search and Filter Methods
+  applyFilters() {
+    this.filteredAssets = this.assets.filter(asset => {
+      // Search filter
+      const matchesSearch = !this.searchTerm || 
+        asset.assetId.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        asset.assetTag.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        (asset.assetType && asset.assetType.toLowerCase().includes(this.searchTerm.toLowerCase())) ||
+        (asset.make && asset.make.toLowerCase().includes(this.searchTerm.toLowerCase())) ||
+        (asset.model && asset.model.toLowerCase().includes(this.searchTerm.toLowerCase())) ||
+        (asset.serialNumber && asset.serialNumber.toLowerCase().includes(this.searchTerm.toLowerCase()));
+
+      // Status filter
+      const matchesStatus = this.filterStatus === 'all' || asset.status === this.filterStatus;
+
+      // Type filter
+      const matchesType = this.filterType === 'all' || asset.assetType === this.filterType;
+
+      return matchesSearch && matchesStatus && matchesType;
+    });
+  }
+
+  onSearchChange() {
+    this.applyFilters();
+  }
+
+  onStatusFilterChange() {
+    this.applyFilters();
+  }
+
+  onTypeFilterChange() {
+    this.applyFilters();
+  }
+
+  clearFilters() {
+    this.searchTerm = '';
+    this.filterStatus = 'all';
+    this.filterType = 'all';
+    this.applyFilters();
+  }
+
+  // View/Edit modal tab navigation
+  setViewTab(tab: number) {
+    this.viewTab = tab;
+  }
+
+  setEditTab(tab: number) {
+    this.editTab = tab;
   }
 
   clearValidationErrors() {

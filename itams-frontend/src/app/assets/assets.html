@@ -33,6 +33,37 @@
       </div>
     </div>
 
+    <!-- Search and Filter Row -->
+    <div *ngIf="!loading" class="row mb-3">
+      <div class="col-md-4">
+        <label class="form-label">Search Assets</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Asset ID, Tag, Type, Make, Model..." 
+                 [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Filter by Status</label>
+        <select class="form-select" [(ngModel)]="filterStatus" (ngModelChange)="onStatusFilterChange()">
+          <option value="all">All Status</option>
+          <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Filter by Type</label>
+        <select class="form-select" [(ngModel)]="filterType" (ngModelChange)="onTypeFilterChange()">
+          <option value="all">All Types</option>
+          <option *ngFor="let type of assetTypes" [value]="type">{{ type }}</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+          <i class="fas fa-times me-2"></i>Clear
+        </button>
+      </div>
+    </div>
+
     <!-- Assets Table -->
     <div *ngIf="!loading" class="table-responsive">
       <table class="table table-hover">
@@ -42,18 +73,16 @@
             <th>Type</th>
             <th>Classification</th>
             <th>Region</th>
-            <th>Site</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let asset of assets">
+          <tr *ngFor="let asset of filteredAssets">
             <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
             <td>{{ asset.assetType }}</td>
             <td>{{ asset.classification || 'N/A' }}</td>
             <td>{{ asset.region || 'N/A' }}</td>
-            <td>{{ asset.site || 'N/A' }}</td>
             <td>
               <span class="badge" 
                     [class.bg-success]="asset.status === 'In Use'"
@@ -133,19 +162,6 @@
           <div class="tab-pane fade" [class.show]="currentTab === 1" [class.active]="currentTab === 1">
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label">Location *</label>
-                <select class="form-select" 
-                        [(ngModel)]="createForm.locationId"
-                        [class.is-invalid]="hasValidationError('locationId')">
-                  <option value="0">Select Location</option>
-                  <option *ngFor="let location of locations" [value]="location.id">{{ location.name }}</option>
-                </select>
-                <div *ngIf="hasValidationError('locationId')" class="invalid-feedback d-block">
-                  {{ getValidationError('locationId') }}
-                </div>
-              </div>
-
-              <div class="col-md-6">
                 <label class="form-label">Asset Tag *</label>
                 <input type="text" 
                        class="form-control" 
@@ -158,13 +174,6 @@
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Usage Category *</label>
-                <select class="form-select" [(ngModel)]="createForm.usageCategory">
-                  <option *ngFor="let category of usageCategories" [value]="category">{{ category }}</option>
-                </select>
-              </div>
-
-              <div class="col-md-6">
                 <label class="form-label">Classification</label>
                 <input type="text" class="form-control" [(ngModel)]="createForm.classification" placeholder="e.g., TMS Critical, IT General">
               </div>
@@ -172,7 +181,7 @@
               <div class="col-md-6">
                 <label class="form-label">Status *</label>
                 <select class="form-select" [(ngModel)]="createForm.status">
-                  <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+                  <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
                 </select>
               </div>
 
@@ -317,209 +326,182 @@
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
       <div class="modal-body" *ngIf="selectedAsset">
-        <div class="row g-3">
-          <!-- Basic Information -->
-          <div class="col-12">
-            <h6 class="text-primary border-bottom pb-2">Basic Information</h6>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Asset ID</label>
-            <p class="fw-bold">{{ selectedAsset.assetId }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Asset Tag</label>
-            <p class="fw-bold">{{ selectedAsset.assetTag }}</p>
-          </div>
-          
-          <!-- Location Information -->
-          <div class="col-12 mt-3">
-            <h6 class="text-primary border-bottom pb-2">Location Information</h6>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Region</label>
-            <p>{{ selectedAsset.region || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">State</label>
-            <p>{{ selectedAsset.state || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Site</label>
-            <p>{{ selectedAsset.site || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Plaza Name</label>
-            <p>{{ selectedAsset.plazaName || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Location</label>
-            <p>{{ selectedAsset.locationText || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Department</label>
-            <p>{{ selectedAsset.department || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Placing</label>
-            <p>{{ selectedAsset.placing || 'N/A' }}</p>
-          </div>
-          
-          <div class="col-12 mt-3">
-            <h6 class="text-primary border-bottom pb-2">Asset Information</h6>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Location</label>
-            <p>{{ selectedAsset.locationName }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Usage Category</label>
-            <p>{{ selectedAsset.usageCategory }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Classification</label>
-            <p>{{ selectedAsset.classification || 'N/A' }}</p>
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="viewTab === 1" (click)="setViewTab(1)" style="cursor: pointer;">
+              <i class="fas fa-info-circle me-1"></i>Basic & Location
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="viewTab === 2" (click)="setViewTab(2)" style="cursor: pointer;">
+              <i class="fas fa-cogs me-1"></i>Technical
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="viewTab === 3" (click)="setViewTab(3)" style="cursor: pointer;">
+              <i class="fas fa-user-check me-1"></i>User & Status
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="viewTab === 4" (click)="setViewTab(4)" style="cursor: pointer;">
+              <i class="fas fa-shopping-cart me-1"></i>Procurement
+            </a>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Tab 1: Basic & Location -->
+          <div *ngIf="viewTab === 1" class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted">Asset ID</label>
+              <p class="fw-bold">{{ selectedAsset.assetId }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Asset Tag</label>
+              <p class="fw-bold">{{ selectedAsset.assetTag }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Classification</label>
+              <p>{{ selectedAsset.classification || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Region</label>
+              <p>{{ selectedAsset.region || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">State</label>
+              <p>{{ selectedAsset.state || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Plaza Name</label>
+              <p>{{ selectedAsset.plazaName || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Placing</label>
+              <p>{{ selectedAsset.placing || 'N/A' }}</p>
+            </div>
           </div>
 
-          <!-- Technical Details -->
-          <div class="col-12 mt-4">
-            <h6 class="text-primary border-bottom pb-2">Technical Details</h6>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Asset Type</label>
-            <p>{{ selectedAsset.assetType }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Sub Type</label>
-            <p>{{ selectedAsset.subType || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Make</label>
-            <p>{{ selectedAsset.make }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Model</label>
-            <p>{{ selectedAsset.model }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Serial Number</label>
-            <p>{{ selectedAsset.serialNumber || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Classification</label>
-            <p>{{ selectedAsset.classification || 'N/A' }}</p>
-          </div>
-          
-          <!-- System Information -->
-          <div class="col-12 mt-4">
-            <h6 class="text-primary border-bottom pb-2">System Information</h6>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">OS Type</label>
-            <p>{{ selectedAsset.osType || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">OS Version</label>
-            <p>{{ selectedAsset.osVersion || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">DB Type</label>
-            <p>{{ selectedAsset.dbType || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">DB Version</label>
-            <p>{{ selectedAsset.dbVersion || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">IP Address</label>
-            <p>{{ selectedAsset.ipAddress || 'N/A' }}</p>
-          </div>
-          
-          <!-- User Assignment -->
-          <div class="col-12 mt-4">
-            <h6 class="text-primary border-bottom pb-2">User Assignment</h6>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Assigned User</label>
-            <p>{{ selectedAsset.assignedUserText || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">User Role</label>
-            <p>{{ selectedAsset.userRole || 'N/A' }}</p>
-          </div>
-          
-          <!-- Status Information -->
-          <div class="col-12 mt-4">
-            <h6 class="text-primary border-bottom pb-2">Status Information</h6>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Asset Status</label>
-            <p>
-              <span class="badge" 
-                    [class.bg-success]="selectedAsset.status === 'In Use'"
-                    [class.bg-info]="selectedAsset.status === 'Spare'"
-                    [class.bg-warning]="selectedAsset.status === 'Repair'"
-                    [class.bg-secondary]="selectedAsset.status === 'Decommissioned'">
-                {{ selectedAsset.status }}
-              </span>
-            </p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Patch Status</label>
-            <p>{{ selectedAsset.patchStatus || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">USB Blocking Status</label>
-            <p>{{ selectedAsset.usbBlockingStatus || 'N/A' }}</p>
+          <!-- Tab 2: Technical Details -->
+          <div *ngIf="viewTab === 2" class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted">Asset Type</label>
+              <p>{{ selectedAsset.assetType }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Sub Type</label>
+              <p>{{ selectedAsset.subType || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Make</label>
+              <p>{{ selectedAsset.make }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Model</label>
+              <p>{{ selectedAsset.model }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Serial Number</label>
+              <p>{{ selectedAsset.serialNumber || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">OS Type</label>
+              <p>{{ selectedAsset.osType || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">OS Version</label>
+              <p>{{ selectedAsset.osVersion || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">DB Type</label>
+              <p>{{ selectedAsset.dbType || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">DB Version</label>
+              <p>{{ selectedAsset.dbVersion || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">IP Address</label>
+              <p>{{ selectedAsset.ipAddress || 'N/A' }}</p>
+            </div>
           </div>
 
-          <!-- Procurement & Warranty -->
-          <div class="col-12 mt-4">
-            <h6 class="text-primary border-bottom pb-2">Procurement & Warranty</h6>
+          <!-- Tab 3: User & Status -->
+          <div *ngIf="viewTab === 3" class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted">Assigned User</label>
+              <p>{{ selectedAsset.assignedUserText || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">User Role</label>
+              <p>{{ selectedAsset.userRole || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Asset Status</label>
+              <p>
+                <span class="badge" 
+                      [class.bg-success]="selectedAsset.status === 'In Use'"
+                      [class.bg-info]="selectedAsset.status === 'Spare'"
+                      [class.bg-warning]="selectedAsset.status === 'Repair'"
+                      [class.bg-secondary]="selectedAsset.status === 'Decommissioned'">
+                  {{ selectedAsset.status }}
+                </span>
+              </p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Patch Status</label>
+              <p>{{ selectedAsset.patchStatus || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">USB Blocking Status</label>
+              <p>{{ selectedAsset.usbBlockingStatus || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Procured By</label>
+              <p>{{ selectedAsset.procuredBy || 'N/A' }}</p>
+            </div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Procured By</label>
-            <p>{{ selectedAsset.procuredBy || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Commissioning Date</label>
-            <p>{{ selectedAsset.commissioningDate ? (selectedAsset.commissioningDate | date:'mediumDate') : 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Procurement Date</label>
-            <p>{{ selectedAsset.procurementDate ? (selectedAsset.procurementDate | date:'mediumDate') : 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Procurement Cost</label>
-            <p>{{ selectedAsset.procurementCost ? ('₹' + selectedAsset.procurementCost) : 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Vendor</label>
-            <p>{{ selectedAsset.vendor || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Warranty Period</label>
-            <p>
-              {{ selectedAsset.warrantyStartDate ? (selectedAsset.warrantyStartDate | date:'mediumDate') : 'N/A' }}
-              to
-              {{ selectedAsset.warrantyEndDate ? (selectedAsset.warrantyEndDate | date:'mediumDate') : 'N/A' }}
-            </p>
-          </div>
-          
-          <!-- Additional Information -->
-          <div class="col-12 mt-4">
-            <h6 class="text-primary border-bottom pb-2">Additional Information</h6>
-          </div>
-          <div class="col-12">
-            <label class="form-label text-muted">Remarks</label>
-            <p>{{ selectedAsset.remarks || 'N/A' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Created At</label>
-            <p>{{ selectedAsset.createdAt | date:'medium' }}</p>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted">Updated At</label>
-            <p>{{ selectedAsset.updatedAt ? (selectedAsset.updatedAt | date:'medium') : 'N/A' }}</p>
+
+          <!-- Tab 4: Procurement & Warranty -->
+          <div *ngIf="viewTab === 4" class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted">Commissioning Date</label>
+              <p>{{ selectedAsset.commissioningDate ? (selectedAsset.commissioningDate | date:'mediumDate') : 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Procurement Date</label>
+              <p>{{ selectedAsset.procurementDate ? (selectedAsset.procurementDate | date:'mediumDate') : 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Procurement Cost</label>
+              <p>{{ selectedAsset.procurementCost ? ('₹' + selectedAsset.procurementCost) : 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Vendor</label>
+              <p>{{ selectedAsset.vendor || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Warranty Start Date</label>
+              <p>{{ selectedAsset.warrantyStartDate ? (selectedAsset.warrantyStartDate | date:'mediumDate') : 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Warranty End Date</label>
+              <p>{{ selectedAsset.warrantyEndDate ? (selectedAsset.warrantyEndDate | date:'mediumDate') : 'N/A' }}</p>
+            </div>
+            <div class="col-12">
+              <label class="form-label text-muted">Remarks</label>
+              <p>{{ selectedAsset.remarks || 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Created At</label>
+              <p>{{ selectedAsset.createdAt | date:'medium' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Updated At</label>
+              <p>{{ selectedAsset.updatedAt ? (selectedAsset.updatedAt | date:'medium') : 'N/A' }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -545,113 +527,181 @@
       </div>
       <div class="modal-body" *ngIf="selectedAsset">
         <form>
-          <div class="row g-3">
-            <!-- Asset Tag -->
-            <div class="col-md-6">
-              <label class="form-label">Asset Tag</label>
-              <input type="text" class="form-control" [(ngModel)]="editForm.assetTag" name="assetTag">
+          <!-- Tab Navigation -->
+          <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="editTab === 1" (click)="setEditTab(1)" style="cursor: pointer;">
+                <i class="fas fa-info-circle me-1"></i>Basic & Location
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="editTab === 2" (click)="setEditTab(2)" style="cursor: pointer;">
+                <i class="fas fa-cogs me-1"></i>Technical
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="editTab === 3" (click)="setEditTab(3)" style="cursor: pointer;">
+                <i class="fas fa-user-check me-1"></i>User & Status
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="editTab === 4" (click)="setEditTab(4)" style="cursor: pointer;">
+                <i class="fas fa-shopping-cart me-1"></i>Procurement
+              </a>
+            </li>
+          </ul>
+
+          <!-- Tab Content -->
+          <div class="tab-content">
+            <!-- Tab 1: Basic & Location -->
+            <div *ngIf="editTab === 1" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Asset Tag</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.assetTag" name="assetTag">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Classification</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.classification" name="classification" placeholder="e.g., TMS Critical, IT General">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Region</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.region" name="region">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">State</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.state" name="state">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Plaza Name</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.plazaName" name="plazaName">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Placing</label>
+                <select class="form-select" [(ngModel)]="editForm.placing" name="placing">
+                  <option value="">Select Placing</option>
+                  <option *ngFor="let placing of placingOptions" [value]="placing">{{ placing }}</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Location</label>
+                <select class="form-select" [(ngModel)]="editForm.locationId" name="locationId">
+                  <option [value]="null">Select Location</option>
+                  <option [value]="location.id" *ngFor="let location of locations">
+                    {{ location.name }}
+                  </option>
+                </select>
+              </div>
             </div>
 
-            <!-- Location -->
-            <div class="col-md-6">
-              <label class="form-label">Location</label>
-              <select class="form-select" [(ngModel)]="editForm.locationId" name="locationId">
-                <option [value]="null">Select Location</option>
-                <option [value]="location.id" *ngFor="let location of locations">
-                  {{ location.name }}
-                </option>
-              </select>
+            <!-- Tab 2: Technical Details -->
+            <div *ngIf="editTab === 2" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Asset Type</label>
+                <select class="form-select" [(ngModel)]="editForm.assetType" name="assetType">
+                  <option value="">Select Asset Type</option>
+                  <option value="Hardware">Hardware</option>
+                  <option value="Software">Software</option>
+                  <option value="Digital">Digital</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Sub Type</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.subType" name="subType">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Make</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.make" name="make">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Model</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.model" name="model">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Serial Number</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.serialNumber" name="serialNumber">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">OS Type</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.osType" name="osType">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">OS Version</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.osVersion" name="osVersion">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">DB Type</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.dbType" name="dbType">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">DB Version</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.dbVersion" name="dbVersion">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">IP Address</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.ipAddress" name="ipAddress">
+              </div>
             </div>
 
-            <!-- Asset Type -->
-            <div class="col-md-6">
-              <label class="form-label">Asset Type</label>
-              <select class="form-select" [(ngModel)]="editForm.assetType" name="assetType">
-                <option value="">Select Asset Type</option>
-                <option value="Hardware">Hardware</option>
-                <option value="Software">Software</option>
-                <option value="Digital">Digital</option>
-              </select>
+            <!-- Tab 3: User & Status -->
+            <div *ngIf="editTab === 3" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Assigned User</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.assignedUserText" name="assignedUserText">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">User Role</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.userRole" name="userRole">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status</label>
+                <select class="form-select" [(ngModel)]="editForm.status" name="status">
+                  <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Patch Status</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.patchStatus" name="patchStatus">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">USB Blocking Status</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.usbBlockingStatus" name="usbBlockingStatus">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Procured By</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.procuredBy" name="procuredBy">
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">Remarks</label>
+                <textarea class="form-control" [(ngModel)]="editForm.remarks" name="remarks" rows="3"></textarea>
+              </div>
             </div>
 
-            <!-- Sub Type -->
-            <div class="col-md-6">
-              <label class="form-label">Sub Type</label>
-              <input type="text" class="form-control" [(ngModel)]="editForm.subType" name="subType">
-            </div>
-
-            <!-- Make -->
-            <div class="col-md-6">
-              <label class="form-label">Make</label>
-              <input type="text" class="form-control" [(ngModel)]="editForm.make" name="make">
-            </div>
-
-            <!-- Model -->
-            <div class="col-md-6">
-              <label class="form-label">Model</label>
-              <input type="text" class="form-control" [(ngModel)]="editForm.model" name="model">
-            </div>
-
-            <!-- Serial Number -->
-            <div class="col-md-6">
-              <label class="form-label">Serial Number</label>
-              <input type="text" class="form-control" [(ngModel)]="editForm.serialNumber" name="serialNumber">
-            </div>
-
-            <!-- Status -->
-            <div class="col-md-6">
-              <label class="form-label">Status</label>
-              <select class="form-select" [(ngModel)]="editForm.status" name="status">
-                <option value="In Use">In Use</option>
-                <option value="Spare">Spare</option>
-                <option value="Repair">Repair</option>
-                <option value="Decommissioned">Decommissioned</option>
-              </select>
-            </div>
-
-            <!-- Placing -->
-            <div class="col-md-6">
-              <label class="form-label">Placing</label>
-              <select class="form-select" [(ngModel)]="editForm.placing" name="placing">
-                <option value="">Select Placing</option>
-                <option *ngFor="let placing of placingOptions" [value]="placing">{{ placing }}</option>
-              </select>
-            </div>
-
-            <!-- Procurement Date -->
-            <div class="col-md-6">
-              <label class="form-label">Procurement Date</label>
-              <input type="date" class="form-control" [(ngModel)]="editForm.procurementDate" name="procurementDate">
-            </div>
-
-            <!-- Procurement Cost -->
-            <div class="col-md-6">
-              <label class="form-label">Procurement Cost</label>
-              <input type="number" class="form-control" [(ngModel)]="editForm.procurementCost" name="procurementCost">
-            </div>
-
-            <!-- Vendor -->
-            <div class="col-md-6">
-              <label class="form-label">Vendor</label>
-              <input type="text" class="form-control" [(ngModel)]="editForm.vendor" name="vendor">
-            </div>
-
-            <!-- Warranty Start Date -->
-            <div class="col-md-6">
-              <label class="form-label">Warranty Start Date</label>
-              <input type="date" class="form-control" [(ngModel)]="editForm.warrantyStartDate" name="warrantyStartDate">
-            </div>
-
-            <!-- Warranty End Date -->
-            <div class="col-md-6">
-              <label class="form-label">Warranty End Date</label>
-              <input type="date" class="form-control" [(ngModel)]="editForm.warrantyEndDate" name="warrantyEndDate">
-            </div>
-
-            <!-- Commissioning Date -->
-            <div class="col-md-6">
-              <label class="form-label">Commissioning Date</label>
-              <input type="date" class="form-control" [(ngModel)]="editForm.commissioningDate" name="commissioningDate">
+            <!-- Tab 4: Procurement & Warranty -->
+            <div *ngIf="editTab === 4" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Commissioning Date</label>
+                <input type="date" class="form-control" [(ngModel)]="editForm.commissioningDate" name="commissioningDate">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Procurement Date</label>
+                <input type="date" class="form-control" [(ngModel)]="editForm.procurementDate" name="procurementDate">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Procurement Cost</label>
+                <input type="number" class="form-control" [(ngModel)]="editForm.procurementCost" name="procurementCost">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Vendor</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.vendor" name="vendor">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Warranty Start Date</label>
+                <input type="date" class="form-control" [(ngModel)]="editForm.warrantyStartDate" name="warrantyStartDate">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Warranty End Date</label>
+                <input type="date" class="form-control" [(ngModel)]="editForm.warrantyEndDate" name="warrantyEndDate">
+              </div>
             </div>
           </div>
 
