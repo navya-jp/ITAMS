@@ -114,7 +114,7 @@ export class Assets implements OnInit {
   ];
   
   placingOptions = ['Lane Area', 'Booth Area', 'Plaza Area', 'Server Room', 'Control Room', 'Admin Building'];
-  assetTypes = ['Hardware', 'Software', 'Digital'];
+  assetTypes = ['Hardware', 'Software'];
 
   // Validation
   validationErrors: { [key: string]: string } = {};
