@@ -147,14 +147,15 @@ public class UserService : IUserService
             throw new InvalidOperationException("Role not found");
         }
 
-        // SuperAdmins don't need project assignment (they have access to all projects)
-        // For other roles, projectId is required
+        // SuperAdmins and Auditors don't need project assignment
+        // SuperAdmins have access to all projects
+        // Auditors have read-only access to all projects
         int? finalProjectId = null;
-        if (role.Name != "Super Admin") // Note: Role name has a space
+        if (role.Name != "Super Admin" && role.Name != "Auditor")
         {
             if (!request.ProjectId.HasValue || request.ProjectId.Value == 0)
             {
-                throw new InvalidOperationException("Project assignment is required for non-SuperAdmin users");
+                throw new InvalidOperationException("Project assignment is required for this role");
             }
             finalProjectId = request.ProjectId.Value;
         }

@@ -123,7 +123,12 @@ public class UsersController : BaseController
                 LastName = createUserDto.LastName,
                 RoleId = createUserDto.RoleId,
                 Password = createUserDto.Password,
-                MustChangePassword = createUserDto.MustChangePassword
+                MustChangePassword = createUserDto.MustChangePassword,
+                ProjectId = createUserDto.ProjectId,
+                RestrictedRegion = createUserDto.RestrictedRegion,
+                RestrictedState = createUserDto.RestrictedState,
+                RestrictedPlaza = createUserDto.RestrictedPlaza,
+                RestrictedOffice = createUserDto.RestrictedOffice
             };
 
             var user = await _userService.CreateUserAsync(request);
