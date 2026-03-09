@@ -582,11 +582,12 @@ export class Users implements OnInit {
     // Convert roleId and projectId to numbers (HTML forms return strings)
     this.createForm.roleId = Number(this.createForm.roleId);
     
-    // SuperAdmins don't need project assignment
-    if (this.isSuperAdminRole(this.createForm.roleId)) {
-      this.createForm.projectId = 0; // Set to 0 for superadmins
-    } else if (this.createForm.projectId) {
-      this.createForm.projectId = Number(this.createForm.projectId);
+    // SuperAdmins and Auditors don't need project assignment
+    if (this.isSuperAdminRole(this.createForm.roleId) || this.isAuditorRole(this.createForm.roleId)) {
+      this.createForm.projectId = 0; // Set to 0 for superadmins and auditors
+    } else {
+      // Always convert projectId to number for other roles
+      this.createForm.projectId = Number(this.createForm.projectId) || 0;
     }
     
     console.log('Creating user with data:', JSON.stringify(this.createForm)); // Debug log
@@ -834,7 +835,8 @@ export class Users implements OnInit {
 
   isFormValid(): boolean {
     const isSuperAdmin = this.isSuperAdminRole(this.createForm.roleId);
-    const projectValid = isSuperAdmin || (this.createForm.projectId !== undefined && this.createForm.projectId > 0);
+    const isAuditor = this.isAuditorRole(this.createForm.roleId);
+    const projectValid = isSuperAdmin || isAuditor || (this.createForm.projectId !== undefined && this.createForm.projectId > 0);
     
     return this.createForm.username.length >= 3 &&
            this.isUsernameValid &&
@@ -857,6 +859,12 @@ export class Users implements OnInit {
     if (!roleId) return false;
     const role = this.roles.find(r => r.id === roleId);
     return role ? (role.name === 'SuperAdmin' || role.name === 'Super Admin') : false;
+  }
+
+  isAuditorRole(roleId: number | undefined): boolean {
+    if (!roleId) return false;
+    const role = this.roles.find(r => r.id === roleId);
+    return role ? role.name === 'Auditor' : false;
   }
 
   clearMessages() {
