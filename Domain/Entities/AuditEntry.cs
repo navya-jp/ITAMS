@@ -26,9 +26,6 @@ public class AuditEntry
     [StringLength(50)]
     public string UserIdRef { get; set; } = string.Empty; // Alternate key reference
     
-    [Required]
-    public string UserName { get; set; } = string.Empty;
-    
     public string? IpAddress { get; set; }
     
     public string? UserAgent { get; set; }

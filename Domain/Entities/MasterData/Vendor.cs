@@ -42,4 +42,7 @@ public class Vendor
     public DateTime? UpdatedAt { get; set; }
     
     public int? UpdatedBy { get; set; }
+
+    // Navigation properties
+    public virtual ICollection<Asset> Assets { get; set; } = new List<Asset>();
 }

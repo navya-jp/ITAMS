@@ -69,7 +69,8 @@ namespace ITAMS.Services
             {
                 // Find ACTIVE audit record
                 var activeAudit = await context.LoginAudits
-                    .Where(a => a.UserId == user.Id && a.Status == "ACTIVE")
+                    .Include(a => a.SessionStatus)
+                    .Where(a => a.UserId == user.Id && a.SessionStatus!.Name == "ACTIVE")
                     .OrderByDescending(a => a.LoginTime)
                     .FirstOrDefaultAsync();
 
@@ -84,7 +85,11 @@ namespace ITAMS.Services
                 // Check for SESSION_TIMEOUT first (using dynamic timeout from settings)
                 if (sessionDuration.TotalMinutes >= sessionTimeoutMinutes)
                 {
-                    activeAudit.Status = "SESSION_TIMEOUT";
+                    var timeoutStatus = await context.SessionStatuses.FirstOrDefaultAsync(s => s.Name == "SESSION_TIMEOUT");
+                    if (timeoutStatus != null)
+                    {
+                        activeAudit.SessionStatusId = timeoutStatus.Id;
+                    }
                     activeAudit.LogoutTime = now;
                     
                     user.ActiveSessionId = null;
@@ -99,7 +104,11 @@ namespace ITAMS.Services
                 // Check for FORCED_LOGOUT (browser closed - no heartbeat for 2+ minutes)
                 else if (timeSinceLastHeartbeat.TotalMinutes >= 2)
                 {
-                    activeAudit.Status = "FORCED_LOGOUT";
+                    var logoutStatus = await context.SessionStatuses.FirstOrDefaultAsync(s => s.Name == "FORCED_LOGOUT");
+                    if (logoutStatus != null)
+                    {
+                        activeAudit.SessionStatusId = logoutStatus.Id;
+                    }
                     activeAudit.LogoutTime = now;
                     
                     user.ActiveSessionId = null;

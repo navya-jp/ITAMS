@@ -36,4 +36,5 @@ public class AssetType
     public virtual AssetCategory Category { get; set; } = null!;
     public virtual ICollection<AssetSubType> SubTypes { get; set; } = new List<AssetSubType>();
     public virtual ICollection<TypeFieldMapping> FieldMappings { get; set; } = new List<TypeFieldMapping>();
+    public virtual ICollection<Asset> Assets { get; set; } = new List<Asset>();
 }

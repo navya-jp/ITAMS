@@ -26,6 +26,57 @@ public class AssetsController : BaseController
         _bulkUploadService = bulkUploadService;
     }
 
+    private AssetDto MapAssetToDto(Asset a)
+    {
+        return new AssetDto
+        {
+            Id = a.Id,
+            AssetId = a.AssetId,
+            AssetTag = a.AssetTag,
+            ProjectId = a.ProjectId,
+            ProjectName = a.Project?.Name,
+            LocationId = a.LocationId,
+            LocationName = a.Location?.Name,
+            Region = a.Region,
+            State = a.State,
+            Site = a.Site,
+            PlazaName = a.PlazaName,
+            LocationText = a.LocationText,
+            Department = a.Department,
+            Classification = a.Classification?.Name,
+            OSType = a.OperatingSystem?.Name,
+            OSVersion = a.OSVersion,
+            DBType = a.DatabaseType?.Name,
+            DBVersion = a.DBVersion,
+            IPAddress = a.IPAddress,
+            AssignedUserText = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
+            UserRole = a.AssignedUser?.Role?.Name,
+            ProcuredBy = a.ProcuredBy,
+            PatchStatus = a.PatchStatus?.Name,
+            USBBlockingStatus = a.USBBlockingStatus?.Name,
+            Remarks = a.Remarks,
+            UsageCategory = a.UsageCategory.ToString(),
+            AssetType = a.AssetType?.TypeName,
+            SubType = a.SubType?.SubTypeName,
+            Make = a.Make,
+            Model = a.Model,
+            SerialNumber = a.SerialNumber,
+            ProcurementDate = a.ProcurementDate,
+            ProcurementCost = a.ProcurementCost,
+            Vendor = a.Vendor?.VendorName,
+            WarrantyStartDate = a.WarrantyStartDate,
+            WarrantyEndDate = a.WarrantyEndDate,
+            CommissioningDate = a.CommissioningDate,
+            Status = a.AssetStatus?.StatusName,
+            Placing = a.Placing?.Name,
+            AssignedUserId = a.AssignedUserId,
+            AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
+            AssignedUserRole = a.AssignedUser?.Role?.Name,
+            CreatedAt = a.CreatedAt,
+            UpdatedAt = a.UpdatedAt
+        };
+    }
+
     // GET: api/assets
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AssetDto>>> GetAssets()
@@ -36,55 +87,21 @@ public class AssetsController : BaseController
                 .Include(a => a.Project)
                 .Include(a => a.Location)
                 .Include(a => a.AssignedUser)
-                .Select(a => new AssetDto
-                {
-                    Id = a.Id,
-                    AssetId = a.AssetId,
-                    AssetTag = a.AssetTag,
-                    ProjectId = a.ProjectId,
-                    ProjectName = a.Project.Name,
-                    LocationId = a.LocationId,
-                    LocationName = a.Location.Name,
-                    Region = a.Region,
-                    State = a.State,
-                    Site = a.Site,
-                    PlazaName = a.PlazaName,
-                    LocationText = a.LocationText,
-                    Department = a.Department,                    Classification = a.Classification,
-                    OSType = a.OSType,
-                    OSVersion = a.OSVersion,
-                    DBType = a.DBType,
-                    DBVersion = a.DBVersion,
-                    IPAddress = a.IPAddress,
-                    AssignedUserText = a.AssignedUserText,
-                    UserRole = a.UserRole,
-                    ProcuredBy = a.ProcuredBy,
-                    PatchStatus = a.PatchStatus,
-                    USBBlockingStatus = a.USBBlockingStatus,
-                    Remarks = a.Remarks,
-                    UsageCategory = a.UsageCategory.ToString(),
-                                        AssetType = a.AssetType,
-                    SubType = a.SubType,
-                    Make = a.Make,
-                    Model = a.Model,
-                    SerialNumber = a.SerialNumber,
-                    ProcurementDate = a.ProcurementDate,
-                    ProcurementCost = a.ProcurementCost,
-                    Vendor = a.Vendor,
-                    WarrantyStartDate = a.WarrantyStartDate,
-                    WarrantyEndDate = a.WarrantyEndDate,
-                    CommissioningDate = a.CommissioningDate,
-                    Status = a.Status.ToDisplayString(),
-                    Placing = a.Placing,
-                    AssignedUserId = a.AssignedUserId,
-                    AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
-                    AssignedUserRole = a.AssignedUserRole,
-                    CreatedAt = a.CreatedAt,
-                    UpdatedAt = a.UpdatedAt
-                })
+                .ThenInclude(u => u.Role)
+                .Include(a => a.AssetType)
+                .Include(a => a.SubType)
+                .Include(a => a.Vendor)
+                .Include(a => a.AssetStatus)
+                .Include(a => a.Classification)
+                .Include(a => a.OperatingSystem)
+                .Include(a => a.DatabaseType)
+                .Include(a => a.PatchStatus)
+                .Include(a => a.USBBlockingStatus)
+                .Include(a => a.Placing)
                 .ToListAsync();
 
-            return Ok(assets);
+            var dtos = assets.Select(MapAssetToDto).ToList();
+            return Ok(dtos);
         }
         catch (Exception ex)
         {
@@ -105,132 +122,37 @@ public class AssetsController : BaseController
                 return Unauthorized(new { message = "User not authenticated" });
             }
 
-            // Get user's project
             var user = await _context.Users.FindAsync(userId.Value);
             if (user == null)
             {
                 return NotFound(new { message = "User not found" });
             }
 
-            // SuperAdmins see all assets
-            if (user.RoleId == 1) // SuperAdmin role
-            {
-                var allAssets = await _context.Assets
-                    .Include(a => a.Project)
-                    .Include(a => a.Location)
-                    .Include(a => a.AssignedUser)
-                    .Select(a => new AssetDto
-                    {
-                        Id = a.Id,
-                        AssetId = a.AssetId,
-                        AssetTag = a.AssetTag,
-                        ProjectId = a.ProjectId,
-                        ProjectName = a.Project.Name,
-                        LocationId = a.LocationId,
-                        LocationName = a.Location.Name,
-                        Region = a.Region,
-                        State = a.State,
-                        Site = a.Site,
-                        PlazaName = a.PlazaName,
-                        LocationText = a.LocationText,
-                        Department = a.Department,
-                        Classification = a.Classification,
-                        OSType = a.OSType,
-                        OSVersion = a.OSVersion,
-                        DBType = a.DBType,
-                        DBVersion = a.DBVersion,
-                        IPAddress = a.IPAddress,
-                        AssignedUserText = a.AssignedUserText,
-                        UserRole = a.UserRole,
-                        ProcuredBy = a.ProcuredBy,
-                        PatchStatus = a.PatchStatus,
-                        USBBlockingStatus = a.USBBlockingStatus,
-                        Remarks = a.Remarks,
-                        UsageCategory = a.UsageCategory.ToString(),
-                        AssetType = a.AssetType,
-                        SubType = a.SubType,
-                        Make = a.Make,
-                        Model = a.Model,
-                        SerialNumber = a.SerialNumber,
-                        ProcurementDate = a.ProcurementDate,
-                        ProcurementCost = a.ProcurementCost,
-                        Vendor = a.Vendor,
-                        WarrantyStartDate = a.WarrantyStartDate,
-                        WarrantyEndDate = a.WarrantyEndDate,
-                        CommissioningDate = a.CommissioningDate,
-                        Status = a.Status.ToDisplayString(),
-                    Placing = a.Placing,
-                        AssignedUserId = a.AssignedUserId,
-                        AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
-                        AssignedUserRole = a.AssignedUserRole,
-                        CreatedAt = a.CreatedAt,
-                    UpdatedAt = a.UpdatedAt
-                })
-                    .ToListAsync();
-
-                return Ok(allAssets);
-            }
-
-            // Regular users see assets from their project
-            if (!user.ProjectId.HasValue)
-            {
-                return Ok(new List<AssetDto>()); // No project assigned
-            }
-
-            var assets = await _context.Assets
+            IQueryable<Asset> query = _context.Assets
                 .Include(a => a.Project)
                 .Include(a => a.Location)
                 .Include(a => a.AssignedUser)
-                .Where(a => a.ProjectId == user.ProjectId.Value)
-                .Select(a => new AssetDto
-                {
-                    Id = a.Id,
-                    AssetId = a.AssetId,
-                    AssetTag = a.AssetTag,
-                    ProjectId = a.ProjectId,
-                    ProjectName = a.Project.Name,
-                    LocationId = a.LocationId,
-                    LocationName = a.Location.Name,
-                    Region = a.Region,
-                    State = a.State,
-                    Site = a.Site,
-                    PlazaName = a.PlazaName,
-                    LocationText = a.LocationText,
-                    Department = a.Department,                    Classification = a.Classification,
-                    OSType = a.OSType,
-                    OSVersion = a.OSVersion,
-                    DBType = a.DBType,
-                    DBVersion = a.DBVersion,
-                    IPAddress = a.IPAddress,
-                    AssignedUserText = a.AssignedUserText,
-                    UserRole = a.UserRole,
-                    ProcuredBy = a.ProcuredBy,
-                    PatchStatus = a.PatchStatus,
-                    USBBlockingStatus = a.USBBlockingStatus,
-                    Remarks = a.Remarks,
-                    UsageCategory = a.UsageCategory.ToString(),
-                                        AssetType = a.AssetType,
-                    SubType = a.SubType,
-                    Make = a.Make,
-                    Model = a.Model,
-                    SerialNumber = a.SerialNumber,
-                    ProcurementDate = a.ProcurementDate,
-                    ProcurementCost = a.ProcurementCost,
-                    Vendor = a.Vendor,
-                    WarrantyStartDate = a.WarrantyStartDate,
-                    WarrantyEndDate = a.WarrantyEndDate,
-                    CommissioningDate = a.CommissioningDate,
-                    Status = a.Status.ToDisplayString(),
-                    Placing = a.Placing,
-                    AssignedUserId = a.AssignedUserId,
-                    AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
-                    AssignedUserRole = a.AssignedUserRole,
-                    CreatedAt = a.CreatedAt,
-                    UpdatedAt = a.UpdatedAt
-                })
-                .ToListAsync();
+                .ThenInclude(u => u.Role)
+                .Include(a => a.AssetType)
+                .Include(a => a.SubType)
+                .Include(a => a.Vendor)
+                .Include(a => a.AssetStatus)
+                .Include(a => a.Classification)
+                .Include(a => a.OperatingSystem)
+                .Include(a => a.DatabaseType)
+                .Include(a => a.PatchStatus)
+                .Include(a => a.USBBlockingStatus)
+                .Include(a => a.Placing);
 
-            return Ok(assets);
+            // SuperAdmins see all assets
+            if (user.RoleId != 1 && user.ProjectId.HasValue)
+            {
+                query = query.Where(a => a.ProjectId == user.ProjectId.Value);
+            }
+
+            var assets = await query.ToListAsync();
+            var dtos = assets.Select(MapAssetToDto).ToList();
+            return Ok(dtos);
         }
         catch (Exception ex)
         {
@@ -249,61 +171,25 @@ public class AssetsController : BaseController
                 .Include(a => a.Project)
                 .Include(a => a.Location)
                 .Include(a => a.AssignedUser)
-                .Where(a => a.Id == id)
-                .Select(a => new AssetDto
-                {
-                    Id = a.Id,
-                    AssetId = a.AssetId,
-                    AssetTag = a.AssetTag,
-                    ProjectId = a.ProjectId,
-                    ProjectName = a.Project.Name,
-                    LocationId = a.LocationId,
-                    LocationName = a.Location.Name,
-                    Region = a.Region,
-                    State = a.State,
-                    Site = a.Site,
-                    PlazaName = a.PlazaName,
-                    LocationText = a.LocationText,
-                    Department = a.Department,                    Classification = a.Classification,
-                    OSType = a.OSType,
-                    OSVersion = a.OSVersion,
-                    DBType = a.DBType,
-                    DBVersion = a.DBVersion,
-                    IPAddress = a.IPAddress,
-                    AssignedUserText = a.AssignedUserText,
-                    UserRole = a.UserRole,
-                    ProcuredBy = a.ProcuredBy,
-                    PatchStatus = a.PatchStatus,
-                    USBBlockingStatus = a.USBBlockingStatus,
-                    Remarks = a.Remarks,
-                    UsageCategory = a.UsageCategory.ToString(),
-                                        AssetType = a.AssetType,
-                    SubType = a.SubType,
-                    Make = a.Make,
-                    Model = a.Model,
-                    SerialNumber = a.SerialNumber,
-                    ProcurementDate = a.ProcurementDate,
-                    ProcurementCost = a.ProcurementCost,
-                    Vendor = a.Vendor,
-                    WarrantyStartDate = a.WarrantyStartDate,
-                    WarrantyEndDate = a.WarrantyEndDate,
-                    CommissioningDate = a.CommissioningDate,
-                    Status = a.Status.ToDisplayString(),
-                    Placing = a.Placing,
-                    AssignedUserId = a.AssignedUserId,
-                    AssignedUserName = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
-                    AssignedUserRole = a.AssignedUserRole,
-                    CreatedAt = a.CreatedAt,
-                    UpdatedAt = a.UpdatedAt
-                })
-                .FirstOrDefaultAsync();
+                .ThenInclude(u => u.Role)
+                .Include(a => a.AssetType)
+                .Include(a => a.SubType)
+                .Include(a => a.Vendor)
+                .Include(a => a.AssetStatus)
+                .Include(a => a.Classification)
+                .Include(a => a.OperatingSystem)
+                .Include(a => a.DatabaseType)
+                .Include(a => a.PatchStatus)
+                .Include(a => a.USBBlockingStatus)
+                .Include(a => a.Placing)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null)
             {
                 return NotFound(new { message = "Asset not found" });
             }
 
-            return Ok(asset);
+            return Ok(MapAssetToDto(asset));
         }
         catch (Exception ex)
         {
@@ -318,111 +204,75 @@ public class AssetsController : BaseController
     {
         try
         {
-            // Validate and parse Status
-            AssetStatus status;
-            try
-            {
-                status = AssetEnumHelpers.ParseStatusFromDisplay(createDto.Status);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = $"Invalid status: {ex.Message}" });
-            }
+            // Lookup FK values using correct property names
+            var assetType = await _context.AssetTypes.FirstOrDefaultAsync(x => x.TypeName == createDto.AssetType);
+            var subType = string.IsNullOrEmpty(createDto.SubType) ? null : 
+                await _context.AssetSubTypes.FirstOrDefaultAsync(x => x.SubTypeName == createDto.SubType);
+            var vendor = string.IsNullOrEmpty(createDto.Vendor) ? null :
+                await _context.Vendors.FirstOrDefaultAsync(x => x.VendorName == createDto.Vendor);
+            var status = await _context.AssetStatuses.FirstOrDefaultAsync(x => x.StatusName == createDto.Status);
+            var placing = await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == createDto.Placing);
 
-            // Validate Placing
-            string placing;
-            try
-            {
-                placing = AssetEnumHelpers.ValidatePlacing(createDto.Placing);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = $"Invalid placing: {ex.Message}" });
-            }
+            if (assetType == null)
+                return BadRequest(new { message = $"Asset type '{createDto.AssetType}' not found" });
+            if (status == null)
+                return BadRequest(new { message = $"Status '{createDto.Status}' not found" });
+            if (placing == null)
+                return BadRequest(new { message = $"Placing '{createDto.Placing}' not found" });
 
-            // Generate Asset ID
-            var assetId = await GenerateAssetId();
-
-            // Get Project and Location references
             var project = await _context.Projects.FindAsync(createDto.ProjectId);
             var location = await _context.Locations.FindAsync(createDto.LocationId);
 
             if (project == null)
-            {
                 return BadRequest(new { message = "Project not found" });
-            }
-
             if (location == null)
-            {
                 return BadRequest(new { message = "Location not found" });
-            }
+
+            var assetId = await GenerateAssetId();
 
             var asset = new Asset
             {
                 AssetId = assetId,
                 AssetTag = createDto.AssetTag,
                 ProjectId = createDto.ProjectId,
-                ProjectIdRef = project.ProjectId, // Use project ProjectId (alternate key)
+                ProjectIdRef = project.ProjectId,
                 LocationId = createDto.LocationId,
-                LocationIdRef = location.LocationId, // Use location alternate key (LocationId is required string)
+                LocationIdRef = location.LocationId,
                 UsageCategory = Enum.Parse<AssetUsageCategory>(createDto.UsageCategory),
-                                AssetType = createDto.AssetType,
-                SubType = createDto.SubType,
+                AssetTypeId = assetType.Id,
+                AssetSubTypeId = subType?.Id,
                 Make = createDto.Make,
                 Model = createDto.Model,
                 SerialNumber = createDto.SerialNumber,
                 ProcurementDate = createDto.ProcurementDate,
                 ProcurementCost = createDto.ProcurementCost,
-                Vendor = createDto.Vendor,
+                VendorId = vendor?.Id,
                 WarrantyStartDate = createDto.WarrantyStartDate,
                 WarrantyEndDate = createDto.WarrantyEndDate,
                 CommissioningDate = createDto.CommissioningDate,
-                Status = status,
-                Placing = placing,
+                AssetStatusId = status.Id,
+                AssetPlacingId = placing.Id,
                 AssignedUserId = createDto.AssignedUserId,
-                AssignedUserRole = createDto.AssignedUserRole,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = GetCurrentUserId() ?? 1 // Default to 1 if no user context
+                CreatedBy = GetCurrentUserId() ?? 1
             };
 
             _context.Assets.Add(asset);
             await _context.SaveChangesAsync();
 
-            // Log asset creation
-            var currentUserId = GetCurrentUserId();
-            _logger.LogInformation("Asset {AssetId} created by user {UserId}", asset.AssetId, currentUserId);
+            _logger.LogInformation("Asset {AssetId} created by user {UserId}", asset.AssetId, GetCurrentUserId());
 
-            return CreatedAtAction(nameof(GetAsset), new { id = asset.Id }, new AssetDto
-            {
-                Id = asset.Id,
-                AssetId = asset.AssetId,
-                AssetTag = asset.AssetTag,
-                ProjectId = asset.ProjectId,
-                LocationId = asset.LocationId,
-                Region = asset.Region,
-                State = asset.State,
-                Site = asset.Site,
-                PlazaName = asset.PlazaName,
-                LocationText = asset.LocationText,
-                Department = asset.Department,
-                UsageCategory = asset.UsageCategory.ToString(),
-                                AssetType = asset.AssetType,
-                SubType = asset.SubType,
-                Make = asset.Make,
-                Model = asset.Model,
-                SerialNumber = asset.SerialNumber,
-                ProcurementDate = asset.ProcurementDate,
-                ProcurementCost = asset.ProcurementCost,
-                Vendor = asset.Vendor,
-                WarrantyStartDate = asset.WarrantyStartDate,
-                WarrantyEndDate = asset.WarrantyEndDate,
-                CommissioningDate = asset.CommissioningDate,
-                Status = asset.Status.ToCanonicalString(),
-                Placing = asset.Placing,
-                AssignedUserId = asset.AssignedUserId,
-                AssignedUserRole = asset.AssignedUserRole,
-                CreatedAt = asset.CreatedAt
-            });
+            // Reload with navigation properties
+            await _context.Entry(asset).ReloadAsync();
+            await _context.Entry(asset).Reference(a => a.Project).LoadAsync();
+            await _context.Entry(asset).Reference(a => a.Location).LoadAsync();
+            await _context.Entry(asset).Reference(a => a.AssetType).LoadAsync();
+            await _context.Entry(asset).Reference(a => a.SubType).LoadAsync();
+            await _context.Entry(asset).Reference(a => a.Vendor).LoadAsync();
+            await _context.Entry(asset).Reference(a => a.AssetStatus).LoadAsync();
+            await _context.Entry(asset).Reference(a => a.Placing).LoadAsync();
+
+            return CreatedAtAction(nameof(GetAsset), new { id = asset.Id }, MapAssetToDto(asset));
         }
         catch (Exception ex)
         {
@@ -443,47 +293,61 @@ public class AssetsController : BaseController
                 return NotFound(new { message = "Asset not found" });
             }
 
-            // Update fields
-            asset.AssetTag = updateDto.AssetTag ?? asset.AssetTag;
-            asset.LocationId = updateDto.LocationId ?? asset.LocationId;
-            asset.AssetType = updateDto.AssetType ?? asset.AssetType;
-            asset.SubType = updateDto.SubType ?? asset.SubType;
-            asset.Make = updateDto.Make ?? asset.Make;
-            asset.Model = updateDto.Model ?? asset.Model;
-            asset.SerialNumber = updateDto.SerialNumber ?? asset.SerialNumber;
-            asset.ProcurementDate = updateDto.ProcurementDate ?? asset.ProcurementDate;
-            asset.ProcurementCost = updateDto.ProcurementCost ?? asset.ProcurementCost;
-            asset.Vendor = updateDto.Vendor ?? asset.Vendor;
-            asset.WarrantyStartDate = updateDto.WarrantyStartDate ?? asset.WarrantyStartDate;
-            asset.WarrantyEndDate = updateDto.WarrantyEndDate ?? asset.WarrantyEndDate;
-            asset.CommissioningDate = updateDto.CommissioningDate ?? asset.CommissioningDate;
-            
-            if (updateDto.Status != null)
+            if (!string.IsNullOrEmpty(updateDto.AssetTag))
+                asset.AssetTag = updateDto.AssetTag;
+            if (updateDto.LocationId.HasValue)
+                asset.LocationId = updateDto.LocationId.Value;
+            if (!string.IsNullOrEmpty(updateDto.AssetType))
             {
-                try
-                {
-                    asset.Status = AssetEnumHelpers.ParseStatusFromDisplay(updateDto.Status);
-                }
-                catch (ArgumentException ex)
-                {
-                    return BadRequest(new { message = $"Invalid status: {ex.Message}" });
-                }
+                var assetType = await _context.AssetTypes.FirstOrDefaultAsync(x => x.TypeName == updateDto.AssetType);
+                if (assetType != null)
+                    asset.AssetTypeId = assetType.Id;
             }
+            if (!string.IsNullOrEmpty(updateDto.SubType))
+            {
+                var subType = await _context.AssetSubTypes.FirstOrDefaultAsync(x => x.SubTypeName == updateDto.SubType);
+                if (subType != null)
+                    asset.AssetSubTypeId = subType.Id;
+            }
+            if (!string.IsNullOrEmpty(updateDto.Make))
+                asset.Make = updateDto.Make;
+            if (!string.IsNullOrEmpty(updateDto.Model))
+                asset.Model = updateDto.Model;
+            if (!string.IsNullOrEmpty(updateDto.SerialNumber))
+                asset.SerialNumber = updateDto.SerialNumber;
+            if (updateDto.ProcurementDate.HasValue)
+                asset.ProcurementDate = updateDto.ProcurementDate;
+            if (updateDto.ProcurementCost.HasValue)
+                asset.ProcurementCost = updateDto.ProcurementCost;
+            if (!string.IsNullOrEmpty(updateDto.Vendor))
+            {
+                var vendor = await _context.Vendors.FirstOrDefaultAsync(x => x.VendorName == updateDto.Vendor);
+                if (vendor != null)
+                    asset.VendorId = vendor.Id;
+            }
+            if (updateDto.WarrantyStartDate.HasValue)
+                asset.WarrantyStartDate = updateDto.WarrantyStartDate;
+            if (updateDto.WarrantyEndDate.HasValue)
+                asset.WarrantyEndDate = updateDto.WarrantyEndDate;
+            if (updateDto.CommissioningDate.HasValue)
+                asset.CommissioningDate = updateDto.CommissioningDate;
+            if (!string.IsNullOrEmpty(updateDto.Status))
+            {
+                var status = await _context.AssetStatuses.FirstOrDefaultAsync(x => x.StatusName == updateDto.Status);
+                if (status != null)
+                    asset.AssetStatusId = status.Id;
+            }
+            if (!string.IsNullOrEmpty(updateDto.Placing))
+            {
+                var placing = await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == updateDto.Placing);
+                if (placing != null)
+                    asset.AssetPlacingId = placing.Id;
+            }
+            if (updateDto.AssignedUserId.HasValue)
+                asset.AssignedUserId = updateDto.AssignedUserId;
 
-            if (updateDto.Placing != null)
-            {
-                try
-                {
-                    asset.Placing = AssetEnumHelpers.ValidatePlacing(updateDto.Placing);
-                }
-                catch (ArgumentException ex)
-                {
-                    return BadRequest(new { message = $"Invalid placing: {ex.Message}" });
-                }
-            }
-            
-            asset.AssignedUserId = updateDto.AssignedUserId ?? asset.AssignedUserId;
-            asset.AssignedUserRole = updateDto.AssignedUserRole ?? asset.AssignedUserRole;
+            asset.UpdatedAt = DateTime.UtcNow;
+            asset.UpdatedBy = GetCurrentUserId();
 
             await _context.SaveChangesAsync();
 
@@ -524,93 +388,51 @@ public class AssetsController : BaseController
         }
     }
 
-    // Helper method to generate Asset ID
-    private async Task<string> GenerateAssetId()
-    {
-        var lastAsset = await _context.Assets
-            .OrderByDescending(a => a.Id)
-            .FirstOrDefaultAsync();
-
-        if (lastAsset == null)
-        {
-            return "AST00001";
-        }
-
-        // Extract number from last asset ID (AST00001 -> 1)
-        var lastNumber = int.Parse(lastAsset.AssetId.Substring(3));
-        var newNumber = lastNumber + 1;
-
-        return $"AST{newNumber:D5}";
-    }
-
     // POST: api/assets/bulk-upload
     [HttpPost("bulk-upload")]
-    [DisableRequestSizeLimit]
-    [RequestFormLimits(MultipartBodyLengthLimit = 52428800)] // 50MB
-    public async Task<IActionResult> BulkUpload([FromForm] IFormFile file)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> BulkUpload([FromForm] IFormFile file, [FromForm] int projectId)
     {
         try
         {
-            _logger.LogWarning("=== BULK UPLOAD ENDPOINT HIT ===");
-            _logger.LogInformation("Bulk upload request received. File: {FileName}, Size: {Size}", 
-                file?.FileName ?? "null", file?.Length ?? 0);
-            
-            // Validate file
             if (file == null || file.Length == 0)
             {
-                return BadRequest(new { message = "No file uploaded" });
+                return BadRequest(new { message = "No file provided" });
             }
 
-            // Check file extension
-            var extension = Path.GetExtension(file.FileName).ToLower();
-            if (extension != ".xlsx")
-            {
-                return BadRequest(new { message = "Only .xlsx files are allowed" });
-            }
-
-            // Check file size
             if (file.Length > MaxFileSize)
             {
-                return BadRequest(new { message = $"File size exceeds maximum limit of {MaxFileSize / (1024 * 1024)}MB" });
+                return BadRequest(new { message = $"File size exceeds maximum allowed size of {MaxFileSize / (1024 * 1024)}MB" });
             }
 
-            // Get user ID
-            var userId = GetCurrentUserId();
-            if (!userId.HasValue)
+            var userId = GetCurrentUserId() ?? 1;
+            using (var stream = file.OpenReadStream())
             {
-                return Unauthorized(new { message = "User not authenticated" });
+                var result = await _bulkUploadService.ProcessAssetExcelAsync(stream, userId);
+                return Ok(result);
             }
-
-            // Process file
-            using var stream = file.OpenReadStream();
-            var result = await _bulkUploadService.ProcessAssetExcelAsync(stream, userId.Value);
-
-            return Ok(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during bulk upload");
-            return StatusCode(500, new { message = "An error occurred during upload", error = ex.Message });
+            return StatusCode(500, new { message = "Error processing bulk upload", error = ex.Message });
         }
     }
 
-    // GET: api/assets/download-template
-    [HttpGet("download-template")]
-    public IActionResult DownloadTemplate()
+    private async Task<string> GenerateAssetId()
     {
-        try
+        var lastAsset = await _context.Assets
+            .OrderByDescending(a => a.AssetId)
+            .FirstOrDefaultAsync();
+
+        if (lastAsset == null)
+            return "AST00001";
+
+        if (int.TryParse(lastAsset.AssetId.Substring(3), out int lastNumber))
         {
-            _logger.LogInformation("Template download requested");
-            var fileBytes = _bulkUploadService.GenerateSampleTemplate();
-            var fileName = $"Asset_Upload_Template_{DateTime.Now:yyyyMMdd}.xlsx";
-            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            return $"AST{(lastNumber + 1):D5}";
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating template");
-            return StatusCode(500, new { message = "Error generating template" });
-        }
+
+        return "AST00001";
     }
 }
-
-

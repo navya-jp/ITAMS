@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ITAMS.Domain.Entities.MasterData;
 
 namespace ITAMS.Domain.Entities;
 
@@ -7,10 +8,6 @@ public class LoginAudit
     public int Id { get; set; }
     
     public int UserId { get; set; }
-    
-    [Required]
-    [StringLength(100)]
-    public string Username { get; set; } = string.Empty;
     
     [Required]
     public DateTime LoginTime { get; set; } = DateTime.UtcNow;
@@ -29,9 +26,10 @@ public class LoginAudit
     [StringLength(500)]
     public string? SessionId { get; set; }
     
-    [StringLength(50)]
-    public string Status { get; set; } = "ACTIVE"; // ACTIVE, LOGGED_OUT, SESSION_TIMEOUT, FORCED_LOGOUT
+    // NORMALIZED: Status now uses FK instead of text
+    public int? SessionStatusId { get; set; }
     
-    // Navigation property
+    // Navigation properties
     public virtual User User { get; set; } = null!;
+    public virtual SessionStatus? SessionStatus { get; set; }
 }

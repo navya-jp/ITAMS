@@ -33,7 +33,6 @@ public class AuditService : IAuditService
             NewValues = newValues,
             UserId = userId,
             UserIdRef = userIdRef,
-            UserName = userName,
             Timestamp = DateTime.UtcNow,
             IpAddress = httpContext?.Connection?.RemoteIpAddress?.ToString(),
             UserAgent = httpContext?.Request?.Headers["User-Agent"].ToString()

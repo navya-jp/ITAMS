@@ -34,4 +34,5 @@ public class AssetSubType
     
     // Navigation properties
     public virtual AssetType Type { get; set; } = null!;
+    public virtual ICollection<Asset> Assets { get; set; } = new List<Asset>();
 }

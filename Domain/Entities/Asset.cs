@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ITAMS.Domain.Entities.MasterData;
 
 namespace ITAMS.Domain.Entities;
 
@@ -27,12 +28,11 @@ public class Asset
     [Required]
     public AssetUsageCategory UsageCategory { get; set; }
     
-    [Required]
-    [StringLength(100)]
-    public string AssetType { get; set; } = string.Empty;
+    // NORMALIZED: AssetType now uses FK instead of text
+    public int? AssetTypeId { get; set; }
     
-    [StringLength(100)]
-    public string? SubType { get; set; }
+    // NORMALIZED: SubType now uses FK instead of text
+    public int? AssetSubTypeId { get; set; }
     
     [Required]
     [StringLength(100)]
@@ -49,8 +49,8 @@ public class Asset
     
     public decimal? ProcurementCost { get; set; }
     
-    [StringLength(200)]
-    public string? Vendor { get; set; }
+    // NORMALIZED: Vendor now uses FK instead of text
+    public int? VendorId { get; set; }
     
     public DateTime? WarrantyStartDate { get; set; }
     
@@ -58,15 +58,12 @@ public class Asset
     
     public DateTime? CommissioningDate { get; set; }
     
-    [Required]
-    public AssetStatus Status { get; set; } = AssetStatus.InUse;
+    // NORMALIZED: Status now uses FK instead of enum
+    public int? AssetStatusId { get; set; }
     
     public int? AssignedUserId { get; set; }
     
-    [StringLength(100)]
-    public string? AssignedUserRole { get; set; }
-    
-    // Location text fields (from Excel import - display as-is)
+    // Location text fields (from Excel import - display as-is, NOT used for queries)
     [StringLength(100)]
     public string? Region { get; set; }
     
@@ -85,18 +82,17 @@ public class Asset
     [StringLength(100)]
     public string? Department { get; set; }
     
-    // Extended asset fields
-    [StringLength(100)]
-    public string? Classification { get; set; }
+    // NORMALIZED: Classification now uses FK instead of text
+    public int? AssetClassificationId { get; set; }
     
-    [StringLength(100)]
-    public string? OSType { get; set; }
+    // NORMALIZED: OSType now uses FK instead of text
+    public int? OperatingSystemId { get; set; }
     
     [StringLength(100)]
     public string? OSVersion { get; set; }
     
-    [StringLength(100)]
-    public string? DBType { get; set; }
+    // NORMALIZED: DBType now uses FK instead of text
+    public int? DatabaseTypeId { get; set; }
     
     [StringLength(100)]
     public string? DBVersion { get; set; }
@@ -105,25 +101,18 @@ public class Asset
     public string? IPAddress { get; set; }
     
     [StringLength(200)]
-    public string? AssignedUserText { get; set; }
-    
-    [StringLength(100)]
-    public string? UserRole { get; set; }
-    
-    [StringLength(200)]
     public string? ProcuredBy { get; set; }
     
-    [StringLength(100)]
-    public string? PatchStatus { get; set; }
+    // NORMALIZED: PatchStatus now uses FK instead of text
+    public int? PatchStatusId { get; set; }
     
-    [StringLength(100)]
-    public string? USBBlockingStatus { get; set; }
+    // NORMALIZED: USBBlockingStatus now uses FK instead of text
+    public int? USBBlockingStatusId { get; set; }
     
     public string? Remarks { get; set; }
     
-    [Required]
-    [StringLength(50)]
-    public string Placing { get; set; } = string.Empty; // lane area, booth area, plaza area, server room, control room, admin building
+    // NORMALIZED: Placing now uses FK instead of text
+    public int? AssetPlacingId { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
@@ -137,108 +126,20 @@ public class Asset
     public virtual Project Project { get; set; } = null!;
     public virtual Location Location { get; set; } = null!;
     public virtual User? AssignedUser { get; set; }
+    public virtual AssetType? AssetType { get; set; }
+    public virtual AssetSubType? SubType { get; set; }
+    public virtual Vendor? Vendor { get; set; }
+    public virtual Domain.Entities.MasterData.AssetStatus? AssetStatus { get; set; }
+    public virtual AssetClassification? Classification { get; set; }
+    public virtual MasterData.OperatingSystem? OperatingSystem { get; set; }
+    public virtual DatabaseType? DatabaseType { get; set; }
+    public virtual PatchStatus? PatchStatus { get; set; }
+    public virtual USBBlockingStatus? USBBlockingStatus { get; set; }
+    public virtual AssetPlacing? Placing { get; set; }
 }
 
 public enum AssetUsageCategory
 {
     TMS = 1,
     ITNonTMS = 2
-}
-
-public enum AssetStatus
-{
-    InUse = 1,           // Canonical: "inuse"
-    Spare = 2,           // Canonical: "spare"
-    Repair = 3,          // Canonical: "repair"
-    Decommissioned = 4   // Canonical: "decommissioned"
-}
-
-// Helper class for enum conversions
-public static class AssetEnumHelpers
-{
-    // Status conversions
-    public static string ToCanonicalString(this AssetStatus status)
-    {
-        return status switch
-        {
-            AssetStatus.InUse => "inuse",
-            AssetStatus.Spare => "spare",
-            AssetStatus.Repair => "repair",
-            AssetStatus.Decommissioned => "decommissioned",
-            _ => throw new ArgumentException($"Unknown status: {status}")
-        };
-    }
-
-    public static string ToDisplayString(this AssetStatus status)
-    {
-        return status switch
-        {
-            AssetStatus.InUse => "In Use",
-            AssetStatus.Spare => "Spare",
-            AssetStatus.Repair => "Repair",
-            AssetStatus.Decommissioned => "Decommissioned",
-            _ => throw new ArgumentException($"Unknown status: {status}")
-        };
-    }
-
-    public static AssetStatus ParseStatus(string? status)
-    {
-        if (string.IsNullOrWhiteSpace(status))
-            throw new ArgumentException("Status cannot be empty");
-
-        var normalized = status.Trim().ToLower().Replace(" ", "").Replace("-", "").Replace("_", "");
-        
-        return normalized switch
-        {
-            "inuse" or "active" or "working" or "operational" or "deployed" => AssetStatus.InUse,
-            "spare" or "available" or "standby" or "reserve" => AssetStatus.Spare,
-            "repair" or "maintenance" or "underrepair" or "undermaintenance" or "faulty" or "broken" => AssetStatus.Repair,
-            "decommissioned" or "decommitioned" or "retired" or "disposed" or "scrapped" or "obsolete" => AssetStatus.Decommissioned,
-            _ => throw new ArgumentException($"Invalid status value: '{status}'. Expected: In Use, Spare, Repair, or Decommissioned")
-        };
-    }
-
-    public static AssetStatus ParseStatusFromDisplay(string? status)
-    {
-        if (string.IsNullOrWhiteSpace(status))
-            throw new ArgumentException("Status cannot be empty");
-
-        return status.Trim() switch
-        {
-            "In Use" => AssetStatus.InUse,
-            "Spare" => AssetStatus.Spare,
-            "Repair" => AssetStatus.Repair,
-            "Decommissioned" => AssetStatus.Decommissioned,
-            _ => ParseStatus(status) // Fall back to flexible parsing
-        };
-    }
-
-    // Placing validation
-    private static readonly string[] ValidPlacingValues = new[]
-    {
-        "Lane Area",
-        "Booth Area",
-        "Plaza Area",
-        "Server Room",
-        "Control Room",
-        "Admin Building"
-    };
-
-    public static string ValidatePlacing(string? placing)
-    {
-        if (string.IsNullOrWhiteSpace(placing))
-            throw new ArgumentException("Placing cannot be empty");
-
-        // Normalize to title case for comparison
-        var normalized = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(placing.Trim().ToLower());
-        
-        if (!ValidPlacingValues.Contains(normalized))
-        {
-            throw new ArgumentException($"Invalid placing value: '{placing}'. Expected one of: {string.Join(", ", ValidPlacingValues)}");
-        }
-
-        return normalized;
-    }
-
-    public static string[] GetValidPlacingValues() => ValidPlacingValues;
 }

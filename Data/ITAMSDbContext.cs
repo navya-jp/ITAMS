@@ -34,6 +34,13 @@ public class ITAMSDbContext : DbContext
     public DbSet<AssetType> AssetTypes { get; set; }
     public DbSet<AssetSubType> AssetSubTypes { get; set; }
     public DbSet<TypeFieldMapping> TypeFieldMappings { get; set; }
+    public DbSet<AssetPlacing> AssetPlacings { get; set; }
+    public DbSet<PatchStatus> PatchStatuses { get; set; }
+    public DbSet<USBBlockingStatus> USBBlockingStatuses { get; set; }
+    public DbSet<AssetClassification> AssetClassifications { get; set; }
+    public DbSet<Domain.Entities.MasterData.OperatingSystem> OperatingSystems { get; set; }
+    public DbSet<DatabaseType> DatabaseTypes { get; set; }
+    public DbSet<SessionStatus> SessionStatuses { get; set; }
     
     // Workflow entities
     public DbSet<ApprovalWorkflow> ApprovalWorkflows { get; set; }
@@ -222,10 +229,6 @@ public class ITAMSDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(50);
                 
-            entity.Property(e => e.AssetType)
-                .IsRequired()
-                .HasMaxLength(100);
-                
             entity.Property(e => e.Make)
                 .IsRequired()
                 .HasMaxLength(100);
@@ -241,10 +244,58 @@ public class ITAMSDbContext : DbContext
                 .IsRequired()
                 .HasConversion<int>();
                 
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasConversion<int>();
+            // NORMALIZED: FK relationships for lookup tables
+            entity.HasOne(e => e.AssetType)
+                .WithMany(at => at.Assets)
+                .HasForeignKey(e => e.AssetTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
                 
+            entity.HasOne(e => e.SubType)
+                .WithMany(st => st.Assets)
+                .HasForeignKey(e => e.AssetSubTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            entity.HasOne(e => e.Vendor)
+                .WithMany(v => v.Assets)
+                .HasForeignKey(e => e.VendorId)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            entity.HasOne(e => e.AssetStatus)
+                .WithMany(s => s.Assets)
+                .HasForeignKey(e => e.AssetStatusId)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            entity.HasOne(e => e.Classification)
+                .WithMany(c => c.Assets)
+                .HasForeignKey(e => e.AssetClassificationId)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            entity.HasOne(e => e.OperatingSystem)
+                .WithMany(os => os.Assets)
+                .HasForeignKey(e => e.OperatingSystemId)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            entity.HasOne(e => e.DatabaseType)
+                .WithMany(db => db.Assets)
+                .HasForeignKey(e => e.DatabaseTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            entity.HasOne(e => e.PatchStatus)
+                .WithMany(ps => ps.Assets)
+                .HasForeignKey(e => e.PatchStatusId)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            entity.HasOne(e => e.USBBlockingStatus)
+                .WithMany(ubs => ubs.Assets)
+                .HasForeignKey(e => e.USBBlockingStatusId)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            entity.HasOne(e => e.Placing)
+                .WithMany(p => p.Assets)
+                .HasForeignKey(e => e.AssetPlacingId)
+                .OnDelete(DeleteBehavior.SetNull);
+                
+            // Existing FK relationships
             entity.HasOne(e => e.Project)
                 .WithMany(p => p.Assets)
                 .HasForeignKey(e => e.ProjectId)
@@ -274,10 +325,6 @@ public class ITAMSDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(100);
                 
-            entity.Property(e => e.UserName)
-                .IsRequired()
-                .HasMaxLength(100);
-                
             entity.HasOne(e => e.User)
                 .WithMany(u => u.AuditEntries)
                 .HasForeignKey(e => e.UserId)
@@ -289,15 +336,17 @@ public class ITAMSDbContext : DbContext
         {
             entity.ToTable("LoginAudit"); // Map to singular table name
             entity.HasKey(e => e.Id);
-            
-            entity.Property(e => e.Username)
-                .IsRequired()
-                .HasMaxLength(100);
                 
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+                
+            // NORMALIZED: FK relationship for SessionStatus
+            entity.HasOne(e => e.SessionStatus)
+                .WithMany(ss => ss.LoginAudits)
+                .HasForeignKey(e => e.SessionStatusId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // SystemSetting entity configuration

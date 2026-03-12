@@ -127,13 +127,12 @@ namespace ITAMS.Controllers
                 var loginAudit = new LoginAudit
                 {
                     UserId = authenticatedUser.Id,
-                    Username = authenticatedUser.Username,
                     LoginTime = loginTime,
                     IpAddress = ipAddress,
                     BrowserType = browserType,
                     OperatingSystem = operatingSystem,
                     SessionId = sessionId,
-                    Status = "ACTIVE"
+                    SessionStatusId = (await _context.SessionStatuses.FirstOrDefaultAsync(s => s.Name == "ACTIVE"))?.Id
                 };
 
                 _context.LoginAudits.Add(loginAudit);
@@ -215,14 +214,20 @@ namespace ITAMS.Controllers
                     
                     // Find ACTIVE audit record
                     var activeAudit = await _context.LoginAudits
-                        .Where(a => a.UserId == userId && a.Status == "ACTIVE")
+                        .Include(a => a.SessionStatus)
+                        .Where(a => a.UserId == userId && a.SessionStatus!.Name == "ACTIVE")
                         .OrderByDescending(a => a.LoginTime)
                         .FirstOrDefaultAsync();
 
                     if (activeAudit != null)
                     {
                         // Use the provided logout type (SESSION_TIMEOUT or LOGGED_OUT)
-                        activeAudit.Status = logoutType == "SESSION_TIMEOUT" ? "SESSION_TIMEOUT" : "LOGGED_OUT";
+                        var statusName = logoutType == "SESSION_TIMEOUT" ? "SESSION_TIMEOUT" : "LOGGED_OUT";
+                        var status = await _context.SessionStatuses.FirstOrDefaultAsync(s => s.Name == statusName);
+                        if (status != null)
+                        {
+                            activeAudit.SessionStatusId = status.Id;
+                        }
                         activeAudit.LogoutTime = now;
                     }
 

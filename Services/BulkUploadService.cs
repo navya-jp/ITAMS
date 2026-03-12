@@ -110,7 +110,7 @@ public class BulkUploadService : IBulkUploadService
                         continue;
                     }
                     
-                    var validationError = ValidateRow(excelRow, existingAssetTags, existingSerialNumbers);
+                    var validationError = await ValidateRow(excelRow, existingAssetTags, existingSerialNumbers);
 
                     if (!string.IsNullOrEmpty(validationError))
                     {
@@ -302,7 +302,7 @@ public class BulkUploadService : IBulkUploadService
                string.IsNullOrWhiteSpace(row.Status);
     }
 
-    private string ValidateRow(AssetExcelRow row, List<string> existingAssetTags, List<string> existingSerialNumbers)
+    private async Task<string> ValidateRow(AssetExcelRow row, List<string> existingAssetTags, List<string> existingSerialNumbers)
     {
         // Required fields
         if (string.IsNullOrWhiteSpace(row.Asset_Tag))
@@ -331,25 +331,15 @@ public class BulkUploadService : IBulkUploadService
             existingSerialNumbers.Contains(row.Serial_Number.ToLower()))
             return "Serial_Number already exists";
 
-        // Status validation - strict validation using AssetEnumHelpers
-        try
-        {
-            AssetEnumHelpers.ParseStatus(row.Status);
-        }
-        catch (ArgumentException ex)
-        {
-            return $"Invalid Status: {ex.Message}";
-        }
+        // Status validation - check if status exists in database
+        var statusExists = await _context.AssetStatuses.AnyAsync(s => s.StatusName == row.Status);
+        if (!statusExists)
+            return $"Invalid Status: '{row.Status}' not found in database";
 
-                // Placing validation - strict validation
-        try
-        {
-            AssetEnumHelpers.ValidatePlacing(row.Placing);
-        }
-        catch (ArgumentException ex)
-        {
-            return $"Invalid Placing: {ex.Message}";
-        }
+        // Placing validation - check if placing exists in database
+        var placingExists = await _context.AssetPlacings.AnyAsync(p => p.Name == row.Placing);
+        if (!placingExists)
+            return $"Invalid Placing: '{row.Placing}' not found in database";
 
         // Date validation
         if (!string.IsNullOrWhiteSpace(row.Commissioning_Date) && !IsValidDate(row.Commissioning_Date))
@@ -374,28 +364,37 @@ public class BulkUploadService : IBulkUploadService
             return null;
         }
 
-        // Parse and validate status using AssetEnumHelpers
-        AssetStatus status;
-        try
-        {
-            status = AssetEnumHelpers.ParseStatus(row.Status);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogError("Failed to parse status '{Status}': {Error}", row.Status, ex.Message);
-            throw; // Re-throw to be caught by caller
-        }
+        // Lookup FK values from master tables using correct property names
+        var assetType = await _context.AssetTypes.FirstOrDefaultAsync(x => x.TypeName == row.Asset_Type);
+        var subType = string.IsNullOrEmpty(row.Sub_Type) ? null : 
+            await _context.AssetSubTypes.FirstOrDefaultAsync(x => x.SubTypeName == row.Sub_Type);
+        var status = await _context.AssetStatuses.FirstOrDefaultAsync(x => x.StatusName == row.Status);
+        var placing = await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == row.Placing);
+        var classification = string.IsNullOrEmpty(row.Asset_Classification) ? null :
+            await _context.AssetClassifications.FirstOrDefaultAsync(x => x.Name == row.Asset_Classification);
+        var osType = string.IsNullOrEmpty(row.OS_Type) ? null :
+            await _context.OperatingSystems.FirstOrDefaultAsync(x => x.Name == row.OS_Type);
+        var dbType = string.IsNullOrEmpty(row.DB_Type) ? null :
+            await _context.DatabaseTypes.FirstOrDefaultAsync(x => x.Name == row.DB_Type);
+        var patchStatus = string.IsNullOrEmpty(row.Patch_Status) ? null :
+            await _context.PatchStatuses.FirstOrDefaultAsync(x => x.Name == row.Patch_Status);
+        var usbStatus = string.IsNullOrEmpty(row.USB_Blocking_Status) ? null :
+            await _context.USBBlockingStatuses.FirstOrDefaultAsync(x => x.Name == row.USB_Blocking_Status);
 
-                // Validate placing using AssetEnumHelpers
-        string placing;
-        try
+        if (assetType == null)
         {
-            placing = AssetEnumHelpers.ValidatePlacing(row.Placing);
+            _logger.LogError("Asset type '{AssetType}' not found", row.Asset_Type);
+            throw new ArgumentException($"Asset type '{row.Asset_Type}' not found");
         }
-        catch (ArgumentException ex)
+        if (status == null)
         {
-            _logger.LogError("Failed to validate placing '{Placing}': {Error}", row.Placing, ex.Message);
-            throw; // Re-throw to be caught by caller
+            _logger.LogError("Status '{Status}' not found", row.Status);
+            throw new ArgumentException($"Status '{row.Status}' not found");
+        }
+        if (placing == null)
+        {
+            _logger.LogError("Placing '{Placing}' not found", row.Placing);
+            throw new ArgumentException($"Placing '{row.Placing}' not found");
         }
 
         return new Asset
@@ -410,35 +409,33 @@ public class BulkUploadService : IBulkUploadService
             
             // Store location data as text from Excel (display as-is)
             Region = string.IsNullOrWhiteSpace(row.Region) ? "N/A" : row.Region,
-            State = "N/A", // Not in current Excel mapping
-            Site = "N/A", // Not in current Excel mapping  
+            State = "N/A",
+            Site = "N/A",
             PlazaName = string.IsNullOrWhiteSpace(row.Plaza_Name) ? "N/A" : row.Plaza_Name,
             LocationText = string.IsNullOrWhiteSpace(row.Location) ? "N/A" : row.Location,
             Department = string.IsNullOrWhiteSpace(row.Department) ? "N/A" : row.Department,
             
-            // Extended asset fields
-            Classification = string.IsNullOrWhiteSpace(row.Asset_Classification) ? "N/A" : row.Asset_Classification,
-            OSType = string.IsNullOrWhiteSpace(row.OS_Type) ? "N/A" : row.OS_Type,
             OSVersion = string.IsNullOrWhiteSpace(row.OS_Version) ? "N/A" : row.OS_Version,
-            DBType = string.IsNullOrWhiteSpace(row.DB_Type) ? "N/A" : row.DB_Type,
             DBVersion = string.IsNullOrWhiteSpace(row.DB_Version) ? "N/A" : row.DB_Version,
             IPAddress = string.IsNullOrWhiteSpace(row.IP_Address) ? "N/A" : row.IP_Address,
-            AssignedUserText = string.IsNullOrWhiteSpace(row.Assigned_User_Name) ? "N/A" : row.Assigned_User_Name,
-            UserRole = string.IsNullOrWhiteSpace(row.User_Role) ? "N/A" : row.User_Role,
             ProcuredBy = string.IsNullOrWhiteSpace(row.Procured_By) ? "N/A" : row.Procured_By,
-            PatchStatus = string.IsNullOrWhiteSpace(row.Patch_Status) ? "N/A" : row.Patch_Status,
-            USBBlockingStatus = string.IsNullOrWhiteSpace(row.USB_Blocking_Status) ? "N/A" : row.USB_Blocking_Status,
             Remarks = string.IsNullOrWhiteSpace(row.Remarks) ? "N/A" : row.Remarks,
             
-            AssetType = row.Asset_Type,
-            SubType = row.Sub_Type,
+            // FK assignments
+            AssetTypeId = assetType.Id,
+            AssetSubTypeId = subType?.Id,
+            AssetStatusId = status.Id,
+            AssetPlacingId = placing.Id,
+            AssetClassificationId = classification?.Id,
+            OperatingSystemId = osType?.Id,
+            DatabaseTypeId = dbType?.Id,
+            PatchStatusId = patchStatus?.Id,
+            USBBlockingStatusId = usbStatus?.Id,
+            
             Make = row.Make,
             Model = row.Model,
-            UsageCategory = AssetUsageCategory.ITNonTMS, // Default
-                        Status = status,
-            Placing = placing,
+            UsageCategory = AssetUsageCategory.ITNonTMS,
             CommissioningDate = ParseDate(row.Commissioning_Date),
-            AssignedUserRole = row.User_Role,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
         };

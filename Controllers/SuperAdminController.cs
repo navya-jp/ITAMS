@@ -961,7 +961,6 @@ public class SuperAdminController : BaseController
                 OldValues = a.OldValues,
                 NewValues = a.NewValues,
                 Timestamp = a.Timestamp,
-                UserName = a.UserName,
                 IpAddress = a.IpAddress,
                 UserAgent = a.UserAgent
             });
@@ -1002,19 +1001,21 @@ public class SuperAdminController : BaseController
             }
 
             var loginAudits = await query
+                .Include(la => la.User)
+                .Include(la => la.SessionStatus)
                 .OrderByDescending(la => la.LoginTime)
                 .Take(pageSize)
                 .Select(la => new LoginAuditDto
                 {
                     Id = la.Id,
                     UserId = la.UserId,
-                    Username = la.Username,
+                    Username = la.User != null ? la.User.Username : "UNKNOWN",
                     LoginTime = la.LoginTime,
                     LogoutTime = la.LogoutTime,
                     IpAddress = la.IpAddress,
                     BrowserType = la.BrowserType,
                     OperatingSystem = la.OperatingSystem,
-                    Status = la.Status
+                    Status = la.SessionStatus != null ? la.SessionStatus.Name : "UNKNOWN"
                 })
                 .ToListAsync();
 
