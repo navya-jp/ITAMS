@@ -126,7 +126,7 @@ export class Assets implements OnInit {
   ];
   
   statuses = [
-    { value: 'InUse', label: 'In Use' },
+    { value: 'In Use', label: 'In Use' },
     { value: 'Spare', label: 'Spare' },
     { value: 'Repair', label: 'Repair' },
     { value: 'Decommissioned', label: 'Decommissioned' }

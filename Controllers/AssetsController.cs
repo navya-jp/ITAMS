@@ -98,6 +98,7 @@ public class AssetsController : BaseController
                 .Include(a => a.PatchStatus)
                 .Include(a => a.USBBlockingStatus)
                 .Include(a => a.Placing)
+                .OrderBy(a => a.AssetId)
                 .ToListAsync();
 
             var dtos = assets.Select(MapAssetToDto).ToList();
@@ -150,7 +151,7 @@ public class AssetsController : BaseController
                 query = query.Where(a => a.ProjectId == user.ProjectId.Value);
             }
 
-            var assets = await query.ToListAsync();
+            var assets = await query.OrderBy(a => a.AssetId).ToListAsync();
             var dtos = assets.Select(MapAssetToDto).ToList();
             return Ok(dtos);
         }
