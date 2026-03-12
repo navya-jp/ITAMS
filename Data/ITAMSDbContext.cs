@@ -21,6 +21,7 @@ public class ITAMSDbContext : DbContext
     public DbSet<UserProject> UserProjects { get; set; }
     public DbSet<UserProjectPermission> UserProjectPermissions { get; set; }
     public DbSet<Asset> Assets { get; set; }
+    public DbSet<SoftwareAsset> SoftwareAssets { get; set; }
     public DbSet<AuditEntry> AuditEntries { get; set; }
     public DbSet<LoginAudit> LoginAudits { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }

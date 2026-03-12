@@ -60,6 +60,8 @@ export class Assets implements OnInit {
   private baseUrl = '/api'; // Use relative URL with proxy
 
   // Form data
+  selectedAssetType: 'Hardware' | 'Software' = 'Hardware';
+  
   createForm: CreateAsset = {
     assetTag: '',
     projectId: 0,
@@ -81,6 +83,23 @@ export class Assets implements OnInit {
     placing: '',
     assignedUserId: undefined,
     assignedUserRole: ''
+  };
+
+  // Software asset form
+  softwareForm: any = {
+    softwareName: '',
+    version: '',
+    licenseKey: '',
+    licenseType: '',
+    numberOfLicenses: 1,
+    purchaseDate: undefined,
+    validityStartDate: undefined,
+    validityEndDate: undefined,
+    assetTag: '',
+    status: 'Active',
+    vendor: '',
+    publisher: '',
+    validityType: ''
   };
 
   editForm: Partial<CreateAsset> & {
@@ -111,6 +130,25 @@ export class Assets implements OnInit {
     { value: 'Spare', label: 'Spare' },
     { value: 'Repair', label: 'Repair' },
     { value: 'Decommissioned', label: 'Decommissioned' }
+  ];
+  
+  softwareStatuses = [
+    { value: 'Active', label: 'Active' },
+    { value: 'Expired', label: 'Expired' },
+    { value: 'Available', label: 'Available' }
+  ];
+
+  licenseTypes = [
+    { value: 'Subscription', label: 'Subscription' },
+    { value: 'Open Source', label: 'Open Source' },
+    { value: 'Per User', label: 'Per User' },
+    { value: 'Per Core', label: 'Per Core' },
+    { value: 'Per Device', label: 'Per Device' }
+  ];
+
+  validityTypes = [
+    { value: 'Renewable', label: 'Renewable' },
+    { value: 'Perennial', label: 'Perennial' }
   ];
   
   placingOptions = ['Lane Area', 'Booth Area', 'Plaza Area', 'Server Room', 'Control Room', 'Admin Building'];
@@ -465,17 +503,108 @@ export class Assets implements OnInit {
     return isValid;
   }
 
-  // CRUD operations
-  createAsset() {
-    if (!this.validateTab1() || !this.validateTab2()) {
-      return;
+  validateSoftwareForm(): boolean {
+    let isValid = true;
+    this.clearValidationErrors();
+
+    if (!this.softwareForm.softwareName) {
+      this.validationErrors['softwareName'] = 'Software name is required';
+      isValid = false;
     }
 
+    if (!this.softwareForm.version) {
+      this.validationErrors['version'] = 'Version is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.licenseKey) {
+      this.validationErrors['licenseKey'] = 'License key is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.licenseType) {
+      this.validationErrors['licenseType'] = 'License type is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.numberOfLicenses || this.softwareForm.numberOfLicenses <= 0) {
+      this.validationErrors['numberOfLicenses'] = 'Number of licenses must be greater than 0';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.purchaseDate) {
+      this.validationErrors['purchaseDate'] = 'Purchase date is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.validityStartDate) {
+      this.validationErrors['validityStartDate'] = 'Validity start date is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.validityEndDate) {
+      this.validationErrors['validityEndDate'] = 'Validity end date is required';
+      isValid = false;
+    }
+
+    if (this.softwareForm.validityStartDate && this.softwareForm.validityEndDate) {
+      const startDate = new Date(this.softwareForm.validityStartDate);
+      const endDate = new Date(this.softwareForm.validityEndDate);
+      if (endDate <= startDate) {
+        this.validationErrors['validityEndDate'] = 'Validity end date must be greater than start date';
+        isValid = false;
+      }
+    }
+
+    if (!this.softwareForm.assetTag) {
+      this.validationErrors['assetTag'] = 'Asset tag is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.status) {
+      this.validationErrors['status'] = 'Status is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.vendor) {
+      this.validationErrors['vendor'] = 'Vendor is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.publisher) {
+      this.validationErrors['publisher'] = 'Publisher is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.validityType) {
+      this.validationErrors['validityType'] = 'Validity type is required';
+      isValid = false;
+    }
+
+    return isValid;
+  }
+
+  // CRUD operations
+  createAsset() {
+    if (this.selectedAssetType === 'Hardware') {
+      if (!this.validateTab1() || !this.validateTab2()) {
+        return;
+      }
+      this.createHardwareAsset();
+    } else {
+      if (!this.validateSoftwareForm()) {
+        return;
+      }
+      this.createSoftwareAsset();
+    }
+  }
+
+  createHardwareAsset() {
     this.loading = true;
     this.api.createAsset(this.createForm).subscribe({
       next: (asset) => {
         this.assets.push(asset);
-        this.success = 'Asset created successfully';
+        this.success = 'Hardware asset created successfully';
         this.loading = false;
         this.closeModals();
       },
@@ -483,6 +612,23 @@ export class Assets implements OnInit {
         this.error = error.error?.message || 'Failed to create asset';
         this.loading = false;
         console.error('Error creating asset:', error);
+      }
+    });
+  }
+
+  createSoftwareAsset() {
+    this.loading = true;
+    this.api.createSoftwareAsset(this.softwareForm).subscribe({
+      next: (asset) => {
+        this.success = 'Software asset created successfully';
+        this.loading = false;
+        this.closeModals();
+        this.loadAssets();
+      },
+      error: (error) => {
+        this.error = error.error?.message || 'Failed to create software asset';
+        this.loading = false;
+        console.error('Error creating software asset:', error);
       }
     });
   }
@@ -526,6 +672,7 @@ export class Assets implements OnInit {
 
   // Utility methods
   resetCreateForm() {
+    this.selectedAssetType = 'Hardware';
     this.createForm = {
       assetTag: '',
       projectId: 0,
@@ -547,6 +694,21 @@ export class Assets implements OnInit {
       placing: '',
       assignedUserId: undefined,
       assignedUserRole: ''
+    };
+    this.softwareForm = {
+      softwareName: '',
+      version: '',
+      licenseKey: '',
+      licenseType: '',
+      numberOfLicenses: 1,
+      purchaseDate: undefined,
+      validityStartDate: undefined,
+      validityEndDate: undefined,
+      assetTag: '',
+      status: 'Active',
+      vendor: '',
+      publisher: '',
+      validityType: ''
     };
   }
 

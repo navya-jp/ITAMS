@@ -487,4 +487,25 @@ export class Api {
   deleteAsset(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/assets/${id}`, this.getAuthHeaders());
   }
+
+  // Software Assets
+  createSoftwareAsset(asset: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/softwareassets`, asset, this.getAuthHeaders());
+  }
+
+  getSoftwareAssets(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/softwareassets`, this.getAuthHeaders());
+  }
+
+  getSoftwareAsset(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/softwareassets/${id}`, this.getAuthHeaders());
+  }
+
+  updateSoftwareAsset(id: number, asset: any): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/softwareassets/${id}`, asset, this.getAuthHeaders());
+  }
+
+  deleteSoftwareAsset(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/softwareassets/${id}`, this.getAuthHeaders());
+  }
 }

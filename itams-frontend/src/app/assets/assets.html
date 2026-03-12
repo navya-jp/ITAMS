@@ -123,9 +123,23 @@
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
 
+      <!-- Asset Type Selector -->
+      <div class="px-3 pt-3 border-bottom">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Asset Type *</label>
+            <select class="form-select" [(ngModel)]="selectedAssetType">
+              <option value="Hardware">Hardware</option>
+              <option value="Software">Software</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- Tab Navigation -->
       <div class="modal-body p-0 d-flex flex-column">
-        <ul class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
+        <!-- Hardware Asset Tabs -->
+        <ul *ngIf="selectedAssetType === 'Hardware'" class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link" 
                     [class.active]="currentTab === 1"
@@ -156,16 +170,249 @@
           </li>
         </ul>
 
+        <!-- Software Asset Tabs -->
+        <div *ngIf="selectedAssetType === 'Software'" class="px-3 pt-3 mb-0">
+          <h6 class="text-muted mb-3">Software Asset Details</h6>
+        </div>
+
         <!-- Tab Content -->
         <div class="tab-content flex-grow-1 p-3" style="overflow-y: auto;">
-          <!-- Tab 1: Basic Details -->
-          <div class="tab-pane fade" [class.show]="currentTab === 1" [class.active]="currentTab === 1">
+          <!-- Hardware Asset Tabs -->
+          <ng-container *ngIf="selectedAssetType === 'Hardware'">
+            <!-- Tab 1: Basic Details -->
+            <div class="tab-pane fade" [class.show]="currentTab === 1" [class.active]="currentTab === 1">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Asset Tag *</label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="createForm.assetTag"
+                         [class.is-invalid]="hasValidationError('assetTag')"
+                         placeholder="Enter asset tag">
+                  <div *ngIf="hasValidationError('assetTag')" class="invalid-feedback">
+                    {{ getValidationError('assetTag') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Classification</label>
+                  <input type="text" class="form-control" [(ngModel)]="createForm.classification" placeholder="e.g., TMS Critical, IT General">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Status *</label>
+                  <select class="form-select" [(ngModel)]="createForm.status">
+                    <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Placing *</label>
+                  <select class="form-select" 
+                          [(ngModel)]="createForm.placing"
+                          [class.is-invalid]="hasValidationError('placing')">
+                    <option value="">Select Placing</option>
+                    <option *ngFor="let placing of placingOptions" [value]="placing">{{ placing }}</option>
+                  </select>
+                  <div *ngIf="hasValidationError('placing')" class="invalid-feedback">
+                    {{ getValidationError('placing') }}
+                  </div>
+                  <small class="form-text text-muted">Select the physical placement area of the asset</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 2: Asset Details -->
+            <div class="tab-pane fade" [class.show]="currentTab === 2" [class.active]="currentTab === 2">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Asset Type *</label>
+                  <select class="form-select" 
+                          [(ngModel)]="createForm.assetType"
+                          [class.is-invalid]="hasValidationError('assetType')">
+                    <option value="">Select Type</option>
+                    <option *ngFor="let type of assetTypes" [value]="type">{{ type }}</option>
+                  </select>
+                  <div *ngIf="hasValidationError('assetType')" class="invalid-feedback">
+                    {{ getValidationError('assetType') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Sub Type</label>
+                  <input type="text" class="form-control" [(ngModel)]="createForm.subType" placeholder="Enter sub type">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Make *</label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="createForm.make"
+                         [class.is-invalid]="hasValidationError('make')"
+                         placeholder="Enter make">
+                  <div *ngIf="hasValidationError('make')" class="invalid-feedback">
+                    {{ getValidationError('make') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Model *</label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="createForm.model"
+                         [class.is-invalid]="hasValidationError('model')"
+                         placeholder="Enter model">
+                  <div *ngIf="hasValidationError('model')" class="invalid-feedback">
+                    {{ getValidationError('model') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Serial Number</label>
+                  <input type="text" class="form-control" [(ngModel)]="createForm.serialNumber" placeholder="Enter serial number">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Vendor</label>
+                  <input type="text" class="form-control" [(ngModel)]="createForm.vendor" placeholder="Enter vendor name">
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 3: Procurement & Warranty -->
+            <div class="tab-pane fade" [class.show]="currentTab === 3" [class.active]="currentTab === 3">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Procurement Date</label>
+                  <input type="date" class="form-control" [(ngModel)]="createForm.procurementDate">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Procurement Cost</label>
+                  <input type="number" class="form-control" [(ngModel)]="createForm.procurementCost" placeholder="Enter cost">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Warranty Start Date</label>
+                  <input type="date" class="form-control" [(ngModel)]="createForm.warrantyStartDate">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Warranty End Date</label>
+                  <input type="date" class="form-control" [(ngModel)]="createForm.warrantyEndDate">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Commissioning Date</label>
+                  <input type="date" class="form-control" [(ngModel)]="createForm.commissioningDate">
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Software Asset Form -->
+          <ng-container *ngIf="selectedAssetType === 'Software'">
             <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Software Name *</label>
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="softwareForm.softwareName"
+                       [class.is-invalid]="hasValidationError('softwareName')"
+                       placeholder="Enter software name">
+                <div *ngIf="hasValidationError('softwareName')" class="invalid-feedback">
+                  {{ getValidationError('softwareName') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Version *</label>
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="softwareForm.version"
+                       [class.is-invalid]="hasValidationError('version')"
+                       placeholder="Enter version">
+                <div *ngIf="hasValidationError('version')" class="invalid-feedback">
+                  {{ getValidationError('version') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">License Key *</label>
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="softwareForm.licenseKey"
+                       [class.is-invalid]="hasValidationError('licenseKey')"
+                       placeholder="Enter license key">
+                <div *ngIf="hasValidationError('licenseKey')" class="invalid-feedback">
+                  {{ getValidationError('licenseKey') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">License Type *</label>
+                <select class="form-select" 
+                        [(ngModel)]="softwareForm.licenseType"
+                        [class.is-invalid]="hasValidationError('licenseType')">
+                  <option value="">Select License Type</option>
+                  <option *ngFor="let type of licenseTypes" [value]="type.value">{{ type.label }}</option>
+                </select>
+                <div *ngIf="hasValidationError('licenseType')" class="invalid-feedback">
+                  {{ getValidationError('licenseType') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Number of Licenses *</label>
+                <input type="number" 
+                       class="form-control" 
+                       [(ngModel)]="softwareForm.numberOfLicenses"
+                       [class.is-invalid]="hasValidationError('numberOfLicenses')"
+                       placeholder="Enter number of licenses"
+                       min="1">
+                <div *ngIf="hasValidationError('numberOfLicenses')" class="invalid-feedback">
+                  {{ getValidationError('numberOfLicenses') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Purchase Date *</label>
+                <input type="date" 
+                       class="form-control" 
+                       [(ngModel)]="softwareForm.purchaseDate"
+                       [class.is-invalid]="hasValidationError('purchaseDate')">
+                <div *ngIf="hasValidationError('purchaseDate')" class="invalid-feedback">
+                  {{ getValidationError('purchaseDate') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Validity Start Date *</label>
+                <input type="date" 
+                       class="form-control" 
+                       [(ngModel)]="softwareForm.validityStartDate"
+                       [class.is-invalid]="hasValidationError('validityStartDate')">
+                <div *ngIf="hasValidationError('validityStartDate')" class="invalid-feedback">
+                  {{ getValidationError('validityStartDate') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Validity End Date *</label>
+                <input type="date" 
+                       class="form-control" 
+                       [(ngModel)]="softwareForm.validityEndDate"
+                       [class.is-invalid]="hasValidationError('validityEndDate')">
+                <div *ngIf="hasValidationError('validityEndDate')" class="invalid-feedback">
+                  {{ getValidationError('validityEndDate') }}
+                </div>
+              </div>
+
               <div class="col-md-6">
                 <label class="form-label">Asset Tag *</label>
                 <input type="text" 
                        class="form-control" 
-                       [(ngModel)]="createForm.assetTag"
+                       [(ngModel)]="softwareForm.assetTag"
                        [class.is-invalid]="hasValidationError('assetTag')"
                        placeholder="Enter asset tag">
                 <div *ngIf="hasValidationError('assetTag')" class="invalid-feedback">
@@ -174,136 +421,79 @@
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Classification</label>
-                <input type="text" class="form-control" [(ngModel)]="createForm.classification" placeholder="e.g., TMS Critical, IT General">
-              </div>
-
-              <div class="col-md-6">
                 <label class="form-label">Status *</label>
-                <select class="form-select" [(ngModel)]="createForm.status">
-                  <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
-                </select>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Placing *</label>
                 <select class="form-select" 
-                        [(ngModel)]="createForm.placing"
-                        [class.is-invalid]="hasValidationError('placing')">
-                  <option value="">Select Placing</option>
-                  <option *ngFor="let placing of placingOptions" [value]="placing">{{ placing }}</option>
+                        [(ngModel)]="softwareForm.status"
+                        [class.is-invalid]="hasValidationError('status')">
+                  <option value="">Select Status</option>
+                  <option *ngFor="let status of softwareStatuses" [value]="status.value">{{ status.label }}</option>
                 </select>
-                <div *ngIf="hasValidationError('placing')" class="invalid-feedback">
-                  {{ getValidationError('placing') }}
-                </div>
-                <small class="form-text text-muted">Select the physical placement area of the asset</small>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tab 2: Asset Details -->
-          <div class="tab-pane fade" [class.show]="currentTab === 2" [class.active]="currentTab === 2">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Asset Type *</label>
-                <select class="form-select" 
-                        [(ngModel)]="createForm.assetType"
-                        [class.is-invalid]="hasValidationError('assetType')">
-                  <option value="">Select Type</option>
-                  <option *ngFor="let type of assetTypes" [value]="type">{{ type }}</option>
-                </select>
-                <div *ngIf="hasValidationError('assetType')" class="invalid-feedback">
-                  {{ getValidationError('assetType') }}
+                <div *ngIf="hasValidationError('status')" class="invalid-feedback">
+                  {{ getValidationError('status') }}
                 </div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Sub Type</label>
-                <input type="text" class="form-control" [(ngModel)]="createForm.subType" placeholder="Enter sub type">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Make *</label>
+                <label class="form-label">Vendor *</label>
                 <input type="text" 
                        class="form-control" 
-                       [(ngModel)]="createForm.make"
-                       [class.is-invalid]="hasValidationError('make')"
-                       placeholder="Enter make">
-                <div *ngIf="hasValidationError('make')" class="invalid-feedback">
-                  {{ getValidationError('make') }}
+                       [(ngModel)]="softwareForm.vendor"
+                       [class.is-invalid]="hasValidationError('vendor')"
+                       placeholder="Enter vendor name">
+                <div *ngIf="hasValidationError('vendor')" class="invalid-feedback">
+                  {{ getValidationError('vendor') }}
                 </div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Model *</label>
+                <label class="form-label">Publisher *</label>
                 <input type="text" 
                        class="form-control" 
-                       [(ngModel)]="createForm.model"
-                       [class.is-invalid]="hasValidationError('model')"
-                       placeholder="Enter model">
-                <div *ngIf="hasValidationError('model')" class="invalid-feedback">
-                  {{ getValidationError('model') }}
+                       [(ngModel)]="softwareForm.publisher"
+                       [class.is-invalid]="hasValidationError('publisher')"
+                       placeholder="Enter publisher name">
+                <div *ngIf="hasValidationError('publisher')" class="invalid-feedback">
+                  {{ getValidationError('publisher') }}
                 </div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label">Serial Number</label>
-                <input type="text" class="form-control" [(ngModel)]="createForm.serialNumber" placeholder="Enter serial number">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Vendor</label>
-                <input type="text" class="form-control" [(ngModel)]="createForm.vendor" placeholder="Enter vendor name">
-              </div>
-            </div>
-          </div>
-
-          <!-- Tab 3: Procurement & Warranty -->
-          <div class="tab-pane fade" [class.show]="currentTab === 3" [class.active]="currentTab === 3">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Procurement Date</label>
-                <input type="date" class="form-control" [(ngModel)]="createForm.procurementDate">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Procurement Cost</label>
-                <input type="number" class="form-control" [(ngModel)]="createForm.procurementCost" placeholder="Enter cost">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Warranty Start Date</label>
-                <input type="date" class="form-control" [(ngModel)]="createForm.warrantyStartDate">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Warranty End Date</label>
-                <input type="date" class="form-control" [(ngModel)]="createForm.warrantyEndDate">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Commissioning Date</label>
-                <input type="date" class="form-control" [(ngModel)]="createForm.commissioningDate">
+                <label class="form-label">Validity Type *</label>
+                <select class="form-select" 
+                        [(ngModel)]="softwareForm.validityType"
+                        [class.is-invalid]="hasValidationError('validityType')">
+                  <option value="">Select Validity Type</option>
+                  <option *ngFor="let type of validityTypes" [value]="type.value">{{ type.label }}</option>
+                </select>
+                <div *ngIf="hasValidationError('validityType')" class="invalid-feedback">
+                  {{ getValidationError('validityType') }}
+                </div>
               </div>
             </div>
-          </div>
+          </ng-container>
         </div>
       </div>
 
       <!-- Modal Footer -->
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-        <button *ngIf="currentTab > 1" type="button" class="btn btn-outline-primary" (click)="previousTab()">
+        <button *ngIf="selectedAssetType === 'Hardware' && currentTab > 1" type="button" class="btn btn-outline-primary" (click)="previousTab()">
           <i class="fas fa-arrow-left me-2"></i>Previous
         </button>
-        <button *ngIf="currentTab < 3" type="button" class="btn btn-primary" (click)="nextTab()">
+        <button *ngIf="selectedAssetType === 'Hardware' && currentTab < 3" type="button" class="btn btn-primary" (click)="nextTab()">
           Next<i class="fas fa-arrow-right ms-2"></i>
         </button>
-        <button *ngIf="currentTab === 3" type="button" class="btn btn-success" 
+        <button *ngIf="selectedAssetType === 'Hardware' && currentTab === 3" type="button" class="btn btn-success" 
                 [disabled]="loading" 
                 (click)="createAsset()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!loading" class="fas fa-save me-2"></i>Create Asset
+        </button>
+        <button *ngIf="selectedAssetType === 'Software'" type="button" class="btn btn-success" 
+                [disabled]="loading" 
+                (click)="createAsset()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!loading" class="fas fa-save me-2"></i>Create Software Asset
         </button>
       </div>
     </div>
