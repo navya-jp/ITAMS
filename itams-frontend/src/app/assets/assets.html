@@ -171,9 +171,37 @@
         </ul>
 
         <!-- Software Asset Tabs -->
-        <div *ngIf="selectedAssetType === 'Software'" class="px-3 pt-3 mb-0">
-          <h6 class="text-muted mb-3">Software Asset Details</h6>
-        </div>
+        <ul *ngIf="selectedAssetType === 'Software'" class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" 
+                    [class.active]="softwareTab === 1"
+                    (click)="goToSoftwareTab(1)"
+                    type="button">
+              <i class="fas fa-info-circle me-2"></i>License Details
+              <i *ngIf="isSoftwareTabValid(1)" class="fas fa-check text-success ms-2"></i>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" 
+                    [class.active]="softwareTab === 2"
+                    [class.disabled]="softwareTab < 2"
+                    (click)="goToSoftwareTab(2)"
+                    type="button">
+              <i class="fas fa-calendar me-2"></i>Validity & Dates
+              <i *ngIf="isSoftwareTabValid(2)" class="fas fa-check text-success ms-2"></i>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" 
+                    [class.active]="softwareTab === 3"
+                    [class.disabled]="softwareTab < 3"
+                    (click)="goToSoftwareTab(3)"
+                    type="button">
+              <i class="fas fa-tag me-2"></i>Asset & Publisher
+              <i *ngIf="isSoftwareTabValid(3)" class="fas fa-check text-success ms-2"></i>
+            </button>
+          </li>
+        </ul>
 
         <!-- Tab Content -->
         <div class="tab-content flex-grow-1 p-3" style="overflow-y: auto;">
@@ -312,161 +340,174 @@
 
           <!-- Software Asset Form -->
           <ng-container *ngIf="selectedAssetType === 'Software'">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Software Name *</label>
-                <input type="text" 
-                       class="form-control" 
-                       [(ngModel)]="softwareForm.softwareName"
-                       [class.is-invalid]="hasValidationError('softwareName')"
-                       placeholder="Enter software name">
-                <div *ngIf="hasValidationError('softwareName')" class="invalid-feedback">
-                  {{ getValidationError('softwareName') }}
+            <!-- Tab 1: License Details -->
+            <div class="tab-pane fade" [class.show]="softwareTab === 1" [class.active]="softwareTab === 1">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Software Name *</label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="softwareForm.softwareName"
+                         [class.is-invalid]="hasValidationError('softwareName')"
+                         placeholder="Enter software name">
+                  <div *ngIf="hasValidationError('softwareName')" class="invalid-feedback">
+                    {{ getValidationError('softwareName') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Version *</label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="softwareForm.version"
+                         [class.is-invalid]="hasValidationError('version')"
+                         placeholder="Enter version">
+                  <div *ngIf="hasValidationError('version')" class="invalid-feedback">
+                    {{ getValidationError('version') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">License Key *</label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="softwareForm.licenseKey"
+                         [class.is-invalid]="hasValidationError('licenseKey')"
+                         placeholder="Enter license key">
+                  <div *ngIf="hasValidationError('licenseKey')" class="invalid-feedback">
+                    {{ getValidationError('licenseKey') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">License Type *</label>
+                  <select class="form-select" 
+                          [(ngModel)]="softwareForm.licenseType"
+                          [class.is-invalid]="hasValidationError('licenseType')">
+                    <option value="">Select License Type</option>
+                    <option *ngFor="let type of licenseTypes" [value]="type.value">{{ type.label }}</option>
+                  </select>
+                  <div *ngIf="hasValidationError('licenseType')" class="invalid-feedback">
+                    {{ getValidationError('licenseType') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Vendor *</label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="softwareForm.vendor"
+                         [class.is-invalid]="hasValidationError('vendor')"
+                         placeholder="Enter vendor name">
+                  <div *ngIf="hasValidationError('vendor')" class="invalid-feedback">
+                    {{ getValidationError('vendor') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Publisher *</label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="softwareForm.publisher"
+                         [class.is-invalid]="hasValidationError('publisher')"
+                         placeholder="Enter publisher name">
+                  <div *ngIf="hasValidationError('publisher')" class="invalid-feedback">
+                    {{ getValidationError('publisher') }}
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div class="col-md-6">
-                <label class="form-label">Version *</label>
-                <input type="text" 
-                       class="form-control" 
-                       [(ngModel)]="softwareForm.version"
-                       [class.is-invalid]="hasValidationError('version')"
-                       placeholder="Enter version">
-                <div *ngIf="hasValidationError('version')" class="invalid-feedback">
-                  {{ getValidationError('version') }}
+            <!-- Tab 2: Validity & Dates -->
+            <div class="tab-pane fade" [class.show]="softwareTab === 2" [class.active]="softwareTab === 2">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Purchase Date *</label>
+                  <input type="date" 
+                         class="form-control" 
+                         [(ngModel)]="softwareForm.purchaseDate"
+                         [class.is-invalid]="hasValidationError('purchaseDate')">
+                  <div *ngIf="hasValidationError('purchaseDate')" class="invalid-feedback">
+                    {{ getValidationError('purchaseDate') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Number of Licenses *</label>
+                  <input type="number" 
+                         class="form-control" 
+                         [(ngModel)]="softwareForm.numberOfLicenses"
+                         [class.is-invalid]="hasValidationError('numberOfLicenses')"
+                         placeholder="Enter number of licenses"
+                         min="1">
+                  <div *ngIf="hasValidationError('numberOfLicenses')" class="invalid-feedback">
+                    {{ getValidationError('numberOfLicenses') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Validity Start Date *</label>
+                  <input type="date" 
+                         class="form-control" 
+                         [(ngModel)]="softwareForm.validityStartDate"
+                         [class.is-invalid]="hasValidationError('validityStartDate')">
+                  <div *ngIf="hasValidationError('validityStartDate')" class="invalid-feedback">
+                    {{ getValidationError('validityStartDate') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Validity End Date *</label>
+                  <input type="date" 
+                         class="form-control" 
+                         [(ngModel)]="softwareForm.validityEndDate"
+                         [class.is-invalid]="hasValidationError('validityEndDate')">
+                  <div *ngIf="hasValidationError('validityEndDate')" class="invalid-feedback">
+                    {{ getValidationError('validityEndDate') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Validity Type *</label>
+                  <select class="form-select" 
+                          [(ngModel)]="softwareForm.validityType"
+                          [class.is-invalid]="hasValidationError('validityType')">
+                    <option value="">Select Validity Type</option>
+                    <option *ngFor="let type of validityTypes" [value]="type.value">{{ type.label }}</option>
+                  </select>
+                  <div *ngIf="hasValidationError('validityType')" class="invalid-feedback">
+                    {{ getValidationError('validityType') }}
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div class="col-md-6">
-                <label class="form-label">License Key *</label>
-                <input type="text" 
-                       class="form-control" 
-                       [(ngModel)]="softwareForm.licenseKey"
-                       [class.is-invalid]="hasValidationError('licenseKey')"
-                       placeholder="Enter license key">
-                <div *ngIf="hasValidationError('licenseKey')" class="invalid-feedback">
-                  {{ getValidationError('licenseKey') }}
+            <!-- Tab 3: Asset & Publisher -->
+            <div class="tab-pane fade" [class.show]="softwareTab === 3" [class.active]="softwareTab === 3">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Asset Tag *</label>
+                  <input type="text" 
+                         class="form-control" 
+                         [(ngModel)]="softwareForm.assetTag"
+                         [class.is-invalid]="hasValidationError('assetTag')"
+                         placeholder="Enter asset tag">
+                  <div *ngIf="hasValidationError('assetTag')" class="invalid-feedback">
+                    {{ getValidationError('assetTag') }}
+                  </div>
                 </div>
-              </div>
 
-              <div class="col-md-6">
-                <label class="form-label">License Type *</label>
-                <select class="form-select" 
-                        [(ngModel)]="softwareForm.licenseType"
-                        [class.is-invalid]="hasValidationError('licenseType')">
-                  <option value="">Select License Type</option>
-                  <option *ngFor="let type of licenseTypes" [value]="type.value">{{ type.label }}</option>
-                </select>
-                <div *ngIf="hasValidationError('licenseType')" class="invalid-feedback">
-                  {{ getValidationError('licenseType') }}
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Number of Licenses *</label>
-                <input type="number" 
-                       class="form-control" 
-                       [(ngModel)]="softwareForm.numberOfLicenses"
-                       [class.is-invalid]="hasValidationError('numberOfLicenses')"
-                       placeholder="Enter number of licenses"
-                       min="1">
-                <div *ngIf="hasValidationError('numberOfLicenses')" class="invalid-feedback">
-                  {{ getValidationError('numberOfLicenses') }}
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Purchase Date *</label>
-                <input type="date" 
-                       class="form-control" 
-                       [(ngModel)]="softwareForm.purchaseDate"
-                       [class.is-invalid]="hasValidationError('purchaseDate')">
-                <div *ngIf="hasValidationError('purchaseDate')" class="invalid-feedback">
-                  {{ getValidationError('purchaseDate') }}
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Validity Start Date *</label>
-                <input type="date" 
-                       class="form-control" 
-                       [(ngModel)]="softwareForm.validityStartDate"
-                       [class.is-invalid]="hasValidationError('validityStartDate')">
-                <div *ngIf="hasValidationError('validityStartDate')" class="invalid-feedback">
-                  {{ getValidationError('validityStartDate') }}
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Validity End Date *</label>
-                <input type="date" 
-                       class="form-control" 
-                       [(ngModel)]="softwareForm.validityEndDate"
-                       [class.is-invalid]="hasValidationError('validityEndDate')">
-                <div *ngIf="hasValidationError('validityEndDate')" class="invalid-feedback">
-                  {{ getValidationError('validityEndDate') }}
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Asset Tag *</label>
-                <input type="text" 
-                       class="form-control" 
-                       [(ngModel)]="softwareForm.assetTag"
-                       [class.is-invalid]="hasValidationError('assetTag')"
-                       placeholder="Enter asset tag">
-                <div *ngIf="hasValidationError('assetTag')" class="invalid-feedback">
-                  {{ getValidationError('assetTag') }}
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Status *</label>
-                <select class="form-select" 
-                        [(ngModel)]="softwareForm.status"
-                        [class.is-invalid]="hasValidationError('status')">
-                  <option value="">Select Status</option>
-                  <option *ngFor="let status of softwareStatuses" [value]="status.value">{{ status.label }}</option>
-                </select>
-                <div *ngIf="hasValidationError('status')" class="invalid-feedback">
-                  {{ getValidationError('status') }}
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Vendor *</label>
-                <input type="text" 
-                       class="form-control" 
-                       [(ngModel)]="softwareForm.vendor"
-                       [class.is-invalid]="hasValidationError('vendor')"
-                       placeholder="Enter vendor name">
-                <div *ngIf="hasValidationError('vendor')" class="invalid-feedback">
-                  {{ getValidationError('vendor') }}
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Publisher *</label>
-                <input type="text" 
-                       class="form-control" 
-                       [(ngModel)]="softwareForm.publisher"
-                       [class.is-invalid]="hasValidationError('publisher')"
-                       placeholder="Enter publisher name">
-                <div *ngIf="hasValidationError('publisher')" class="invalid-feedback">
-                  {{ getValidationError('publisher') }}
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Validity Type *</label>
-                <select class="form-select" 
-                        [(ngModel)]="softwareForm.validityType"
-                        [class.is-invalid]="hasValidationError('validityType')">
-                  <option value="">Select Validity Type</option>
-                  <option *ngFor="let type of validityTypes" [value]="type.value">{{ type.label }}</option>
-                </select>
-                <div *ngIf="hasValidationError('validityType')" class="invalid-feedback">
-                  {{ getValidationError('validityType') }}
+                <div class="col-md-6">
+                  <label class="form-label">Status *</label>
+                  <select class="form-select" 
+                          [(ngModel)]="softwareForm.status"
+                          [class.is-invalid]="hasValidationError('status')">
+                    <option value="">Select Status</option>
+                    <option *ngFor="let status of softwareStatuses" [value]="status.value">{{ status.label }}</option>
+                  </select>
+                  <div *ngIf="hasValidationError('status')" class="invalid-feedback">
+                    {{ getValidationError('status') }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -477,6 +518,8 @@
       <!-- Modal Footer -->
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        
+        <!-- Hardware Asset Buttons -->
         <button *ngIf="selectedAssetType === 'Hardware' && currentTab > 1" type="button" class="btn btn-outline-primary" (click)="previousTab()">
           <i class="fas fa-arrow-left me-2"></i>Previous
         </button>
@@ -489,7 +532,15 @@
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!loading" class="fas fa-save me-2"></i>Create Asset
         </button>
-        <button *ngIf="selectedAssetType === 'Software'" type="button" class="btn btn-success" 
+
+        <!-- Software Asset Buttons -->
+        <button *ngIf="selectedAssetType === 'Software' && softwareTab > 1" type="button" class="btn btn-outline-primary" (click)="previousSoftwareTab()">
+          <i class="fas fa-arrow-left me-2"></i>Previous
+        </button>
+        <button *ngIf="selectedAssetType === 'Software' && softwareTab < 3" type="button" class="btn btn-primary" (click)="nextSoftwareTab()">
+          Next<i class="fas fa-arrow-right ms-2"></i>
+        </button>
+        <button *ngIf="selectedAssetType === 'Software' && softwareTab === 3" type="button" class="btn btn-success" 
                 [disabled]="loading" 
                 (click)="createAsset()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>

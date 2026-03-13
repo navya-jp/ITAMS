@@ -48,6 +48,10 @@ export class Assets implements OnInit {
   currentTab = 1;
   maxTab = 1;
   
+  // Software asset tab
+  softwareTab = 1;
+  softwareMaxTab = 1;
+  
   // View/Edit modal tabs
   viewTab = 1;
   editTab = 1;
@@ -198,6 +202,8 @@ export class Assets implements OnInit {
     this.showCreateModal = true;
     this.currentTab = 1;
     this.maxTab = 1;
+    this.softwareTab = 1;
+    this.softwareMaxTab = 1;
     this.clearMessages();
   }
 
@@ -592,7 +598,7 @@ export class Assets implements OnInit {
       }
       this.createHardwareAsset();
     } else {
-      if (!this.validateSoftwareForm()) {
+      if (!this.validateSoftwareTab1() || !this.validateSoftwareTab2() || !this.validateSoftwareForm()) {
         return;
       }
       this.createSoftwareAsset();
@@ -765,6 +771,110 @@ export class Assets implements OnInit {
 
   setEditTab(tab: number) {
     this.editTab = tab;
+  }
+
+  // Software asset tab navigation
+  goToSoftwareTab(tabNumber: number) {
+    if (tabNumber <= this.softwareMaxTab) {
+      this.softwareTab = tabNumber;
+    }
+  }
+
+  nextSoftwareTab() {
+    if (this.validateSoftwareTab(this.softwareTab)) {
+      this.softwareTab++;
+      this.softwareMaxTab = Math.max(this.softwareMaxTab, this.softwareTab);
+    }
+  }
+
+  previousSoftwareTab() {
+    if (this.softwareTab > 1) {
+      this.softwareTab--;
+    }
+  }
+
+  validateSoftwareTab(tabNumber: number): boolean {
+    this.clearValidationErrors();
+    
+    if (tabNumber === 1) {
+      return this.validateSoftwareTab1();
+    } else if (tabNumber === 2) {
+      return this.validateSoftwareTab2();
+    }
+    
+    return true;
+  }
+
+  validateSoftwareTab1(): boolean {
+    let isValid = true;
+
+    if (!this.softwareForm.softwareName) {
+      this.validationErrors['softwareName'] = 'Software name is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.version) {
+      this.validationErrors['version'] = 'Version is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.licenseKey) {
+      this.validationErrors['licenseKey'] = 'License key is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.licenseType) {
+      this.validationErrors['licenseType'] = 'License type is required';
+      isValid = false;
+    }
+
+    return isValid;
+  }
+
+  validateSoftwareTab2(): boolean {
+    let isValid = true;
+
+    if (!this.softwareForm.numberOfLicenses || this.softwareForm.numberOfLicenses <= 0) {
+      this.validationErrors['numberOfLicenses'] = 'Number of licenses must be greater than 0';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.purchaseDate) {
+      this.validationErrors['purchaseDate'] = 'Purchase date is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.validityStartDate) {
+      this.validationErrors['validityStartDate'] = 'Validity start date is required';
+      isValid = false;
+    }
+
+    if (!this.softwareForm.validityEndDate) {
+      this.validationErrors['validityEndDate'] = 'Validity end date is required';
+      isValid = false;
+    }
+
+    if (this.softwareForm.validityStartDate && this.softwareForm.validityEndDate) {
+      const startDate = new Date(this.softwareForm.validityStartDate);
+      const endDate = new Date(this.softwareForm.validityEndDate);
+      if (endDate <= startDate) {
+        this.validationErrors['validityEndDate'] = 'Validity end date must be greater than start date';
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  }
+
+  isSoftwareTabValid(tabNumber: number): boolean {
+    if (tabNumber === 1) {
+      return !!(this.softwareForm.softwareName && this.softwareForm.version && this.softwareForm.licenseKey && this.softwareForm.licenseType);
+    } else if (tabNumber === 2) {
+      return !!(this.softwareForm.numberOfLicenses && this.softwareForm.purchaseDate && this.softwareForm.validityStartDate && this.softwareForm.validityEndDate);
+    } else if (tabNumber === 3) {
+      return !!(this.softwareForm.assetTag && this.softwareForm.status && this.softwareForm.vendor && this.softwareForm.publisher && this.softwareForm.validityType);
+    }
+    return true;
   }
 
   clearValidationErrors() {
