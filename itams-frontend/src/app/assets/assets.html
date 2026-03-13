@@ -13,6 +13,26 @@
     </div>
   </div>
 
+  <!-- Tab Navigation -->
+  <ul class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" 
+              [class.active]="activeTab === 'hardware'"
+              (click)="switchTab('hardware')"
+              type="button">
+        <i class="fas fa-laptop me-2"></i>Hardware Assets
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" 
+              [class.active]="activeTab === 'software'"
+              (click)="switchTab('software')"
+              type="button">
+        <i class="fas fa-cube me-2"></i>Software Assets
+      </button>
+    </li>
+  </ul>
+
   <!-- Messages Section -->
   <div class="messages-section" *ngIf="success || error">
     <div *ngIf="success" class="alert alert-success alert-dismissible fade show m-3 mb-0" role="alert">
@@ -33,71 +53,73 @@
       </div>
     </div>
 
-    <!-- Search and Filter Row -->
-    <div *ngIf="!loading" class="row mb-3">
-      <div class="col-md-4">
-        <label class="form-label">Search Assets</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="fas fa-search"></i></span>
-          <input type="text" class="form-control" placeholder="Asset ID, Tag, Type, Make, Model..." 
-                 [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
+    <!-- Hardware Assets Tab -->
+    <ng-container *ngIf="activeTab === 'hardware'">
+      <!-- Search and Filter Row -->
+      <div *ngIf="!loading" class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Search Assets</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" placeholder="Asset ID, Tag, Type, Make, Model..." 
+                   [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Filter by Status</label>
+          <select class="form-select" [(ngModel)]="filterStatus" (ngModelChange)="onStatusFilterChange()">
+            <option value="all">All Status</option>
+            <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Filter by Type</label>
+          <select class="form-select" [(ngModel)]="filterType" (ngModelChange)="onTypeFilterChange()">
+            <option value="all">All Types</option>
+            <option *ngFor="let type of assetTypes" [value]="type">{{ type }}</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+            <i class="fas fa-times me-2"></i>Clear
+          </button>
         </div>
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Filter by Status</label>
-        <select class="form-select" [(ngModel)]="filterStatus" (ngModelChange)="onStatusFilterChange()">
-          <option value="all">All Status</option>
-          <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Filter by Type</label>
-        <select class="form-select" [(ngModel)]="filterType" (ngModelChange)="onTypeFilterChange()">
-          <option value="all">All Types</option>
-          <option *ngFor="let type of assetTypes" [value]="type">{{ type }}</option>
-        </select>
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
-          <i class="fas fa-times me-2"></i>Clear
-        </button>
-      </div>
-    </div>
 
-    <!-- Assets Table -->
-    <div *ngIf="!loading" class="table-responsive">
-      <table class="table table-hover">
-        <thead class="table-light">
-          <tr>
-            <th>Asset ID</th>
-            <th>Type</th>
-            <th>Classification</th>
-            <th>Region</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let asset of filteredAssets">
-            <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
-            <td>{{ asset.assetType }}</td>
-            <td>{{ asset.classification || 'N/A' }}</td>
-            <td>{{ asset.region || 'N/A' }}</td>
-            <td>
-              <span class="badge" 
-                    [class.bg-success]="asset.status === 'In Use'"
-                    [class.bg-info]="asset.status === 'Spare'"
-                    [class.bg-warning]="asset.status === 'Repair'"
-                    [class.bg-secondary]="asset.status === 'Decommissioned'">
-                {{ asset.status }}
-              </span>
-            </td>
-            <td>
-              <div class="btn-group btn-group-sm" role="group">
-                <button class="btn btn-outline-info" (click)="openViewModal(asset)" title="View Details">
-                  <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit Asset">
+      <!-- Hardware Assets Table -->
+      <div *ngIf="!loading" class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Asset ID</th>
+              <th>Type</th>
+              <th>Classification</th>
+              <th>Region</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let asset of filteredAssets">
+              <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
+              <td>{{ asset.assetType }}</td>
+              <td>{{ asset.classification || 'N/A' }}</td>
+              <td>{{ asset.region || 'N/A' }}</td>
+              <td>
+                <span class="badge" 
+                      [class.bg-success]="asset.status === 'In Use'"
+                      [class.bg-info]="asset.status === 'Spare'"
+                      [class.bg-warning]="asset.status === 'Repair'"
+                      [class.bg-secondary]="asset.status === 'Decommissioned'">
+                  {{ asset.status }}
+                </span>
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button class="btn btn-outline-info" (click)="openViewModal(asset)" title="View Details">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit Asset">
                   <i class="fas fa-edit"></i>
                 </button>
               </div>
@@ -111,6 +133,74 @@
         </tbody>
       </table>
     </div>
+    </ng-container>
+
+    <!-- Software Assets Tab -->
+    <ng-container *ngIf="activeTab === 'software'">
+      <!-- Search Row -->
+      <div *ngIf="!loading" class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Search Software Assets</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" placeholder="Software Name, Version, Vendor, Tag..." 
+                   (input)="searchSoftwareAssets($event.target.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Software Assets Table -->
+      <div *ngIf="!loading" class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Software Name</th>
+              <th>Version</th>
+              <th>License Type</th>
+              <th>Vendor</th>
+              <th>Status</th>
+              <th>Validity End</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let asset of filteredSoftwareAssets">
+              <td><strong class="text-primary">{{ asset.softwareName }}</strong></td>
+              <td>{{ asset.version }}</td>
+              <td>{{ asset.licenseType }}</td>
+              <td>{{ asset.vendor }}</td>
+              <td>
+                <span class="badge" 
+                      [class.bg-success]="asset.status === 'Active'"
+                      [class.bg-warning]="asset.status === 'Expired'"
+                      [class.bg-info]="asset.status === 'Available'">
+                  {{ asset.status }}
+                </span>
+              </td>
+              <td>{{ asset.validityEndDate | date:'short' }}</td>
+              <td>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button class="btn btn-outline-info" title="View Details">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-outline-secondary" title="Edit Asset">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" title="Delete Asset">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="softwareAssets.length === 0">
+              <td colspan="7" class="text-center py-4 text-muted">
+                No software assets found. <a href="#" (click)="switchTab('hardware'); openCreateModal(); $event.preventDefault()">Create your first software asset</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
   </div>
 </div>
 

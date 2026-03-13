@@ -27,12 +27,17 @@ interface BulkUploadError {
 export class Assets implements OnInit {
   assets: Asset[] = [];
   filteredAssets: Asset[] = [];
+  softwareAssets: any[] = [];
+  filteredSoftwareAssets: any[] = [];
   projects: Project[] = [];
   locations: Location[] = [];
   projectUsers: any[] = []; // Users in the selected project
   loading = false;
   error = '';
   success = '';
+
+  // Tab selection
+  activeTab: 'hardware' | 'software' = 'hardware';
 
   // Search and filter
   searchTerm = '';
@@ -170,7 +175,7 @@ export class Assets implements OnInit {
 
   loadAssets() {
     this.loading = true;
-    // Load only hardware assets for the main list
+    // Load hardware assets
     this.api.getAssets().subscribe({
       next: (assets) => {
         this.assets = assets;
@@ -182,6 +187,17 @@ export class Assets implements OnInit {
         this.error = 'Failed to load assets';
         this.loading = false;
         console.error('Error loading assets:', error);
+      }
+    });
+
+    // Load software assets
+    this.api.getSoftwareAssets().subscribe({
+      next: (assets) => {
+        this.softwareAssets = assets;
+        this.filteredSoftwareAssets = assets;
+      },
+      error: (error) => {
+        console.error('Error loading software assets:', error);
       }
     });
   }
@@ -769,6 +785,23 @@ export class Assets implements OnInit {
     this.filterStatus = 'all';
     this.filterType = 'all';
     this.applyFilters();
+  }
+
+  // Tab switching
+  switchTab(tab: 'hardware' | 'software') {
+    this.activeTab = tab;
+    this.clearMessages();
+  }
+
+  // Software assets search and filter
+  searchSoftwareAssets(term: string) {
+    this.filteredSoftwareAssets = this.softwareAssets.filter(asset =>
+      !term || 
+      asset.softwareName.toLowerCase().includes(term.toLowerCase()) ||
+      asset.version.toLowerCase().includes(term.toLowerCase()) ||
+      asset.vendor.toLowerCase().includes(term.toLowerCase()) ||
+      asset.assetTag.toLowerCase().includes(term.toLowerCase())
+    );
   }
 
   // View/Edit modal tab navigation
