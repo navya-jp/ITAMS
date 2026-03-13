@@ -108,6 +108,26 @@ public class SoftwareAssetsController : BaseController
     {
         try
         {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(createDto.SoftwareName))
+                return BadRequest(new { message = "Software name is required" });
+            if (string.IsNullOrWhiteSpace(createDto.Version))
+                return BadRequest(new { message = "Version is required" });
+            if (string.IsNullOrWhiteSpace(createDto.LicenseKey))
+                return BadRequest(new { message = "License key is required" });
+            if (string.IsNullOrWhiteSpace(createDto.LicenseType))
+                return BadRequest(new { message = "License type is required" });
+            if (string.IsNullOrWhiteSpace(createDto.AssetTag))
+                return BadRequest(new { message = "Asset tag is required" });
+            if (string.IsNullOrWhiteSpace(createDto.Status))
+                return BadRequest(new { message = "Status is required" });
+            if (string.IsNullOrWhiteSpace(createDto.Vendor))
+                return BadRequest(new { message = "Vendor is required" });
+            if (string.IsNullOrWhiteSpace(createDto.Publisher))
+                return BadRequest(new { message = "Publisher is required" });
+            if (string.IsNullOrWhiteSpace(createDto.ValidityType))
+                return BadRequest(new { message = "Validity type is required" });
+
             // Validation
             if (createDto.ValidityEndDate <= createDto.ValidityStartDate)
             {
@@ -174,7 +194,7 @@ public class SoftwareAssetsController : BaseController
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating software asset");
-            return StatusCode(500, new { message = "Error creating software asset" });
+            return StatusCode(500, new { message = "Error creating software asset: " + ex.Message });
         }
     }
 

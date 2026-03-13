@@ -632,9 +632,10 @@ export class Assets implements OnInit {
         this.loadAssets();
       },
       error: (error) => {
-        this.error = error.error?.message || 'Failed to create software asset';
+        console.error('Full error response:', error);
+        const errorMessage = error.error?.message || error.message || 'Failed to create software asset';
+        this.error = errorMessage;
         this.loading = false;
-        console.error('Error creating software asset:', error);
       }
     });
   }
