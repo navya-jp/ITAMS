@@ -108,6 +108,8 @@ public class SoftwareAssetsController : BaseController
     {
         try
         {
+            _logger.LogInformation("Received software asset creation request: {@CreateDto}", createDto);
+
             // Validate required fields
             if (string.IsNullOrWhiteSpace(createDto.SoftwareName))
                 return BadRequest(new { message = "Software name is required" });

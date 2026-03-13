@@ -624,6 +624,7 @@ export class Assets implements OnInit {
 
   createSoftwareAsset() {
     this.loading = true;
+    console.log('Sending software asset data:', this.softwareForm);
     this.api.createSoftwareAsset(this.softwareForm).subscribe({
       next: (asset) => {
         this.success = 'Software asset created successfully';
@@ -633,6 +634,7 @@ export class Assets implements OnInit {
       },
       error: (error) => {
         console.error('Full error response:', error);
+        console.error('Error details:', error.error);
         const errorMessage = error.error?.message || error.message || 'Failed to create software asset';
         this.error = errorMessage;
         this.loading = false;
