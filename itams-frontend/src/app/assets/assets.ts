@@ -170,6 +170,7 @@ export class Assets implements OnInit {
 
   loadAssets() {
     this.loading = true;
+    // Load only hardware assets for the main list
     this.api.getAssets().subscribe({
       next: (assets) => {
         this.assets = assets;
@@ -630,7 +631,10 @@ export class Assets implements OnInit {
         this.success = 'Software asset created successfully';
         this.loading = false;
         this.closeModals();
-        this.loadAssets();
+        // Reload assets after a short delay to ensure database is updated
+        setTimeout(() => {
+          this.loadAssets();
+        }, 500);
       },
       error: (error) => {
         console.error('Full error response:', error);
