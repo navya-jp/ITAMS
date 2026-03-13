@@ -154,9 +154,9 @@
         <table class="table table-hover">
           <thead class="table-light">
             <tr>
+              <th>Asset ID</th>
               <th>Software Name</th>
               <th>Version</th>
-              <th>License Type</th>
               <th>Vendor</th>
               <th>Status</th>
               <th>Validity End</th>
@@ -165,9 +165,9 @@
           </thead>
           <tbody>
             <tr *ngFor="let asset of filteredSoftwareAssets">
-              <td><strong class="text-primary">{{ asset.softwareName }}</strong></td>
+              <td><strong class="text-primary">{{ asset.assetTag }}</strong></td>
+              <td>{{ asset.softwareName }}</td>
               <td>{{ asset.version }}</td>
-              <td>{{ asset.licenseType }}</td>
               <td>{{ asset.vendor }}</td>
               <td>
                 <span class="badge" 
@@ -180,14 +180,11 @@
               <td>{{ asset.validityEndDate | date:'short' }}</td>
               <td>
                 <div class="btn-group btn-group-sm" role="group">
-                  <button class="btn btn-outline-info" title="View Details">
+                  <button class="btn btn-outline-info" (click)="openSoftwareAssetViewModal(asset)" title="View Details">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button class="btn btn-outline-secondary" title="Edit Asset">
+                  <button class="btn btn-outline-secondary" (click)="openSoftwareAssetEditModal(asset)" title="Edit Asset">
                     <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="btn btn-outline-danger" title="Delete Asset">
-                    <i class="fas fa-trash"></i>
                   </button>
                 </div>
               </td>
@@ -1050,6 +1047,243 @@
   </div>
 </div>
 
+
+<!-- Software Asset View Modal -->
+<div class="modal fade" [class.show]="showViewModal && selectedAsset && selectedAsset.softwareName" [style.display]="showViewModal && selectedAsset && selectedAsset.softwareName ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-eye me-2"></i>Software Asset Details
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body" *ngIf="selectedAsset && selectedAsset.softwareName">
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="viewTab === 1" (click)="setViewTab(1)" style="cursor: pointer;">
+              <i class="fas fa-info-circle me-1"></i>License Details
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="viewTab === 2" (click)="setViewTab(2)" style="cursor: pointer;">
+              <i class="fas fa-calendar me-1"></i>Validity & Dates
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="viewTab === 3" (click)="setViewTab(3)" style="cursor: pointer;">
+              <i class="fas fa-tag me-1"></i>Asset & Status
+            </a>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Tab 1: License Details -->
+          <div *ngIf="viewTab === 1" class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted">Software Name</label>
+              <p class="fw-bold">{{ selectedAsset.softwareName }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Version</label>
+              <p class="fw-bold">{{ selectedAsset.version }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">License Key</label>
+              <p>{{ selectedAsset.licenseKey }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">License Type</label>
+              <p>{{ selectedAsset.licenseType }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Vendor</label>
+              <p>{{ selectedAsset.vendor }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Publisher</label>
+              <p>{{ selectedAsset.publisher }}</p>
+            </div>
+          </div>
+
+          <!-- Tab 2: Validity & Dates -->
+          <div *ngIf="viewTab === 2" class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted">Purchase Date</label>
+              <p>{{ selectedAsset.purchaseDate ? (selectedAsset.purchaseDate | date:'mediumDate') : 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Number of Licenses</label>
+              <p>{{ selectedAsset.numberOfLicenses }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Validity Start Date</label>
+              <p>{{ selectedAsset.validityStartDate ? (selectedAsset.validityStartDate | date:'mediumDate') : 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Validity End Date</label>
+              <p>{{ selectedAsset.validityEndDate ? (selectedAsset.validityEndDate | date:'mediumDate') : 'N/A' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Validity Type</label>
+              <p>{{ selectedAsset.validityType }}</p>
+            </div>
+          </div>
+
+          <!-- Tab 3: Asset & Status -->
+          <div *ngIf="viewTab === 3" class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted">Asset Tag</label>
+              <p class="fw-bold">{{ selectedAsset.assetTag }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Status</label>
+              <p>
+                <span class="badge" 
+                      [class.bg-success]="selectedAsset.status === 'Active'"
+                      [class.bg-warning]="selectedAsset.status === 'Expired'"
+                      [class.bg-info]="selectedAsset.status === 'Available'">
+                  {{ selectedAsset.status }}
+                </span>
+              </p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Created At</label>
+              <p>{{ selectedAsset.createdAt | date:'medium' }}</p>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Updated At</label>
+              <p>{{ selectedAsset.updatedAt ? (selectedAsset.updatedAt | date:'medium') : 'N/A' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
+        <button type="button" class="btn btn-primary" (click)="closeModals(); openSoftwareAssetEditModal(selectedAsset!)">
+          <i class="fas fa-edit me-2"></i>Edit Asset
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Software Asset Edit Modal -->
+<div class="modal fade" [class.show]="showEditModal && selectedAsset && selectedAsset.softwareName" [style.display]="showEditModal && selectedAsset && selectedAsset.softwareName ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-edit me-2"></i>Edit Software Asset
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body" *ngIf="selectedAsset && selectedAsset.softwareName">
+        <form>
+          <!-- Tab Navigation -->
+          <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="editTab === 1" (click)="setEditTab(1)" style="cursor: pointer;">
+                <i class="fas fa-info-circle me-1"></i>License Details
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="editTab === 2" (click)="setEditTab(2)" style="cursor: pointer;">
+                <i class="fas fa-calendar me-1"></i>Validity & Dates
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="editTab === 3" (click)="setEditTab(3)" style="cursor: pointer;">
+                <i class="fas fa-tag me-1"></i>Asset & Status
+              </a>
+            </li>
+          </ul>
+
+          <!-- Tab Content -->
+          <div class="tab-content">
+            <!-- Tab 1: License Details (Read-only) -->
+            <div *ngIf="editTab === 1" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Software Name</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.softwareName" name="softwareName" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Version</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.version" name="version" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">License Key</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.licenseKey" name="licenseKey" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">License Type</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.licenseType" name="licenseType" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Vendor</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.vendor" name="vendor" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Publisher</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.publisher" name="publisher" disabled>
+              </div>
+            </div>
+
+            <!-- Tab 2: Validity & Dates (Read-only) -->
+            <div *ngIf="editTab === 2" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Purchase Date</label>
+                <input type="date" class="form-control" [(ngModel)]="editForm.purchaseDate" name="purchaseDate" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Number of Licenses</label>
+                <input type="number" class="form-control" [(ngModel)]="editForm.numberOfLicenses" name="numberOfLicenses" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Validity Start Date</label>
+                <input type="date" class="form-control" [(ngModel)]="editForm.validityStartDate" name="validityStartDate" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Validity End Date</label>
+                <input type="date" class="form-control" [(ngModel)]="editForm.validityEndDate" name="validityEndDate" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Validity Type</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.validityType" name="validityType" disabled>
+              </div>
+            </div>
+
+            <!-- Tab 3: Asset & Status (Editable) -->
+            <div *ngIf="editTab === 3" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Asset Tag</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.assetTag" name="assetTag" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status *</label>
+                <select class="form-select" [(ngModel)]="editForm.status" name="status">
+                  <option *ngFor="let status of softwareStatuses" [value]="status.value">{{ status.label }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="error" class="alert alert-danger mt-3">{{ error }}</div>
+          <div *ngIf="success" class="alert alert-success mt-3">{{ success }}</div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button type="button" class="btn btn-primary" [disabled]="loading" (click)="updateSoftwareAsset()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!loading" class="fas fa-save me-2"></i>Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Bulk Upload Modal -->
 <div class="modal fade" [class.show]="showBulkUploadModal" [style.display]="showBulkUploadModal ? 'block' : 'none'" tabindex="-1">

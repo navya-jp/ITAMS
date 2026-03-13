@@ -224,6 +224,21 @@ export class Assets implements OnInit {
     this.clearMessages();
   }
 
+  openSoftwareAssetViewModal(asset: any) {
+    this.selectedAsset = asset;
+    this.showViewModal = true;
+    this.viewTab = 1;
+    this.clearMessages();
+  }
+
+  openSoftwareAssetEditModal(asset: any) {
+    this.selectedAsset = asset;
+    this.editForm = { ...asset };
+    this.showEditModal = true;
+    this.editTab = 1;
+    this.clearMessages();
+  }
+
   openEditModal(asset: Asset) {
     this.selectedAsset = asset;
     this.editForm = {
@@ -677,6 +692,29 @@ export class Assets implements OnInit {
         this.error = error.error?.message || 'Failed to update asset';
         this.loading = false;
         console.error('Error updating asset:', error);
+      }
+    });
+  }
+
+  updateSoftwareAsset() {
+    if (!this.selectedAsset) return;
+
+    this.loading = true;
+    const updateData = {
+      status: this.editForm.status
+    };
+    
+    this.api.updateSoftwareAsset(this.selectedAsset.id, updateData).subscribe({
+      next: () => {
+        this.success = 'Software asset updated successfully';
+        this.loading = false;
+        this.closeModals();
+        this.loadAssets();
+      },
+      error: (error) => {
+        this.error = error.error?.message || 'Failed to update software asset';
+        this.loading = false;
+        console.error('Error updating software asset:', error);
       }
     });
   }
