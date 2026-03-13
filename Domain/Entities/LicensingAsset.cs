@@ -2,17 +2,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ITAMS.Domain.Entities;
 
-public class SoftwareAsset
+public class LicensingAsset
 {
     public int Id { get; set; }
     
     [Required]
     [StringLength(50)]
-    public string AssetId { get; set; } = string.Empty; // Auto-generated: ASTS00001, ASTS00002, etc.
+    public string AssetId { get; set; } = string.Empty; // Auto-generated: ASTL00001, ASTL00002, etc.
     
     [Required]
     [StringLength(200)]
-    public string SoftwareName { get; set; } = string.Empty;
+    public string LicenseName { get; set; } = string.Empty;
     
     [Required]
     [StringLength(50)]
@@ -24,7 +24,7 @@ public class SoftwareAsset
     
     [Required]
     [StringLength(50)]
-    public string LicenseType { get; set; } = string.Empty; // Subscription, Open Source, Per User, Per Core, Per Device
+    public string LicenseType { get; set; } = string.Empty; // Software License, SSL Certificate, Application License, etc.
     
     [Required]
     public int NumberOfLicenses { get; set; }

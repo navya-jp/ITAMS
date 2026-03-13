@@ -15,6 +15,9 @@ public class Asset
     [StringLength(50)]
     public string AssetTag { get; set; } = string.Empty;
     
+    // Asset Category (Hardware, Licensing, Services)
+    public int? AssetCategoryId { get; set; }
+    
     public int ProjectId { get; set; }
     
     [StringLength(50)]
@@ -136,6 +139,7 @@ public class Asset
     public virtual PatchStatus? PatchStatus { get; set; }
     public virtual USBBlockingStatus? USBBlockingStatus { get; set; }
     public virtual AssetPlacing? Placing { get; set; }
+    public virtual MasterData.AssetCategory? Category { get; set; }
 }
 
 public enum AssetUsageCategory

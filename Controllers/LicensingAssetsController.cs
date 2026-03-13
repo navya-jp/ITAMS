@@ -9,15 +9,15 @@ namespace ITAMS.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class SoftwareAssetsController : BaseController
+public class LicensingAssetsController : BaseController
 {
     private readonly ITAMSDbContext _context;
-    private readonly ILogger<SoftwareAssetsController> _logger;
+    private readonly ILogger<LicensingAssetsController> _logger;
     private readonly IAssetIdGeneratorService _assetIdGeneratorService;
 
-    public SoftwareAssetsController(
+    public LicensingAssetsController(
         ITAMSDbContext context,
-        ILogger<SoftwareAssetsController> logger,
+        ILogger<LicensingAssetsController> logger,
         IAssetIdGeneratorService assetIdGeneratorService)
     {
         _context = context;
@@ -25,19 +25,19 @@ public class SoftwareAssetsController : BaseController
         _assetIdGeneratorService = assetIdGeneratorService;
     }
 
-    // GET: api/softwareassets
+    // GET: api/licensingassets
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SoftwareAssetDto>>> GetSoftwareAssets()
+    public async Task<ActionResult<IEnumerable<LicensingAssetDto>>> GetLicensingAssets()
     {
         try
         {
-            var assets = await _context.SoftwareAssets
+            var assets = await _context.LicensingAssets
                 .OrderByDescending(a => a.CreatedAt)
-                .Select(a => new SoftwareAssetDto
+                .Select(a => new LicensingAssetDto
                 {
                     Id = a.Id,
                     AssetId = a.AssetId,
-                    SoftwareName = a.SoftwareName,
+                    LicenseName = a.LicenseName,
                     Version = a.Version,
                     LicenseKey = a.LicenseKey,
                     LicenseType = a.LicenseType,
@@ -64,19 +64,19 @@ public class SoftwareAssetsController : BaseController
         }
     }
 
-    // GET: api/softwareassets/{id}
+    // GET: api/LicensingAssets/{id}
     [HttpGet("{id}")]
-    public async Task<ActionResult<SoftwareAssetDto>> GetSoftwareAsset(int id)
+    public async Task<ActionResult<LicensingAssetDto>> GetLicensingAsset(int id)
     {
         try
         {
-            var asset = await _context.SoftwareAssets
+            var asset = await _context.LicensingAssets
                 .Where(a => a.Id == id)
-                .Select(a => new SoftwareAssetDto
+                .Select(a => new LicensingAssetDto
                 {
                     Id = a.Id,
                     AssetId = a.AssetId,
-                    SoftwareName = a.SoftwareName,
+                    LicenseName = a.LicenseName,
                     Version = a.Version,
                     LicenseKey = a.LicenseKey,
                     LicenseType = a.LicenseType,
@@ -108,16 +108,16 @@ public class SoftwareAssetsController : BaseController
         }
     }
 
-    // POST: api/softwareassets
+    // POST: api/LicensingAssets
     [HttpPost]
-    public async Task<ActionResult<SoftwareAssetDto>> CreateSoftwareAsset([FromBody] CreateSoftwareAssetDto createDto)
+    public async Task<ActionResult<LicensingAssetDto>> CreateLicensingAsset([FromBody] CreateLicensingAssetDto createDto)
     {
         try
         {
             _logger.LogInformation("Received software asset creation request: {@CreateDto}", createDto);
 
             // Validate required fields
-            if (string.IsNullOrWhiteSpace(createDto.SoftwareName))
+            if (string.IsNullOrWhiteSpace(createDto.LicenseName))
                 return BadRequest(new { message = "Software name is required" });
             if (string.IsNullOrWhiteSpace(createDto.Version))
                 return BadRequest(new { message = "Version is required" });
@@ -146,12 +146,12 @@ public class SoftwareAssetsController : BaseController
             }
 
             // Generate AssetId automatically
-            var assetId = await _assetIdGeneratorService.GenerateSoftwareAssetIdAsync();
+            var assetId = await _assetIdGeneratorService.GenerateLicensingAssetIdAsync();
 
-            var asset = new SoftwareAsset
+            var asset = new LicensingAsset
             {
                 AssetId = assetId,
-                SoftwareName = createDto.SoftwareName,
+                LicenseName = createDto.LicenseName,
                 Version = createDto.Version,
                 LicenseKey = createDto.LicenseKey,
                 LicenseType = createDto.LicenseType,
@@ -168,16 +168,16 @@ public class SoftwareAssetsController : BaseController
                 CreatedBy = GetCurrentUserId() ?? 1
             };
 
-            _context.SoftwareAssets.Add(asset);
+            _context.LicensingAssets.Add(asset);
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Software asset {AssetId} created by user {UserId}", asset.AssetId, GetCurrentUserId());
 
-            return CreatedAtAction(nameof(GetSoftwareAsset), new { id = asset.Id }, new SoftwareAssetDto
+            return CreatedAtAction(nameof(GetLicensingAsset), new { id = asset.Id }, new LicensingAssetDto
             {
                 Id = asset.Id,
                 AssetId = asset.AssetId,
-                SoftwareName = asset.SoftwareName,
+                LicenseName = asset.LicenseName,
                 Version = asset.Version,
                 LicenseKey = asset.LicenseKey,
                 LicenseType = asset.LicenseType,
@@ -200,13 +200,13 @@ public class SoftwareAssetsController : BaseController
         }
     }
 
-    // PUT: api/softwareassets/{id}
+    // PUT: api/LicensingAssets/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateSoftwareAsset(int id, [FromBody] UpdateSoftwareAssetDto updateDto)
+    public async Task<IActionResult> UpdateLicensingAsset(int id, [FromBody] UpdateLicensingAssetDto updateDto)
     {
         try
         {
-            var asset = await _context.SoftwareAssets.FindAsync(id);
+            var asset = await _context.LicensingAssets.FindAsync(id);
             if (asset == null)
             {
                 return NotFound(new { message = "Software asset not found" });
@@ -227,8 +227,8 @@ public class SoftwareAssetsController : BaseController
             }
 
             // Update fields
-            if (!string.IsNullOrEmpty(updateDto.SoftwareName))
-                asset.SoftwareName = updateDto.SoftwareName;
+            if (!string.IsNullOrEmpty(updateDto.LicenseName))
+                asset.LicenseName = updateDto.LicenseName;
             if (!string.IsNullOrEmpty(updateDto.Version))
                 asset.Version = updateDto.Version;
             if (!string.IsNullOrEmpty(updateDto.LicenseKey))
@@ -270,19 +270,19 @@ public class SoftwareAssetsController : BaseController
         }
     }
 
-    // DELETE: api/softwareassets/{id}
+    // DELETE: api/LicensingAssets/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteSoftwareAsset(int id)
+    public async Task<IActionResult> DeleteLicensingAsset(int id)
     {
         try
         {
-            var asset = await _context.SoftwareAssets.FindAsync(id);
+            var asset = await _context.LicensingAssets.FindAsync(id);
             if (asset == null)
             {
                 return NotFound(new { message = "Software asset not found" });
             }
 
-            _context.SoftwareAssets.Remove(asset);
+            _context.LicensingAssets.Remove(asset);
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Software asset {AssetTag} deleted by user {UserId}", asset.AssetTag, GetCurrentUserId());
@@ -296,3 +296,4 @@ public class SoftwareAssetsController : BaseController
         }
     }
 }
+

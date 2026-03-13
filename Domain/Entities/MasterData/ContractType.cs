@@ -2,13 +2,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ITAMS.Domain.Entities.MasterData;
 
-public class AssetCategory
+public class ContractType
 {
     public int Id { get; set; }
     
     [Required]
-    [StringLength(50)]
-    public string CategoryName { get; set; } = string.Empty; // Hardware, Licensing, Services
+    [StringLength(100)]
+    public string TypeName { get; set; } = string.Empty; // Comprehensive AMC, Non-Comprehensive AMC, Breakdown Visits Only, etc.
     
     [StringLength(500)]
     public string? Description { get; set; }

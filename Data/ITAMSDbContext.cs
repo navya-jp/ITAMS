@@ -21,7 +21,8 @@ public class ITAMSDbContext : DbContext
     public DbSet<UserProject> UserProjects { get; set; }
     public DbSet<UserProjectPermission> UserProjectPermissions { get; set; }
     public DbSet<Asset> Assets { get; set; }
-    public DbSet<SoftwareAsset> SoftwareAssets { get; set; }
+    public DbSet<LicensingAsset> LicensingAssets { get; set; }
+    public DbSet<ServiceAsset> ServiceAssets { get; set; }
     public DbSet<AuditEntry> AuditEntries { get; set; }
     public DbSet<LoginAudit> LoginAudits { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
@@ -31,7 +32,9 @@ public class ITAMSDbContext : DbContext
     public DbSet<Domain.Entities.MasterData.AssetStatus> AssetStatuses { get; set; }
     public DbSet<CriticalityLevel> CriticalityLevels { get; set; }
     public DbSet<AssetMasterField> AssetMasterFields { get; set; }
-    public DbSet<AssetCategory> AssetCategories { get; set; }
+    public DbSet<MasterData.AssetCategory> AssetCategories { get; set; }
+    public DbSet<MasterData.ServiceType> ServiceTypes { get; set; }
+    public DbSet<MasterData.ContractType> ContractTypes { get; set; }
     public DbSet<AssetType> AssetTypes { get; set; }
     public DbSet<AssetSubType> AssetSubTypes { get; set; }
     public DbSet<TypeFieldMapping> TypeFieldMappings { get; set; }
