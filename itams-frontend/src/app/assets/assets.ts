@@ -49,7 +49,7 @@ export class Assets implements OnInit {
   showEditModal = false;
   showViewModal = false;
   showBulkUploadModal = false;
-  selectedAsset: Asset | null = null;
+  selectedAsset: Asset | any = null;
   currentTab = 1;
   maxTab = 1;
   
@@ -112,6 +112,18 @@ export class Assets implements OnInit {
   };
 
   editForm: Partial<CreateAsset> & {
+    assetId?: string;
+    softwareName?: string;
+    version?: string;
+    licenseKey?: string;
+    licenseType?: string;
+    numberOfLicenses?: number;
+    purchaseDate?: Date;
+    validityStartDate?: Date;
+    validityEndDate?: Date;
+    validityType?: string;
+    vendor?: string;
+    publisher?: string;
     region?: string;
     state?: string;
     plazaName?: string;
