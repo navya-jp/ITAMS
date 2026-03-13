@@ -165,7 +165,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let asset of filteredSoftwareAssets">
-              <td><strong class="text-primary">{{ asset.assetTag }}</strong></td>
+              <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
               <td>{{ asset.softwareName }}</td>
               <td>{{ asset.version }}</td>
               <td>{{ asset.vendor }}</td>
@@ -572,18 +572,12 @@
             <!-- Tab 3: Asset & Publisher -->
             <div class="tab-pane fade" [class.show]="softwareTab === 3" [class.active]="softwareTab === 3">
               <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Asset Tag *</label>
-                  <input type="text" 
-                         class="form-control" 
-                         [(ngModel)]="softwareForm.assetTag"
-                         [class.is-invalid]="hasValidationError('assetTag')"
-                         placeholder="Enter asset tag">
-                  <div *ngIf="hasValidationError('assetTag')" class="invalid-feedback">
-                    {{ getValidationError('assetTag') }}
+                <div class="col-md-12">
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Asset ID will be auto-generated</strong> when you create this software asset.
                   </div>
                 </div>
-
                 <div class="col-md-6">
                   <label class="form-label">Status *</label>
                   <select class="form-select" 
@@ -1135,8 +1129,8 @@
           <!-- Tab 3: Asset & Status -->
           <div *ngIf="viewTab === 3" class="row g-3">
             <div class="col-md-6">
-              <label class="form-label text-muted">Asset Tag</label>
-              <p class="fw-bold">{{ selectedAsset.assetTag }}</p>
+              <label class="form-label text-muted">Asset ID</label>
+              <p class="fw-bold">{{ selectedAsset.assetId }}</p>
             </div>
             <div class="col-md-6">
               <label class="form-label text-muted">Status</label>
@@ -1258,8 +1252,8 @@
             <!-- Tab 3: Asset & Status (Editable) -->
             <div *ngIf="editTab === 3" class="row g-3">
               <div class="col-md-6">
-                <label class="form-label">Asset Tag</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.assetTag" name="assetTag" disabled>
+                <label class="form-label">Asset ID</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.assetId" name="assetId" disabled>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Status *</label>

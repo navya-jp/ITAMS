@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ITAMS.Data;
 using ITAMS.Domain.Entities;
 using ITAMS.Models;
+using ITAMS.Services;
 
 namespace ITAMS.Controllers;
 
@@ -12,13 +13,16 @@ public class SoftwareAssetsController : BaseController
 {
     private readonly ITAMSDbContext _context;
     private readonly ILogger<SoftwareAssetsController> _logger;
+    private readonly IAssetIdGeneratorService _assetIdGeneratorService;
 
     public SoftwareAssetsController(
         ITAMSDbContext context,
-        ILogger<SoftwareAssetsController> logger)
+        ILogger<SoftwareAssetsController> logger,
+        IAssetIdGeneratorService assetIdGeneratorService)
     {
         _context = context;
         _logger = logger;
+        _assetIdGeneratorService = assetIdGeneratorService;
     }
 
     // GET: api/softwareassets
@@ -32,6 +36,7 @@ public class SoftwareAssetsController : BaseController
                 .Select(a => new SoftwareAssetDto
                 {
                     Id = a.Id,
+                    AssetId = a.AssetId,
                     SoftwareName = a.SoftwareName,
                     Version = a.Version,
                     LicenseKey = a.LicenseKey,
@@ -70,6 +75,7 @@ public class SoftwareAssetsController : BaseController
                 .Select(a => new SoftwareAssetDto
                 {
                     Id = a.Id,
+                    AssetId = a.AssetId,
                     SoftwareName = a.SoftwareName,
                     Version = a.Version,
                     LicenseKey = a.LicenseKey,
@@ -119,8 +125,6 @@ public class SoftwareAssetsController : BaseController
                 return BadRequest(new { message = "License key is required" });
             if (string.IsNullOrWhiteSpace(createDto.LicenseType))
                 return BadRequest(new { message = "License type is required" });
-            if (string.IsNullOrWhiteSpace(createDto.AssetTag))
-                return BadRequest(new { message = "Asset tag is required" });
             if (string.IsNullOrWhiteSpace(createDto.Status))
                 return BadRequest(new { message = "Status is required" });
             if (string.IsNullOrWhiteSpace(createDto.Vendor))
@@ -141,17 +145,12 @@ public class SoftwareAssetsController : BaseController
                 return BadRequest(new { message = "Number of Licenses must be greater than 0" });
             }
 
-            // Check for duplicate AssetTag
-            var existingAsset = await _context.SoftwareAssets
-                .FirstOrDefaultAsync(a => a.AssetTag == createDto.AssetTag);
-
-            if (existingAsset != null)
-            {
-                return BadRequest(new { message = "Asset Tag already exists" });
-            }
+            // Generate AssetId automatically
+            var assetId = await _assetIdGeneratorService.GenerateSoftwareAssetIdAsync();
 
             var asset = new SoftwareAsset
             {
+                AssetId = assetId,
                 SoftwareName = createDto.SoftwareName,
                 Version = createDto.Version,
                 LicenseKey = createDto.LicenseKey,
@@ -163,7 +162,7 @@ public class SoftwareAssetsController : BaseController
                 ValidityType = createDto.ValidityType,
                 Vendor = createDto.Vendor,
                 Publisher = createDto.Publisher,
-                AssetTag = createDto.AssetTag,
+                AssetTag = createDto.AssetTag ?? assetId, // Use generated AssetId if not provided
                 Status = createDto.Status,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = GetCurrentUserId() ?? 1
@@ -172,11 +171,12 @@ public class SoftwareAssetsController : BaseController
             _context.SoftwareAssets.Add(asset);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Software asset {AssetTag} created by user {UserId}", asset.AssetTag, GetCurrentUserId());
+            _logger.LogInformation("Software asset {AssetId} created by user {UserId}", asset.AssetId, GetCurrentUserId());
 
             return CreatedAtAction(nameof(GetSoftwareAsset), new { id = asset.Id }, new SoftwareAssetDto
             {
                 Id = asset.Id,
+                AssetId = asset.AssetId,
                 SoftwareName = asset.SoftwareName,
                 Version = asset.Version,
                 LicenseKey = asset.LicenseKey,

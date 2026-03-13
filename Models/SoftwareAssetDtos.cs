@@ -3,6 +3,7 @@ namespace ITAMS.Models;
 public class SoftwareAssetDto
 {
     public int Id { get; set; }
+    public string AssetId { get; set; } = string.Empty;
     public string SoftwareName { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
     public string LicenseKey { get; set; } = string.Empty;
@@ -33,7 +34,7 @@ public class CreateSoftwareAssetDto
     public string ValidityType { get; set; } = string.Empty;
     public string Vendor { get; set; } = string.Empty;
     public string Publisher { get; set; } = string.Empty;
-    public string AssetTag { get; set; } = string.Empty;
+    public string? AssetTag { get; set; } // Optional - will use generated AssetId if not provided
     public string Status { get; set; } = "Active";
 }
 

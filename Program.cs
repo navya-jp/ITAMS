@@ -76,6 +76,7 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAccessControlService, AccessControlService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IBulkUploadService, BulkUploadService>();
+builder.Services.AddScoped<IAssetIdGeneratorService, AssetIdGeneratorService>();
 
 // Add RBAC services
 builder.Services.AddScoped<ITAMS.Services.RBAC.IPermissionResolver, ITAMS.Services.RBAC.PermissionResolver>();

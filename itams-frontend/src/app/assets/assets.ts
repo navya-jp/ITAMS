@@ -594,11 +594,6 @@ export class Assets implements OnInit {
       }
     }
 
-    if (!this.softwareForm.assetTag) {
-      this.validationErrors['assetTag'] = 'Asset tag is required';
-      isValid = false;
-    }
-
     if (!this.softwareForm.status) {
       this.validationErrors['status'] = 'Status is required';
       isValid = false;
@@ -838,7 +833,7 @@ export class Assets implements OnInit {
       asset.softwareName.toLowerCase().includes(term.toLowerCase()) ||
       asset.version.toLowerCase().includes(term.toLowerCase()) ||
       asset.vendor.toLowerCase().includes(term.toLowerCase()) ||
-      asset.assetTag.toLowerCase().includes(term.toLowerCase())
+      asset.assetId.toLowerCase().includes(term.toLowerCase())
     );
   }
 

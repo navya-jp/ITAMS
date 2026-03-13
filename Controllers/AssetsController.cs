@@ -423,17 +423,18 @@ public class AssetsController : BaseController
     private async Task<string> GenerateAssetId()
     {
         var lastAsset = await _context.Assets
+            .Where(a => a.AssetId.StartsWith("ASTH"))
             .OrderByDescending(a => a.AssetId)
             .FirstOrDefaultAsync();
 
         if (lastAsset == null)
-            return "AST00001";
+            return "ASTH00001";
 
-        if (int.TryParse(lastAsset.AssetId.Substring(3), out int lastNumber))
+        if (int.TryParse(lastAsset.AssetId.Substring(4), out int lastNumber))
         {
-            return $"AST{(lastNumber + 1):D5}";
+            return $"ASTH{(lastNumber + 1):D5}";
         }
 
-        return "AST00001";
+        return "ASTH00001";
     }
 }

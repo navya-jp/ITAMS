@@ -7,6 +7,10 @@ public class SoftwareAsset
     public int Id { get; set; }
     
     [Required]
+    [StringLength(50)]
+    public string AssetId { get; set; } = string.Empty; // Auto-generated: ASTS00001, ASTS00002, etc.
+    
+    [Required]
     [StringLength(200)]
     public string SoftwareName { get; set; } = string.Empty;
     
