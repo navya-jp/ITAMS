@@ -37,7 +37,7 @@ export class Assets implements OnInit {
   success = '';
 
   // Tab selection
-  activeTab: 'hardware' | 'software' = 'hardware';
+  activeTab: 'hardware' | 'Licensing' = 'hardware';
 
   // Search and filter
   searchTerm = '';
@@ -69,7 +69,7 @@ export class Assets implements OnInit {
   private baseUrl = '/api'; // Use relative URL with proxy
 
   // Form data
-  selectedAssetType: 'Hardware' | 'Software' = 'Hardware';
+  selectedAssetType: 'Hardware' | 'Licensing' | 'Services' = 'Hardware';
   
   createForm: CreateAsset = {
     assetTag: '',
@@ -96,7 +96,7 @@ export class Assets implements OnInit {
 
   // Software asset form
   licensingForm: any = {
-    LicenseName: '',
+    licenseName: '',
     version: '',
     licenseKey: '',
     licenseType: '',
@@ -113,7 +113,7 @@ export class Assets implements OnInit {
 
   editForm: Partial<CreateAsset> & {
     assetId?: string;
-    LicenseName?: string;
+    licenseName?: string;
     version?: string;
     licenseKey?: string;
     licenseType?: string;
@@ -236,14 +236,14 @@ export class Assets implements OnInit {
     this.clearMessages();
   }
 
-  openSoftwareAssetViewModal(asset: any) {
+  openLicensingAssetViewModal(asset: any) {
     this.selectedAsset = asset;
     this.showViewModal = true;
     this.viewTab = 1;
     this.clearMessages();
   }
 
-  openSoftwareAssetEditModal(asset: any) {
+  openLicensingAssetEditModal(asset: any) {
     this.selectedAsset = asset;
     this.editForm = { ...asset };
     this.showEditModal = true;
@@ -557,8 +557,8 @@ export class Assets implements OnInit {
     let isValid = true;
     this.clearValidationErrors();
 
-    if (!this.licensingForm.LicenseName) {
-      this.validationErrors['LicenseName'] = 'Software name is required';
+    if (!this.licensingForm.licenseName) {
+      this.validationErrors['licenseName'] = 'Software name is required';
       isValid = false;
     }
 
@@ -770,7 +770,7 @@ export class Assets implements OnInit {
       assignedUserRole: ''
     };
     this.licensingForm = {
-      LicenseName: '',
+      licenseName: '',
       version: '',
       licenseKey: '',
       licenseType: '',
@@ -833,16 +833,15 @@ export class Assets implements OnInit {
   }
 
   // Tab switching
-  switchTab(tab: 'hardware' | 'software') {
+  switchTab(tab: 'hardware' | 'Licensing') {
     this.activeTab = tab;
     this.clearMessages();
   }
 
-  // Software assets search and filter
   searchlicensingAssets(term: string) {
     this.filteredlicensingAssets = this.licensingAssets.filter(asset =>
       !term || 
-      asset.LicenseName.toLowerCase().includes(term.toLowerCase()) ||
+      asset.licenseName.toLowerCase().includes(term.toLowerCase()) ||
       asset.version.toLowerCase().includes(term.toLowerCase()) ||
       asset.vendor.toLowerCase().includes(term.toLowerCase()) ||
       asset.assetId.toLowerCase().includes(term.toLowerCase())
@@ -893,8 +892,8 @@ export class Assets implements OnInit {
   validatelicensingTab1(): boolean {
     let isValid = true;
 
-    if (!this.licensingForm.LicenseName) {
-      this.validationErrors['LicenseName'] = 'Software name is required';
+    if (!this.licensingForm.licenseName) {
+      this.validationErrors['licenseName'] = 'Software name is required';
       isValid = false;
     }
 
@@ -953,7 +952,7 @@ export class Assets implements OnInit {
 
   islicensingTabValid(tabNumber: number): boolean {
     if (tabNumber === 1) {
-      return !!(this.licensingForm.LicenseName && this.licensingForm.version && this.licensingForm.licenseKey && this.licensingForm.licenseType);
+      return !!(this.licensingForm.licenseName && this.licensingForm.version && this.licensingForm.licenseKey && this.licensingForm.licenseType);
     } else if (tabNumber === 2) {
       return !!(this.licensingForm.numberOfLicenses && this.licensingForm.purchaseDate && this.licensingForm.validityStartDate && this.licensingForm.validityEndDate);
     } else if (tabNumber === 3) {

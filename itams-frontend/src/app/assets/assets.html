@@ -144,7 +144,7 @@
           <div class="input-group">
             <span class="input-group-text"><i class="fas fa-search"></i></span>
             <input type="text" class="form-control" placeholder="Licensing Name, Version, Vendor, Tag..." 
-                   (input)="searchlicensingassets($event.target.value)">
+                   (input)="searchlicensingAssets($any($event.target).value)">
           </div>
         </div>
       </div>
@@ -164,9 +164,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let asset of filteredlicensingassets">
+            <tr *ngFor="let asset of filteredlicensingAssets">
               <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
-              <td>{{ asset.LicenseName }}</td>
+              <td>{{ asset.licenseName }}</td>
               <td>{{ asset.version }}</td>
               <td>{{ asset.vendor }}</td>
               <td>
@@ -189,9 +189,9 @@
                 </div>
               </td>
             </tr>
-            <tr *ngIf="licensingassets.length === 0">
+            <tr *ngIf="licensingAssets.length === 0">
               <td colspan="7" class="text-center py-4 text-muted">
-                No Licensing Assets found. <a href="#" (click)="switchTab('hardware'); openCreateModal(); $event.preventDefault()">Create your first licensing asset</a>
+                No Licensing Assets found. <a href="#" (click)="openCreateModal(); $event.preventDefault()">Create your first licensing asset</a>
               </td>
             </tr>
           </tbody>
@@ -434,11 +434,11 @@
                   <label class="form-label">Licensing Name *</label>
                   <input type="text" 
                          class="form-control" 
-                         [(ngModel)]="licensingForm.LicenseName"
-                         [class.is-invalid]="hasValidationError('LicenseName')"
+                         [(ngModel)]="licensingForm.licenseName"
+                         [class.is-invalid]="hasValidationError('licenseName')"
                          placeholder="Enter Licensing name">
-                  <div *ngIf="hasValidationError('LicenseName')" class="invalid-feedback">
-                    {{ getValidationError('LicenseName') }}
+                  <div *ngIf="hasValidationError('licenseName')" class="invalid-feedback">
+                    {{ getValidationError('licenseName') }}
                   </div>
                 </div>
 
@@ -1043,7 +1043,7 @@
 
 
 <!-- licensing asset View Modal -->
-<div class="modal fade" [class.show]="showViewModal && selectedAsset && selectedAsset.LicenseName" [style.display]="showViewModal && selectedAsset && selectedAsset.LicenseName ? 'block' : 'none'" tabindex="-1">
+<div class="modal fade" [class.show]="showViewModal && selectedAsset && selectedAsset.licenseName" [style.display]="showViewModal && selectedAsset && selectedAsset.licenseName ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
@@ -1052,7 +1052,7 @@
         </h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
-      <div class="modal-body" *ngIf="selectedAsset && selectedAsset.LicenseName">
+      <div class="modal-body" *ngIf="selectedAsset && selectedAsset.licenseName">
         <!-- Tab Navigation -->
         <ul class="nav nav-tabs mb-3">
           <li class="nav-item">
@@ -1078,7 +1078,7 @@
           <div *ngIf="viewTab === 1" class="row g-3">
             <div class="col-md-6">
               <label class="form-label text-muted">Licensing Name</label>
-              <p class="fw-bold">{{ selectedAsset.LicenseName }}</p>
+              <p class="fw-bold">{{ selectedAsset.licenseName }}</p>
             </div>
             <div class="col-md-6">
               <label class="form-label text-muted">Version</label>
@@ -1165,7 +1165,7 @@
 </div>
 
 <!-- licensing asset Edit Modal -->
-<div class="modal fade" [class.show]="showEditModal && selectedAsset && selectedAsset.LicenseName" [style.display]="showEditModal && selectedAsset && selectedAsset.LicenseName ? 'block' : 'none'" tabindex="-1">
+<div class="modal fade" [class.show]="showEditModal && selectedAsset && selectedAsset.licenseName" [style.display]="showEditModal && selectedAsset && selectedAsset.licenseName ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
@@ -1174,7 +1174,7 @@
         </h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
-      <div class="modal-body" *ngIf="selectedAsset && selectedAsset.LicenseName">
+      <div class="modal-body" *ngIf="selectedAsset && selectedAsset.licenseName">
         <form>
           <!-- Tab Navigation -->
           <ul class="nav nav-tabs mb-3">
@@ -1201,7 +1201,7 @@
             <div *ngIf="editTab === 1" class="row g-3">
               <div class="col-md-6">
                 <label class="form-label">Licensing Name</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.LicenseName" name="LicenseName" disabled>
+                <input type="text" class="form-control" [(ngModel)]="editForm.licenseName" name="licenseName" disabled>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Version</label>
