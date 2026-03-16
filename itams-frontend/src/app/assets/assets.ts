@@ -143,7 +143,7 @@ export class Assets implements OnInit {
     { value: 'Perennial', label: 'Perennial' }
   ];
 
-  placingOptions = ['Lane Area', 'Booth Area', 'Plaza Area', 'Server Room', 'Control Room', 'Admin Building', 'Tunnel'];
+  placingOptions = ['Lane Area', 'Booth Area', 'Plaza Area', 'Server Room', 'Control Room', 'Admin Building', 'Tunnel', 'Scrap Area', 'Spare Store'];
   assetTypes = ['Hardware', 'Software'];
 
   // Services
