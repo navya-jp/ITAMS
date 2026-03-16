@@ -32,9 +32,9 @@ public class ITAMSDbContext : DbContext
     public DbSet<Domain.Entities.MasterData.AssetStatus> AssetStatuses { get; set; }
     public DbSet<CriticalityLevel> CriticalityLevels { get; set; }
     public DbSet<AssetMasterField> AssetMasterFields { get; set; }
-    public DbSet<MasterData.AssetCategory> AssetCategories { get; set; }
-    public DbSet<MasterData.ServiceType> ServiceTypes { get; set; }
-    public DbSet<MasterData.ContractType> ContractTypes { get; set; }
+    public DbSet<Domain.Entities.MasterData.AssetCategory> AssetCategories { get; set; }
+    public DbSet<Domain.Entities.MasterData.ServiceType> ServiceTypes { get; set; }
+    public DbSet<Domain.Entities.MasterData.ContractType> ContractTypes { get; set; }
     public DbSet<AssetType> AssetTypes { get; set; }
     public DbSet<AssetSubType> AssetSubTypes { get; set; }
     public DbSet<TypeFieldMapping> TypeFieldMappings { get; set; }
