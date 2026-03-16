@@ -489,23 +489,24 @@ export class Api {
   }
 
   // Software Assets
-  createSoftwareAsset(asset: any): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/softwareassets`, asset, this.getAuthHeaders());
+  createLicensingAsset(asset: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/licensingassets`, asset, this.getAuthHeaders());
   }
 
-  getSoftwareAssets(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/softwareassets`, this.getAuthHeaders());
+  getLicensingAssets(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/licensingassets`, this.getAuthHeaders());
   }
 
   getSoftwareAsset(id: number): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/softwareassets/${id}`, this.getAuthHeaders());
+    return this.http.get<any>(`${this.baseUrl}/licensingassets/${id}`, this.getAuthHeaders());
   }
 
-  updateSoftwareAsset(id: number, asset: any): Observable<void> {
-    return this.http.put<void>(`${this.baseUrl}/softwareassets/${id}`, asset, this.getAuthHeaders());
+  updateLicensingAsset(id: number, asset: any): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/licensingassets/${id}`, asset, this.getAuthHeaders());
   }
 
-  deleteSoftwareAsset(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/softwareassets/${id}`, this.getAuthHeaders());
+  deleteLicensingAsset(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/licensingassets/${id}`, this.getAuthHeaders());
   }
 }
+

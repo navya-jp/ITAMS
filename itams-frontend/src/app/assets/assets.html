@@ -25,10 +25,10 @@
     </li>
     <li class="nav-item" role="presentation">
       <button class="nav-link" 
-              [class.active]="activeTab === 'software'"
-              (click)="switchTab('software')"
+              [class.active]="activeTab === 'Licensing'"
+              (click)="switchTab('Licensing')"
               type="button">
-        <i class="fas fa-cube me-2"></i>Software Assets
+        <i class="fas fa-cube me-2"></i>Licensing Assets
       </button>
     </li>
   </ul>
@@ -135,27 +135,27 @@
     </div>
     </ng-container>
 
-    <!-- Software Assets Tab -->
-    <ng-container *ngIf="activeTab === 'software'">
+    <!-- Licensing Assets Tab -->
+    <ng-container *ngIf="activeTab === 'Licensing'">
       <!-- Search Row -->
       <div *ngIf="!loading" class="row mb-3">
         <div class="col-md-6">
-          <label class="form-label">Search Software Assets</label>
+          <label class="form-label">Search Licensing Assets</label>
           <div class="input-group">
             <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" class="form-control" placeholder="Software Name, Version, Vendor, Tag..." 
-                   (input)="searchSoftwareAssets($event.target.value)">
+            <input type="text" class="form-control" placeholder="Licensing Name, Version, Vendor, Tag..." 
+                   (input)="searchlicensingassets($event.target.value)">
           </div>
         </div>
       </div>
 
-      <!-- Software Assets Table -->
+      <!-- Licensing Assets Table -->
       <div *ngIf="!loading" class="table-responsive">
         <table class="table table-hover">
           <thead class="table-light">
             <tr>
               <th>Asset ID</th>
-              <th>Software Name</th>
+              <th>Licensing Name</th>
               <th>Version</th>
               <th>Vendor</th>
               <th>Status</th>
@@ -164,9 +164,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let asset of filteredSoftwareAssets">
+            <tr *ngFor="let asset of filteredlicensingassets">
               <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
-              <td>{{ asset.softwareName }}</td>
+              <td>{{ asset.LicenseName }}</td>
               <td>{{ asset.version }}</td>
               <td>{{ asset.vendor }}</td>
               <td>
@@ -180,18 +180,18 @@
               <td>{{ asset.validityEndDate | date:'short' }}</td>
               <td>
                 <div class="btn-group btn-group-sm" role="group">
-                  <button class="btn btn-outline-info" (click)="openSoftwareAssetViewModal(asset)" title="View Details">
+                  <button class="btn btn-outline-info" (click)="openLicensingAssetViewModal(asset)" title="View Details">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button class="btn btn-outline-secondary" (click)="openSoftwareAssetEditModal(asset)" title="Edit Asset">
+                  <button class="btn btn-outline-secondary" (click)="openLicensingAssetEditModal(asset)" title="Edit Asset">
                     <i class="fas fa-edit"></i>
                   </button>
                 </div>
               </td>
             </tr>
-            <tr *ngIf="softwareAssets.length === 0">
+            <tr *ngIf="licensingassets.length === 0">
               <td colspan="7" class="text-center py-4 text-muted">
-                No software assets found. <a href="#" (click)="switchTab('hardware'); openCreateModal(); $event.preventDefault()">Create your first software asset</a>
+                No Licensing Assets found. <a href="#" (click)="switchTab('hardware'); openCreateModal(); $event.preventDefault()">Create your first licensing asset</a>
               </td>
             </tr>
           </tbody>
@@ -217,7 +217,7 @@
             <label class="form-label fw-bold">Asset Type *</label>
             <select class="form-select" [(ngModel)]="selectedAssetType">
               <option value="Hardware">Hardware</option>
-              <option value="Software">Software</option>
+              <option value="Licensing">Licensing</option>
             </select>
           </div>
         </div>
@@ -257,35 +257,35 @@
           </li>
         </ul>
 
-        <!-- Software Asset Tabs -->
-        <ul *ngIf="selectedAssetType === 'Software'" class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
+        <!-- licensing asset Tabs -->
+        <ul *ngIf="selectedAssetType === 'Licensing'" class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link" 
-                    [class.active]="softwareTab === 1"
-                    (click)="goToSoftwareTab(1)"
+                    [class.active]="licensingTab === 1"
+                    (click)="goTolicensingTab(1)"
                     type="button">
               <i class="fas fa-info-circle me-2"></i>License Details
-              <i *ngIf="isSoftwareTabValid(1)" class="fas fa-check text-success ms-2"></i>
+              <i *ngIf="islicensingTabValid(1)" class="fas fa-check text-success ms-2"></i>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" 
-                    [class.active]="softwareTab === 2"
-                    [class.disabled]="softwareTab < 2"
-                    (click)="goToSoftwareTab(2)"
+                    [class.active]="licensingTab === 2"
+                    [class.disabled]="licensingTab < 2"
+                    (click)="goTolicensingTab(2)"
                     type="button">
               <i class="fas fa-calendar me-2"></i>Validity & Dates
-              <i *ngIf="isSoftwareTabValid(2)" class="fas fa-check text-success ms-2"></i>
+              <i *ngIf="islicensingTabValid(2)" class="fas fa-check text-success ms-2"></i>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" 
-                    [class.active]="softwareTab === 3"
-                    [class.disabled]="softwareTab < 3"
-                    (click)="goToSoftwareTab(3)"
+                    [class.active]="licensingTab === 3"
+                    [class.disabled]="licensingTab < 3"
+                    (click)="goTolicensingTab(3)"
                     type="button">
               <i class="fas fa-tag me-2"></i>Asset & Publisher
-              <i *ngIf="isSoftwareTabValid(3)" class="fas fa-check text-success ms-2"></i>
+              <i *ngIf="islicensingTabValid(3)" class="fas fa-check text-success ms-2"></i>
             </button>
           </li>
         </ul>
@@ -425,20 +425,20 @@
             </div>
           </ng-container>
 
-          <!-- Software Asset Form -->
-          <ng-container *ngIf="selectedAssetType === 'Software'">
+          <!-- licensing asset Form -->
+          <ng-container *ngIf="selectedAssetType === 'Licensing'">
             <!-- Tab 1: License Details -->
-            <div class="tab-pane fade" [class.show]="softwareTab === 1" [class.active]="softwareTab === 1">
+            <div class="tab-pane fade" [class.show]="licensingTab === 1" [class.active]="licensingTab === 1">
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label">Software Name *</label>
+                  <label class="form-label">Licensing Name *</label>
                   <input type="text" 
                          class="form-control" 
-                         [(ngModel)]="softwareForm.softwareName"
-                         [class.is-invalid]="hasValidationError('softwareName')"
-                         placeholder="Enter software name">
-                  <div *ngIf="hasValidationError('softwareName')" class="invalid-feedback">
-                    {{ getValidationError('softwareName') }}
+                         [(ngModel)]="licensingForm.LicenseName"
+                         [class.is-invalid]="hasValidationError('LicenseName')"
+                         placeholder="Enter Licensing name">
+                  <div *ngIf="hasValidationError('LicenseName')" class="invalid-feedback">
+                    {{ getValidationError('LicenseName') }}
                   </div>
                 </div>
 
@@ -446,7 +446,7 @@
                   <label class="form-label">Version *</label>
                   <input type="text" 
                          class="form-control" 
-                         [(ngModel)]="softwareForm.version"
+                         [(ngModel)]="licensingForm.version"
                          [class.is-invalid]="hasValidationError('version')"
                          placeholder="Enter version">
                   <div *ngIf="hasValidationError('version')" class="invalid-feedback">
@@ -458,7 +458,7 @@
                   <label class="form-label">License Key *</label>
                   <input type="text" 
                          class="form-control" 
-                         [(ngModel)]="softwareForm.licenseKey"
+                         [(ngModel)]="licensingForm.licenseKey"
                          [class.is-invalid]="hasValidationError('licenseKey')"
                          placeholder="Enter license key">
                   <div *ngIf="hasValidationError('licenseKey')" class="invalid-feedback">
@@ -469,7 +469,7 @@
                 <div class="col-md-6">
                   <label class="form-label">License Type *</label>
                   <select class="form-select" 
-                          [(ngModel)]="softwareForm.licenseType"
+                          [(ngModel)]="licensingForm.licenseType"
                           [class.is-invalid]="hasValidationError('licenseType')">
                     <option value="">Select License Type</option>
                     <option *ngFor="let type of licenseTypes" [value]="type.value">{{ type.label }}</option>
@@ -483,7 +483,7 @@
                   <label class="form-label">Vendor *</label>
                   <input type="text" 
                          class="form-control" 
-                         [(ngModel)]="softwareForm.vendor"
+                         [(ngModel)]="licensingForm.vendor"
                          [class.is-invalid]="hasValidationError('vendor')"
                          placeholder="Enter vendor name">
                   <div *ngIf="hasValidationError('vendor')" class="invalid-feedback">
@@ -495,7 +495,7 @@
                   <label class="form-label">Publisher *</label>
                   <input type="text" 
                          class="form-control" 
-                         [(ngModel)]="softwareForm.publisher"
+                         [(ngModel)]="licensingForm.publisher"
                          [class.is-invalid]="hasValidationError('publisher')"
                          placeholder="Enter publisher name">
                   <div *ngIf="hasValidationError('publisher')" class="invalid-feedback">
@@ -506,13 +506,13 @@
             </div>
 
             <!-- Tab 2: Validity & Dates -->
-            <div class="tab-pane fade" [class.show]="softwareTab === 2" [class.active]="softwareTab === 2">
+            <div class="tab-pane fade" [class.show]="licensingTab === 2" [class.active]="licensingTab === 2">
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Purchase Date *</label>
                   <input type="date" 
                          class="form-control" 
-                         [(ngModel)]="softwareForm.purchaseDate"
+                         [(ngModel)]="licensingForm.purchaseDate"
                          [class.is-invalid]="hasValidationError('purchaseDate')">
                   <div *ngIf="hasValidationError('purchaseDate')" class="invalid-feedback">
                     {{ getValidationError('purchaseDate') }}
@@ -523,7 +523,7 @@
                   <label class="form-label">Number of Licenses *</label>
                   <input type="number" 
                          class="form-control" 
-                         [(ngModel)]="softwareForm.numberOfLicenses"
+                         [(ngModel)]="licensingForm.numberOfLicenses"
                          [class.is-invalid]="hasValidationError('numberOfLicenses')"
                          placeholder="Enter number of licenses"
                          min="1">
@@ -536,7 +536,7 @@
                   <label class="form-label">Validity Start Date *</label>
                   <input type="date" 
                          class="form-control" 
-                         [(ngModel)]="softwareForm.validityStartDate"
+                         [(ngModel)]="licensingForm.validityStartDate"
                          [class.is-invalid]="hasValidationError('validityStartDate')">
                   <div *ngIf="hasValidationError('validityStartDate')" class="invalid-feedback">
                     {{ getValidationError('validityStartDate') }}
@@ -547,7 +547,7 @@
                   <label class="form-label">Validity End Date *</label>
                   <input type="date" 
                          class="form-control" 
-                         [(ngModel)]="softwareForm.validityEndDate"
+                         [(ngModel)]="licensingForm.validityEndDate"
                          [class.is-invalid]="hasValidationError('validityEndDate')">
                   <div *ngIf="hasValidationError('validityEndDate')" class="invalid-feedback">
                     {{ getValidationError('validityEndDate') }}
@@ -557,7 +557,7 @@
                 <div class="col-md-6">
                   <label class="form-label">Validity Type *</label>
                   <select class="form-select" 
-                          [(ngModel)]="softwareForm.validityType"
+                          [(ngModel)]="licensingForm.validityType"
                           [class.is-invalid]="hasValidationError('validityType')">
                     <option value="">Select Validity Type</option>
                     <option *ngFor="let type of validityTypes" [value]="type.value">{{ type.label }}</option>
@@ -570,21 +570,21 @@
             </div>
 
             <!-- Tab 3: Asset & Publisher -->
-            <div class="tab-pane fade" [class.show]="softwareTab === 3" [class.active]="softwareTab === 3">
+            <div class="tab-pane fade" [class.show]="licensingTab === 3" [class.active]="licensingTab === 3">
               <div class="row g-3">
                 <div class="col-md-12">
                   <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
-                    <strong>Asset ID will be auto-generated</strong> when you create this software asset.
+                    <strong>Asset ID will be auto-generated</strong> when you create this licensing asset.
                   </div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Status *</label>
                   <select class="form-select" 
-                          [(ngModel)]="softwareForm.status"
+                          [(ngModel)]="licensingForm.status"
                           [class.is-invalid]="hasValidationError('status')">
                     <option value="">Select Status</option>
-                    <option *ngFor="let status of softwareStatuses" [value]="status.value">{{ status.label }}</option>
+                    <option *ngFor="let status of licensingStatuses" [value]="status.value">{{ status.label }}</option>
                   </select>
                   <div *ngIf="hasValidationError('status')" class="invalid-feedback">
                     {{ getValidationError('status') }}
@@ -614,18 +614,18 @@
           <i *ngIf="!loading" class="fas fa-save me-2"></i>Create Asset
         </button>
 
-        <!-- Software Asset Buttons -->
-        <button *ngIf="selectedAssetType === 'Software' && softwareTab > 1" type="button" class="btn btn-outline-primary" (click)="previousSoftwareTab()">
+        <!-- licensing asset Buttons -->
+        <button *ngIf="selectedAssetType === 'Licensing' && licensingTab > 1" type="button" class="btn btn-outline-primary" (click)="previouslicensingTab()">
           <i class="fas fa-arrow-left me-2"></i>Previous
         </button>
-        <button *ngIf="selectedAssetType === 'Software' && softwareTab < 3" type="button" class="btn btn-primary" (click)="nextSoftwareTab()">
+        <button *ngIf="selectedAssetType === 'Licensing' && licensingTab < 3" type="button" class="btn btn-primary" (click)="nextlicensingTab()">
           Next<i class="fas fa-arrow-right ms-2"></i>
         </button>
-        <button *ngIf="selectedAssetType === 'Software' && softwareTab === 3" type="button" class="btn btn-success" 
+        <button *ngIf="selectedAssetType === 'Licensing' && licensingTab === 3" type="button" class="btn btn-success" 
                 [disabled]="loading" 
                 (click)="createAsset()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-          <i *ngIf="!loading" class="fas fa-save me-2"></i>Create Software Asset
+          <i *ngIf="!loading" class="fas fa-save me-2"></i>Create licensing asset
         </button>
       </div>
     </div>
@@ -922,7 +922,7 @@
                 <select class="form-select" [(ngModel)]="editForm.assetType" name="assetType">
                   <option value="">Select Asset Type</option>
                   <option value="Hardware">Hardware</option>
-                  <option value="Software">Software</option>
+                  <option value="Licensing">Licensing</option>
                 </select>
               </div>
               <div class="col-md-6">
@@ -1042,17 +1042,17 @@
 </div>
 
 
-<!-- Software Asset View Modal -->
-<div class="modal fade" [class.show]="showViewModal && selectedAsset && selectedAsset.softwareName" [style.display]="showViewModal && selectedAsset && selectedAsset.softwareName ? 'block' : 'none'" tabindex="-1">
+<!-- licensing asset View Modal -->
+<div class="modal fade" [class.show]="showViewModal && selectedAsset && selectedAsset.LicenseName" [style.display]="showViewModal && selectedAsset && selectedAsset.LicenseName ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
-          <i class="fas fa-eye me-2"></i>Software Asset Details
+          <i class="fas fa-eye me-2"></i>licensing asset Details
         </h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
-      <div class="modal-body" *ngIf="selectedAsset && selectedAsset.softwareName">
+      <div class="modal-body" *ngIf="selectedAsset && selectedAsset.LicenseName">
         <!-- Tab Navigation -->
         <ul class="nav nav-tabs mb-3">
           <li class="nav-item">
@@ -1077,8 +1077,8 @@
           <!-- Tab 1: License Details -->
           <div *ngIf="viewTab === 1" class="row g-3">
             <div class="col-md-6">
-              <label class="form-label text-muted">Software Name</label>
-              <p class="fw-bold">{{ selectedAsset.softwareName }}</p>
+              <label class="form-label text-muted">Licensing Name</label>
+              <p class="fw-bold">{{ selectedAsset.LicenseName }}</p>
             </div>
             <div class="col-md-6">
               <label class="form-label text-muted">Version</label>
@@ -1156,7 +1156,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
-        <button type="button" class="btn btn-primary" (click)="closeModals(); openSoftwareAssetEditModal(selectedAsset!)">
+        <button type="button" class="btn btn-primary" (click)="closeModals(); openLicensingAssetEditModal(selectedAsset!)">
           <i class="fas fa-edit me-2"></i>Edit Asset
         </button>
       </div>
@@ -1164,17 +1164,17 @@
   </div>
 </div>
 
-<!-- Software Asset Edit Modal -->
-<div class="modal fade" [class.show]="showEditModal && selectedAsset && selectedAsset.softwareName" [style.display]="showEditModal && selectedAsset && selectedAsset.softwareName ? 'block' : 'none'" tabindex="-1">
+<!-- licensing asset Edit Modal -->
+<div class="modal fade" [class.show]="showEditModal && selectedAsset && selectedAsset.LicenseName" [style.display]="showEditModal && selectedAsset && selectedAsset.LicenseName ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
-          <i class="fas fa-edit me-2"></i>Edit Software Asset
+          <i class="fas fa-edit me-2"></i>Edit licensing asset
         </h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
-      <div class="modal-body" *ngIf="selectedAsset && selectedAsset.softwareName">
+      <div class="modal-body" *ngIf="selectedAsset && selectedAsset.LicenseName">
         <form>
           <!-- Tab Navigation -->
           <ul class="nav nav-tabs mb-3">
@@ -1200,8 +1200,8 @@
             <!-- Tab 1: License Details (Read-only) -->
             <div *ngIf="editTab === 1" class="row g-3">
               <div class="col-md-6">
-                <label class="form-label">Software Name</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.softwareName" name="softwareName" disabled>
+                <label class="form-label">Licensing Name</label>
+                <input type="text" class="form-control" [(ngModel)]="editForm.LicenseName" name="LicenseName" disabled>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Version</label>
@@ -1258,7 +1258,7 @@
               <div class="col-md-6">
                 <label class="form-label">Status *</label>
                 <select class="form-select" [(ngModel)]="editForm.status" name="status">
-                  <option *ngFor="let status of softwareStatuses" [value]="status.value">{{ status.label }}</option>
+                  <option *ngFor="let status of licensingStatuses" [value]="status.value">{{ status.label }}</option>
                 </select>
               </div>
             </div>
@@ -1270,7 +1270,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-        <button type="button" class="btn btn-primary" [disabled]="loading" (click)="updateSoftwareAsset()">
+        <button type="button" class="btn btn-primary" [disabled]="loading" (click)="updateLicensingAsset()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!loading" class="fas fa-save me-2"></i>Save Changes
         </button>
@@ -1423,3 +1423,4 @@
     </div>
   </div>
 </div>
+

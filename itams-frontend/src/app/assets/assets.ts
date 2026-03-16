@@ -27,8 +27,8 @@ interface BulkUploadError {
 export class Assets implements OnInit {
   assets: Asset[] = [];
   filteredAssets: Asset[] = [];
-  softwareAssets: any[] = [];
-  filteredSoftwareAssets: any[] = [];
+  licensingAssets: any[] = [];
+  filteredlicensingAssets: any[] = [];
   projects: Project[] = [];
   locations: Location[] = [];
   projectUsers: any[] = []; // Users in the selected project
@@ -54,8 +54,8 @@ export class Assets implements OnInit {
   maxTab = 1;
   
   // Software asset tab
-  softwareTab = 1;
-  softwareMaxTab = 1;
+  licensingTab = 1;
+  licensingMaxTab = 1;
   
   // View/Edit modal tabs
   viewTab = 1;
@@ -95,8 +95,8 @@ export class Assets implements OnInit {
   };
 
   // Software asset form
-  softwareForm: any = {
-    softwareName: '',
+  licensingForm: any = {
+    LicenseName: '',
     version: '',
     licenseKey: '',
     licenseType: '',
@@ -113,7 +113,7 @@ export class Assets implements OnInit {
 
   editForm: Partial<CreateAsset> & {
     assetId?: string;
-    softwareName?: string;
+    LicenseName?: string;
     version?: string;
     licenseKey?: string;
     licenseType?: string;
@@ -153,7 +153,7 @@ export class Assets implements OnInit {
     { value: 'Decommissioned', label: 'Decommissioned' }
   ];
   
-  softwareStatuses = [
+  licensingStatuses = [
     { value: 'Active', label: 'Active' },
     { value: 'Expired', label: 'Expired' },
     { value: 'Available', label: 'Available' }
@@ -203,10 +203,10 @@ export class Assets implements OnInit {
     });
 
     // Load software assets
-    this.api.getSoftwareAssets().subscribe({
+    this.api.getLicensingAssets().subscribe({
       next: (assets) => {
-        this.softwareAssets = assets;
-        this.filteredSoftwareAssets = assets;
+        this.licensingAssets = assets;
+        this.filteredlicensingAssets = assets;
       },
       error: (error) => {
         console.error('Error loading software assets:', error);
@@ -231,8 +231,8 @@ export class Assets implements OnInit {
     this.showCreateModal = true;
     this.currentTab = 1;
     this.maxTab = 1;
-    this.softwareTab = 1;
-    this.softwareMaxTab = 1;
+    this.licensingTab = 1;
+    this.licensingMaxTab = 1;
     this.clearMessages();
   }
 
@@ -553,75 +553,75 @@ export class Assets implements OnInit {
     return isValid;
   }
 
-  validateSoftwareForm(): boolean {
+  validatelicensingForm(): boolean {
     let isValid = true;
     this.clearValidationErrors();
 
-    if (!this.softwareForm.softwareName) {
-      this.validationErrors['softwareName'] = 'Software name is required';
+    if (!this.licensingForm.LicenseName) {
+      this.validationErrors['LicenseName'] = 'Software name is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.version) {
+    if (!this.licensingForm.version) {
       this.validationErrors['version'] = 'Version is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.licenseKey) {
+    if (!this.licensingForm.licenseKey) {
       this.validationErrors['licenseKey'] = 'License key is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.licenseType) {
+    if (!this.licensingForm.licenseType) {
       this.validationErrors['licenseType'] = 'License type is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.numberOfLicenses || this.softwareForm.numberOfLicenses <= 0) {
+    if (!this.licensingForm.numberOfLicenses || this.licensingForm.numberOfLicenses <= 0) {
       this.validationErrors['numberOfLicenses'] = 'Number of licenses must be greater than 0';
       isValid = false;
     }
 
-    if (!this.softwareForm.purchaseDate) {
+    if (!this.licensingForm.purchaseDate) {
       this.validationErrors['purchaseDate'] = 'Purchase date is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.validityStartDate) {
+    if (!this.licensingForm.validityStartDate) {
       this.validationErrors['validityStartDate'] = 'Validity start date is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.validityEndDate) {
+    if (!this.licensingForm.validityEndDate) {
       this.validationErrors['validityEndDate'] = 'Validity end date is required';
       isValid = false;
     }
 
-    if (this.softwareForm.validityStartDate && this.softwareForm.validityEndDate) {
-      const startDate = new Date(this.softwareForm.validityStartDate);
-      const endDate = new Date(this.softwareForm.validityEndDate);
+    if (this.licensingForm.validityStartDate && this.licensingForm.validityEndDate) {
+      const startDate = new Date(this.licensingForm.validityStartDate);
+      const endDate = new Date(this.licensingForm.validityEndDate);
       if (endDate <= startDate) {
         this.validationErrors['validityEndDate'] = 'Validity end date must be greater than start date';
         isValid = false;
       }
     }
 
-    if (!this.softwareForm.status) {
+    if (!this.licensingForm.status) {
       this.validationErrors['status'] = 'Status is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.vendor) {
+    if (!this.licensingForm.vendor) {
       this.validationErrors['vendor'] = 'Vendor is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.publisher) {
+    if (!this.licensingForm.publisher) {
       this.validationErrors['publisher'] = 'Publisher is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.validityType) {
+    if (!this.licensingForm.validityType) {
       this.validationErrors['validityType'] = 'Validity type is required';
       isValid = false;
     }
@@ -637,10 +637,10 @@ export class Assets implements OnInit {
       }
       this.createHardwareAsset();
     } else {
-      if (!this.validateSoftwareTab1() || !this.validateSoftwareTab2() || !this.validateSoftwareForm()) {
+      if (!this.validatelicensingTab1() || !this.validatelicensingTab2() || !this.validatelicensingForm()) {
         return;
       }
-      this.createSoftwareAsset();
+      this.createLicensingAsset();
     }
   }
 
@@ -661,10 +661,10 @@ export class Assets implements OnInit {
     });
   }
 
-  createSoftwareAsset() {
+  createLicensingAsset() {
     this.loading = true;
-    console.log('Sending software asset data:', this.softwareForm);
-    this.api.createSoftwareAsset(this.softwareForm).subscribe({
+    console.log('Sending software asset data:', this.licensingForm);
+    this.api.createLicensingAsset(this.licensingForm).subscribe({
       next: (asset) => {
         this.success = 'Software asset created successfully';
         this.loading = false;
@@ -703,7 +703,7 @@ export class Assets implements OnInit {
     });
   }
 
-  updateSoftwareAsset() {
+  updateLicensingAsset() {
     if (!this.selectedAsset) return;
 
     this.loading = true;
@@ -711,7 +711,7 @@ export class Assets implements OnInit {
       status: this.editForm.status
     };
     
-    this.api.updateSoftwareAsset(this.selectedAsset.id, updateData).subscribe({
+    this.api.updateLicensingAsset(this.selectedAsset.id, updateData).subscribe({
       next: () => {
         this.success = 'Software asset updated successfully';
         this.loading = false;
@@ -769,8 +769,8 @@ export class Assets implements OnInit {
       assignedUserId: undefined,
       assignedUserRole: ''
     };
-    this.softwareForm = {
-      softwareName: '',
+    this.licensingForm = {
+      LicenseName: '',
       version: '',
       licenseKey: '',
       licenseType: '',
@@ -839,10 +839,10 @@ export class Assets implements OnInit {
   }
 
   // Software assets search and filter
-  searchSoftwareAssets(term: string) {
-    this.filteredSoftwareAssets = this.softwareAssets.filter(asset =>
+  searchlicensingAssets(term: string) {
+    this.filteredlicensingAssets = this.licensingAssets.filter(asset =>
       !term || 
-      asset.softwareName.toLowerCase().includes(term.toLowerCase()) ||
+      asset.LicenseName.toLowerCase().includes(term.toLowerCase()) ||
       asset.version.toLowerCase().includes(term.toLowerCase()) ||
       asset.vendor.toLowerCase().includes(term.toLowerCase()) ||
       asset.assetId.toLowerCase().includes(term.toLowerCase())
@@ -859,56 +859,56 @@ export class Assets implements OnInit {
   }
 
   // Software asset tab navigation
-  goToSoftwareTab(tabNumber: number) {
-    if (tabNumber <= this.softwareMaxTab) {
-      this.softwareTab = tabNumber;
+  goTolicensingTab(tabNumber: number) {
+    if (tabNumber <= this.licensingMaxTab) {
+      this.licensingTab = tabNumber;
     }
   }
 
-  nextSoftwareTab() {
-    if (this.validateSoftwareTab(this.softwareTab)) {
-      this.softwareTab++;
-      this.softwareMaxTab = Math.max(this.softwareMaxTab, this.softwareTab);
+  nextlicensingTab() {
+    if (this.validatelicensingTab(this.licensingTab)) {
+      this.licensingTab++;
+      this.licensingMaxTab = Math.max(this.licensingMaxTab, this.licensingTab);
     }
   }
 
-  previousSoftwareTab() {
-    if (this.softwareTab > 1) {
-      this.softwareTab--;
+  previouslicensingTab() {
+    if (this.licensingTab > 1) {
+      this.licensingTab--;
     }
   }
 
-  validateSoftwareTab(tabNumber: number): boolean {
+  validatelicensingTab(tabNumber: number): boolean {
     this.clearValidationErrors();
     
     if (tabNumber === 1) {
-      return this.validateSoftwareTab1();
+      return this.validatelicensingTab1();
     } else if (tabNumber === 2) {
-      return this.validateSoftwareTab2();
+      return this.validatelicensingTab2();
     }
     
     return true;
   }
 
-  validateSoftwareTab1(): boolean {
+  validatelicensingTab1(): boolean {
     let isValid = true;
 
-    if (!this.softwareForm.softwareName) {
-      this.validationErrors['softwareName'] = 'Software name is required';
+    if (!this.licensingForm.LicenseName) {
+      this.validationErrors['LicenseName'] = 'Software name is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.version) {
+    if (!this.licensingForm.version) {
       this.validationErrors['version'] = 'Version is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.licenseKey) {
+    if (!this.licensingForm.licenseKey) {
       this.validationErrors['licenseKey'] = 'License key is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.licenseType) {
+    if (!this.licensingForm.licenseType) {
       this.validationErrors['licenseType'] = 'License type is required';
       isValid = false;
     }
@@ -916,32 +916,32 @@ export class Assets implements OnInit {
     return isValid;
   }
 
-  validateSoftwareTab2(): boolean {
+  validatelicensingTab2(): boolean {
     let isValid = true;
 
-    if (!this.softwareForm.numberOfLicenses || this.softwareForm.numberOfLicenses <= 0) {
+    if (!this.licensingForm.numberOfLicenses || this.licensingForm.numberOfLicenses <= 0) {
       this.validationErrors['numberOfLicenses'] = 'Number of licenses must be greater than 0';
       isValid = false;
     }
 
-    if (!this.softwareForm.purchaseDate) {
+    if (!this.licensingForm.purchaseDate) {
       this.validationErrors['purchaseDate'] = 'Purchase date is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.validityStartDate) {
+    if (!this.licensingForm.validityStartDate) {
       this.validationErrors['validityStartDate'] = 'Validity start date is required';
       isValid = false;
     }
 
-    if (!this.softwareForm.validityEndDate) {
+    if (!this.licensingForm.validityEndDate) {
       this.validationErrors['validityEndDate'] = 'Validity end date is required';
       isValid = false;
     }
 
-    if (this.softwareForm.validityStartDate && this.softwareForm.validityEndDate) {
-      const startDate = new Date(this.softwareForm.validityStartDate);
-      const endDate = new Date(this.softwareForm.validityEndDate);
+    if (this.licensingForm.validityStartDate && this.licensingForm.validityEndDate) {
+      const startDate = new Date(this.licensingForm.validityStartDate);
+      const endDate = new Date(this.licensingForm.validityEndDate);
       if (endDate <= startDate) {
         this.validationErrors['validityEndDate'] = 'Validity end date must be greater than start date';
         isValid = false;
@@ -951,13 +951,13 @@ export class Assets implements OnInit {
     return isValid;
   }
 
-  isSoftwareTabValid(tabNumber: number): boolean {
+  islicensingTabValid(tabNumber: number): boolean {
     if (tabNumber === 1) {
-      return !!(this.softwareForm.softwareName && this.softwareForm.version && this.softwareForm.licenseKey && this.softwareForm.licenseType);
+      return !!(this.licensingForm.LicenseName && this.licensingForm.version && this.licensingForm.licenseKey && this.licensingForm.licenseType);
     } else if (tabNumber === 2) {
-      return !!(this.softwareForm.numberOfLicenses && this.softwareForm.purchaseDate && this.softwareForm.validityStartDate && this.softwareForm.validityEndDate);
+      return !!(this.licensingForm.numberOfLicenses && this.licensingForm.purchaseDate && this.licensingForm.validityStartDate && this.licensingForm.validityEndDate);
     } else if (tabNumber === 3) {
-      return !!(this.softwareForm.assetTag && this.softwareForm.status && this.softwareForm.vendor && this.softwareForm.publisher && this.softwareForm.validityType);
+      return !!(this.licensingForm.assetTag && this.licensingForm.status && this.licensingForm.vendor && this.licensingForm.publisher && this.licensingForm.validityType);
     }
     return true;
   }
@@ -997,3 +997,4 @@ export class Assets implements OnInit {
     return `₹${amount.toLocaleString()}`;
   }
 }
+
