@@ -1,1409 +1,939 @@
-<!-- Assets Main View -->
 <div class="assets-container h-100 d-flex flex-column">
-  <!-- Header Section -->
-  <div class="assets-header d-flex justify-content-between align-items-center p-3 border-bottom">
-    <h2 class="mb-0">Asset Management</h2>
-    <div class="btn-group">
-      <button class="btn btn-outline-primary" (click)="openBulkUploadModal()">
-        <i class="fas fa-file-upload me-2"></i>Bulk Upload
-      </button>
-      <button class="btn btn-primary" (click)="openCreateModal()">
-        <i class="fas fa-plus me-2"></i>Create Asset
-      </button>
-    </div>
-  </div>
 
-  <!-- Tab Navigation -->
-  <ul class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" 
-              [class.active]="activeTab === 'hardware'"
-              (click)="switchTab('hardware')"
-              type="button">
-        <i class="fas fa-laptop me-2"></i>Hardware Assets
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" 
-              [class.active]="activeTab === 'Licensing'"
-              (click)="switchTab('Licensing')"
-              type="button">
-        <i class="fas fa-cube me-2"></i>Licensing Assets
-      </button>
-    </li>
-  </ul>
-
-  <!-- Messages Section -->
-  <div class="messages-section" *ngIf="success || error">
-    <div *ngIf="success" class="alert alert-success alert-dismissible fade show m-3 mb-0" role="alert">
-      {{ success }}
-      <button type="button" class="btn-close" (click)="clearMessages()"></button>
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- VIEW 1: Location Type Selection                                        -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="currentView === 'location-select'" class="location-select-view d-flex flex-column h-100">
+    <div class="assets-header d-flex justify-content-between align-items-center p-3 border-bottom">
+      <h2 class="mb-0"><i class="fas fa-boxes me-2 text-primary"></i>Asset Management</h2>
     </div>
-    <div *ngIf="error" class="alert alert-danger alert-dismissible fade show m-3 mb-0" role="alert">
-      {{ error }}
-      <button type="button" class="btn-close" (click)="clearMessages()"></button>
-    </div>
-  </div>
-
-  <!-- Assets Content -->
-  <div class="assets-content flex-grow-1 p-3" style="overflow-y: auto;">
-    <div *ngIf="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+    <div class="flex-grow-1 d-flex flex-column align-items-center justify-content-center p-4">
+      <div class="text-center mb-5">
+        <h3 class="fw-bold text-dark">Select Location Type</h3>
+        <p class="text-muted">Choose where you want to manage assets</p>
       </div>
-    </div>
-
-    <!-- Hardware Assets Tab -->
-    <ng-container *ngIf="activeTab === 'hardware'">
-      <!-- Search and Filter Row -->
-      <div *ngIf="!loading" class="row mb-3">
-        <div class="col-md-4">
-          <label class="form-label">Search Assets</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" class="form-control" placeholder="Asset ID, Tag, Type, Make, Model..." 
-                   [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
-          </div>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Filter by Status</label>
-          <select class="form-select" [(ngModel)]="filterStatus" (ngModelChange)="onStatusFilterChange()">
-            <option value="all">All Status</option>
-            <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Filter by Type</label>
-          <select class="form-select" [(ngModel)]="filterType" (ngModelChange)="onTypeFilterChange()">
-            <option value="all">All Types</option>
-            <option *ngFor="let type of assetTypes" [value]="type">{{ type }}</option>
-          </select>
-        </div>
-        <div class="col-md-2 d-flex align-items-end">
-          <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
-            <i class="fas fa-times me-2"></i>Clear
-          </button>
-        </div>
-      </div>
-
-      <!-- Hardware Assets Table -->
-      <div *ngIf="!loading" class="table-responsive">
-        <table class="table table-hover">
-          <thead class="table-light">
-            <tr>
-              <th>Asset ID</th>
-              <th>Type</th>
-              <th>Classification</th>
-              <th>Region</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let asset of filteredAssets">
-              <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
-              <td>{{ asset.assetType }}</td>
-              <td>{{ asset.classification || 'N/A' }}</td>
-              <td>{{ asset.region || 'N/A' }}</td>
-              <td>
-                <span class="badge" 
-                      [class.bg-success]="asset.status === 'In Use'"
-                      [class.bg-info]="asset.status === 'Spare'"
-                      [class.bg-warning]="asset.status === 'Repair'"
-                      [class.bg-secondary]="asset.status === 'Decommissioned'">
-                  {{ asset.status }}
-                </span>
-              </td>
-              <td>
-                <div class="btn-group btn-group-sm" role="group">
-                  <button class="btn btn-outline-info" (click)="openViewModal(asset)" title="View Details">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit Asset">
-                  <i class="fas fa-edit"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr *ngIf="assets.length === 0">
-            <td colspan="7" class="text-center py-4 text-muted">
-              No assets found. <a href="#" (click)="openCreateModal(); $event.preventDefault()">Create your first asset</a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    </ng-container>
-
-    <!-- Licensing Assets Tab -->
-    <ng-container *ngIf="activeTab === 'Licensing'">
-      <!-- Search Row -->
-      <div *ngIf="!loading" class="row mb-3">
+      <div class="row g-4 justify-content-center" style="max-width: 700px; width: 100%;">
         <div class="col-md-6">
-          <label class="form-label">Search Licensing Assets</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" class="form-control" placeholder="Licensing Name, Version, Vendor, Tag..." 
-                   (input)="searchlicensingAssets($any($event.target).value)">
+          <div class="card location-type-card h-100 text-center p-4" (click)="selectLocationType('office')">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
+              <i class="fas fa-building fa-4x text-primary mb-3"></i>
+              <h4 class="fw-bold mb-2">Head Office</h4>
+              <p class="text-muted mb-0">Manage IT assets at Head Office</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card location-type-card h-100 text-center p-4" (click)="selectLocationType('site')">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
+              <i class="fas fa-map-marker-alt fa-4x text-success mb-3"></i>
+              <h4 class="fw-bold mb-2">Site</h4>
+              <p class="text-muted mb-0">Manage IT assets at toll plaza sites</p>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Licensing Assets Table -->
-      <div *ngIf="!loading" class="table-responsive">
-        <table class="table table-hover">
-          <thead class="table-light">
-            <tr>
-              <th>Asset ID</th>
-              <th>Licensing Name</th>
-              <th>Version</th>
-              <th>Vendor</th>
-              <th>Status</th>
-              <th>Validity End</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let asset of filteredlicensingAssets">
-              <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
-              <td>{{ asset.licenseName }}</td>
-              <td>{{ asset.version }}</td>
-              <td>{{ asset.vendor }}</td>
-              <td>
-                <span class="badge" 
-                      [class.bg-success]="asset.status === 'Active'"
-                      [class.bg-warning]="asset.status === 'Expired'"
-                      [class.bg-info]="asset.status === 'Available'">
-                  {{ asset.status }}
-                </span>
-              </td>
-              <td>{{ asset.validityEndDate | date:'short' }}</td>
-              <td>
-                <div class="btn-group btn-group-sm" role="group">
-                  <button class="btn btn-outline-info" (click)="openLicensingAssetViewModal(asset)" title="View Details">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button class="btn btn-outline-secondary" (click)="openLicensingAssetEditModal(asset)" title="Edit Asset">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr *ngIf="licensingAssets.length === 0">
-              <td colspan="7" class="text-center py-4 text-muted">
-                No Licensing Assets found. <a href="#" (click)="openCreateModal(); $event.preventDefault()">Create your first licensing asset</a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- VIEW 2: Category Dashboard                                             -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="currentView === 'category-dashboard'" class="category-dashboard-view d-flex flex-column h-100">
+    <div class="assets-header d-flex justify-content-between align-items-center p-3 border-bottom">
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+              <a href="#" (click)="goBack('location-select'); $event.preventDefault()" class="text-decoration-none">
+                <i class="fas fa-boxes me-1"></i>Assets
+              </a>
+            </li>
+            <li class="breadcrumb-item active">{{ locationTypeLabel }}</li>
+          </ol>
+        </nav>
+        <h5 class="mb-0 mt-1 fw-bold">{{ locationTypeLabel }} — Asset Categories</h5>
       </div>
-    </ng-container>
+      <button class="btn btn-outline-secondary btn-sm" (click)="goBack('location-select')">
+        <i class="fas fa-arrow-left me-1"></i>Back
+      </button>
+    </div>
+
+    <div *ngIf="loading" class="flex-grow-1 d-flex align-items-center justify-content-center">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+    </div>
+
+    <div *ngIf="!loading" class="flex-grow-1 d-flex flex-column align-items-center justify-content-center p-4">
+      <div class="text-center mb-4">
+        <h4 class="fw-bold text-dark">Select Asset Category</h4>
+        <p class="text-muted">What type of assets do you want to manage?</p>
+      </div>
+      <div class="row g-4 justify-content-center" style="max-width: 900px; width: 100%;">
+        <div class="col-md-4" *ngFor="let cat of assetCategories">
+          <div class="card category-card h-100 text-center" (click)="selectCategory($any(cat.value))">
+            <div class="card-body d-flex flex-column align-items-center justify-content-between p-4">
+              <div class="d-flex flex-column align-items-center">
+                <i [class]="cat.icon + ' category-icon mb-3'" [style.color]="cat.color"></i>
+                <h5 class="fw-bold mb-1">{{ cat.label }}</h5>
+                <p class="text-muted small mb-3">{{ cat.description }}</p>
+              </div>
+              <div class="d-flex flex-column align-items-center w-100">
+                <span class="badge rounded-pill mb-3 px-3 py-2" [style.background-color]="cat.color">
+                  {{ getCategoryCount(cat.value) }} Assets
+                </span>
+                <button class="btn btn-outline-secondary btn-sm w-100">View All →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- VIEW 3: Asset List                                                     -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="currentView === 'asset-list'" class="asset-list-view d-flex flex-column h-100">
+    <!-- Header -->
+    <div class="assets-header d-flex justify-content-between align-items-center p-3 border-bottom">
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+              <a href="#" (click)="goBack('location-select'); $event.preventDefault()" class="text-decoration-none">Assets</a>
+            </li>
+            <li class="breadcrumb-item">
+              <a href="#" (click)="goBack('category-dashboard'); $event.preventDefault()" class="text-decoration-none">{{ locationTypeLabel }}</a>
+            </li>
+            <li class="breadcrumb-item active">{{ categoryLabel }}</li>
+          </ol>
+        </nav>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-outline-secondary btn-sm" (click)="goBack('category-dashboard')">
+          <i class="fas fa-arrow-left me-1"></i>Back
+        </button>
+        <button class="btn btn-outline-primary btn-sm" (click)="openBulkUploadModal()">
+          <i class="fas fa-file-upload me-1"></i>Bulk Upload
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="openCreateModal()">
+          <i class="fas fa-plus me-1"></i>Add Asset
+        </button>
+      </div>
+    </div>
+
+    <!-- Active filter chips -->
+    <div class="px-3 pt-2 pb-0 d-flex gap-2 align-items-center flex-wrap">
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2">
+        <i class="fas fa-map-marker-alt me-1"></i>{{ locationTypeLabel }}
+      </span>
+      <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2">
+        <i class="fas fa-tag me-1"></i>{{ categoryLabel }}
+      </span>
+    </div>
+
+    <!-- Messages -->
+    <div class="px-3 pt-2" *ngIf="success || error">
+      <div *ngIf="success" class="alert alert-success alert-dismissible fade show mb-0" role="alert">
+        {{ success }}<button type="button" class="btn-close" (click)="clearMessages()"></button>
+      </div>
+      <div *ngIf="error" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+        {{ error }}<button type="button" class="btn-close" (click)="clearMessages()"></button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="assets-content flex-grow-1 p-3" style="overflow-y: auto;">
+      <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+      </div>
+
+      <!-- Hardware Assets -->
+      <ng-container *ngIf="selectedCategory === 'hardware'">
+        <div *ngIf="!loading" class="row mb-3">
+          <div class="col-md-4">
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input type="text" class="form-control" placeholder="Asset ID, Tag, Type, Make, Model..."
+                     [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" [(ngModel)]="filterStatus" (ngModelChange)="onStatusFilterChange()">
+              <option value="all">All Status</option>
+              <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" [(ngModel)]="filterType" (ngModelChange)="onTypeFilterChange()">
+              <option value="all">All Types</option>
+              <option *ngFor="let t of assetTypes" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+              <i class="fas fa-times me-1"></i>Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- HEAD OFFICE TABLE -->
+        <div *ngIf="!loading && selectedLocationType === 'office'" class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Asset ID</th>
+                <th>Asset Type</th>
+                <th>Make</th>
+                <th>Model</th>
+                <th>Assigned User</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let asset of filteredAssets">
+                <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
+                <td>{{ asset.assetType }}</td>
+                <td>{{ asset.make }}</td>
+                <td>{{ asset.model }}</td>
+                <td>{{ asset.assignedUserText || 'N/A' }}</td>
+                <td>
+                  <span class="badge"
+                        [class.bg-success]="asset.status === 'In Use'"
+                        [class.bg-info]="asset.status === 'Spare'"
+                        [class.bg-warning]="asset.status === 'Repair'"
+                        [class.bg-secondary]="asset.status === 'Decommissioned'">
+                    {{ asset.status }}
+                  </span>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info" (click)="openViewModal(asset)" title="View"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit"><i class="fas fa-edit"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="filteredAssets.length === 0">
+                <td colspan="7" class="text-center py-4 text-muted">No assets found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- SITE TABLE -->
+        <div *ngIf="!loading && selectedLocationType === 'site'" class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Asset ID</th><th>Type</th><th>Classification</th><th>Region</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let asset of filteredAssets">
+                <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
+                <td>{{ asset.assetType }}</td>
+                <td>{{ asset.classification || 'N/A' }}</td>
+                <td>{{ asset.region || 'N/A' }}</td>
+                <td>
+                  <span class="badge"
+                        [class.bg-success]="asset.status === 'In Use'"
+                        [class.bg-info]="asset.status === 'Spare'"
+                        [class.bg-warning]="asset.status === 'Repair'"
+                        [class.bg-secondary]="asset.status === 'Decommissioned'">
+                    {{ asset.status }}
+                  </span>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info" (click)="openViewModal(asset)" title="View"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit"><i class="fas fa-edit"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="filteredAssets.length === 0">
+                <td colspan="6" class="text-center py-4 text-muted">No hardware assets found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+
+      <!-- Licensing Assets -->
+      <ng-container *ngIf="selectedCategory === 'licensing'">
+        <div *ngIf="!loading" class="row mb-3">
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input type="text" class="form-control" placeholder="License Name, Version, Vendor, ID..."
+                     (input)="searchlicensingAssets($any($event.target).value)">
+            </div>
+          </div>
+        </div>
+        <div *ngIf="!loading" class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Asset ID</th><th>License Name</th><th>Version</th><th>Vendor</th><th>Status</th><th>Validity End</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let asset of filteredlicensingAssets">
+                <td><strong class="text-primary">{{ asset.assetId }}</strong></td>
+                <td>{{ asset.licenseName }}</td>
+                <td>{{ asset.version }}</td>
+                <td>{{ asset.vendor }}</td>
+                <td>
+                  <span class="badge"
+                        [class.bg-success]="asset.status === 'Active'"
+                        [class.bg-warning]="asset.status === 'Expired'"
+                        [class.bg-info]="asset.status === 'Available'">
+                    {{ asset.status }}
+                  </span>
+                </td>
+                <td>{{ asset.validityEndDate | date:'shortDate' }}</td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info" (click)="openLicensingAssetViewModal(asset)" title="View"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-outline-secondary" (click)="openLicensingAssetEditModal(asset)" title="Edit"><i class="fas fa-edit"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="licensingAssets.length === 0">
+                <td colspan="7" class="text-center py-4 text-muted">No licensing assets found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+
+      <!-- Services (placeholder) -->
+      <ng-container *ngIf="selectedCategory === 'services'">
+        <div class="text-center py-5 text-muted">
+          <i class="fas fa-concierge-bell fa-3x mb-3" style="color: #fd7e14;"></i>
+          <h5>Services module coming soon</h5>
+          <p>AMC, support contracts, and SLA management will be available here.</p>
+        </div>
+      </ng-container>
+    </div>
   </div>
 </div>
 
-<!-- Create Asset Modal -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- CREATE ASSET MODAL                                                         -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content h-75">
+    <div class="modal-content" style="max-height:90vh;">
       <div class="modal-header">
         <h5 class="modal-title">Create New Asset</h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
 
-      <!-- Asset Type Selector -->
-      <div class="px-3 pt-3 border-bottom">
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label class="form-label fw-bold">Asset Type *</label>
-            <select class="form-select" [(ngModel)]="selectedAssetType">
-              <option value="Hardware">Hardware</option>
-              <option value="Licensing">Licensing</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab Navigation -->
-      <div class="modal-body p-0 d-flex flex-column">
-        <!-- Hardware Asset Tabs -->
-        <ul *ngIf="selectedAssetType === 'Hardware'" class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" 
-                    [class.active]="currentTab === 1"
-                    (click)="goToTab(1)"
-                    type="button">
-              <i class="fas fa-info-circle me-2"></i>Basic Details
-              <i *ngIf="isTabValid(1)" class="fas fa-check text-success ms-2"></i>
+      <div class="modal-body p-0 d-flex flex-column" style="overflow:hidden;">
+        <!-- Hardware Tabs -->
+        <ul *ngIf="selectedAssetType === 'Hardware'" class="nav nav-tabs px-3 pt-3 mb-0">
+          <li class="nav-item">
+            <button class="nav-link" [class.active]="currentTab===1" (click)="goToTab(1)" type="button">
+              <i class="fas fa-info-circle me-1"></i>Basic Details
+              <i *ngIf="isTabValid(1)" class="fas fa-check text-success ms-1"></i>
             </button>
           </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" 
-                    [class.active]="currentTab === 2"
-                    [class.disabled]="currentTab < 2"
-                    (click)="goToTab(2)"
-                    type="button">
-              <i class="fas fa-cogs me-2"></i>Asset Details
-              <i *ngIf="isTabValid(2)" class="fas fa-check text-success ms-2"></i>
+          <li class="nav-item">
+            <button class="nav-link" [class.active]="currentTab===2" [class.disabled]="currentTab<2" (click)="goToTab(2)" type="button">
+              <i class="fas fa-cogs me-1"></i>Asset Details
+              <i *ngIf="isTabValid(2)" class="fas fa-check text-success ms-1"></i>
             </button>
           </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" 
-                    [class.active]="currentTab === 3"
-                    [class.disabled]="currentTab < 3"
-                    (click)="goToTab(3)"
-                    type="button">
-              <i class="fas fa-calendar me-2"></i>Procurement & Warranty
+          <li class="nav-item">
+            <button class="nav-link" [class.active]="currentTab===3" [class.disabled]="currentTab<3" (click)="goToTab(3)" type="button">
+              <i class="fas fa-calendar me-1"></i>Procurement
+            </button>
+          </li>
+        </ul>
+        <!-- Licensing Tabs -->
+        <ul *ngIf="selectedAssetType === 'Licensing'" class="nav nav-tabs px-3 pt-3 mb-0">
+          <li class="nav-item">
+            <button class="nav-link" [class.active]="licensingTab===1" (click)="goTolicensingTab(1)" type="button">
+              <i class="fas fa-info-circle me-1"></i>License Details
+              <i *ngIf="islicensingTabValid(1)" class="fas fa-check text-success ms-1"></i>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" [class.active]="licensingTab===2" [class.disabled]="licensingTab<2" (click)="goTolicensingTab(2)" type="button">
+              <i class="fas fa-calendar me-1"></i>Validity & Dates
+              <i *ngIf="islicensingTabValid(2)" class="fas fa-check text-success ms-1"></i>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" [class.active]="licensingTab===3" [class.disabled]="licensingTab<3" (click)="goTolicensingTab(3)" type="button">
+              <i class="fas fa-tag me-1"></i>Asset & Status
+              <i *ngIf="islicensingTabValid(3)" class="fas fa-check text-success ms-1"></i>
             </button>
           </li>
         </ul>
 
-        <!-- licensing asset Tabs -->
-        <ul *ngIf="selectedAssetType === 'Licensing'" class="nav nav-tabs px-3 pt-3 mb-0" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" 
-                    [class.active]="licensingTab === 1"
-                    (click)="goTolicensingTab(1)"
-                    type="button">
-              <i class="fas fa-info-circle me-2"></i>License Details
-              <i *ngIf="islicensingTabValid(1)" class="fas fa-check text-success ms-2"></i>
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" 
-                    [class.active]="licensingTab === 2"
-                    [class.disabled]="licensingTab < 2"
-                    (click)="goTolicensingTab(2)"
-                    type="button">
-              <i class="fas fa-calendar me-2"></i>Validity & Dates
-              <i *ngIf="islicensingTabValid(2)" class="fas fa-check text-success ms-2"></i>
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" 
-                    [class.active]="licensingTab === 3"
-                    [class.disabled]="licensingTab < 3"
-                    (click)="goTolicensingTab(3)"
-                    type="button">
-              <i class="fas fa-tag me-2"></i>Asset & Publisher
-              <i *ngIf="islicensingTabValid(3)" class="fas fa-check text-success ms-2"></i>
-            </button>
-          </li>
-        </ul>
-
-        <!-- Tab Content -->
-        <div class="tab-content flex-grow-1 p-3" style="overflow-y: auto;">
-          <!-- Hardware Asset Tabs -->
+        <div class="tab-content flex-grow-1 p-3" style="overflow-y:auto;">
+          <!-- Hardware Tab 1 -->
           <ng-container *ngIf="selectedAssetType === 'Hardware'">
-            <!-- Tab 1: Basic Details -->
-            <div class="tab-pane fade" [class.show]="currentTab === 1" [class.active]="currentTab === 1">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Asset Tag *</label>
-                  <input type="text" 
-                         class="form-control" 
-                         [(ngModel)]="createForm.assetTag"
-                         [class.is-invalid]="hasValidationError('assetTag')"
-                         placeholder="Enter asset tag">
-                  <div *ngIf="hasValidationError('assetTag')" class="invalid-feedback">
-                    {{ getValidationError('assetTag') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Classification</label>
-                  <input type="text" class="form-control" [(ngModel)]="createForm.classification" placeholder="e.g., TMS Critical, IT General">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Status *</label>
-                  <select class="form-select" [(ngModel)]="createForm.status">
-                    <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
-                  </select>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Placing *</label>
-                  <select class="form-select" 
-                          [(ngModel)]="createForm.placing"
-                          [class.is-invalid]="hasValidationError('placing')">
-                    <option value="">Select Placing</option>
-                    <option *ngFor="let placing of placingOptions" [value]="placing">{{ placing }}</option>
-                  </select>
-                  <div *ngIf="hasValidationError('placing')" class="invalid-feedback">
-                    {{ getValidationError('placing') }}
-                  </div>
-                  <small class="form-text text-muted">Select the physical placement area of the asset</small>
-                </div>
+            <div *ngIf="currentTab===1" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Asset Tag *</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.assetTag"
+                       [class.is-invalid]="hasValidationError('assetTag')" placeholder="Enter asset tag">
+                <div *ngIf="hasValidationError('assetTag')" class="invalid-feedback">{{ getValidationError('assetTag') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Usage Category *</label>
+                <select class="form-select" [(ngModel)]="createForm.usageCategory">
+                  <option *ngFor="let u of usageCategories" [value]="u.value">{{ u.label }}</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Classification</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.classification" placeholder="e.g., TMS Critical">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status *</label>
+                <select class="form-select" [(ngModel)]="createForm.status">
+                  <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
+                </select>
+              </div>
+              <!-- Office: Location dropdown | Site: Placing dropdown -->
+              <div class="col-md-6" *ngIf="selectedLocationType === 'office'">
+                <label class="form-label">Location *</label>
+                <select class="form-select" [(ngModel)]="createForm.locationId" [class.is-invalid]="hasValidationError('placing')">
+                  <option [value]="0">Select Location</option>
+                  <option *ngFor="let loc of locations" [value]="loc.id">{{ loc.name }}</option>
+                </select>
+              </div>
+              <div class="col-md-6" *ngIf="selectedLocationType === 'site'">
+                <label class="form-label">Placing *</label>
+                <select class="form-select" [(ngModel)]="createForm.placing" [class.is-invalid]="hasValidationError('placing')">
+                  <option value="">Select Placing</option>
+                  <option *ngFor="let p of placingOptions" [value]="p">{{ p }}</option>
+                </select>
+                <div *ngIf="hasValidationError('placing')" class="invalid-feedback">{{ getValidationError('placing') }}</div>
               </div>
             </div>
-
-            <!-- Tab 2: Asset Details -->
-            <div class="tab-pane fade" [class.show]="currentTab === 2" [class.active]="currentTab === 2">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Asset Type *</label>
-                  <select class="form-select" 
-                          [(ngModel)]="createForm.assetType"
-                          [class.is-invalid]="hasValidationError('assetType')">
-                    <option value="">Select Type</option>
-                    <option *ngFor="let type of assetTypes" [value]="type">{{ type }}</option>
-                  </select>
-                  <div *ngIf="hasValidationError('assetType')" class="invalid-feedback">
-                    {{ getValidationError('assetType') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Sub Type</label>
-                  <input type="text" class="form-control" [(ngModel)]="createForm.subType" placeholder="Enter sub type">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Make *</label>
-                  <input type="text" 
-                         class="form-control" 
-                         [(ngModel)]="createForm.make"
-                         [class.is-invalid]="hasValidationError('make')"
-                         placeholder="Enter make">
-                  <div *ngIf="hasValidationError('make')" class="invalid-feedback">
-                    {{ getValidationError('make') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Model *</label>
-                  <input type="text" 
-                         class="form-control" 
-                         [(ngModel)]="createForm.model"
-                         [class.is-invalid]="hasValidationError('model')"
-                         placeholder="Enter model">
-                  <div *ngIf="hasValidationError('model')" class="invalid-feedback">
-                    {{ getValidationError('model') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Serial Number</label>
-                  <input type="text" class="form-control" [(ngModel)]="createForm.serialNumber" placeholder="Enter serial number">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Vendor</label>
-                  <input type="text" class="form-control" [(ngModel)]="createForm.vendor" placeholder="Enter vendor name">
-                </div>
+            <!-- Hardware Tab 2 -->
+            <div *ngIf="currentTab===2" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Asset Type *</label>
+                <select class="form-select" [(ngModel)]="createForm.assetType" [class.is-invalid]="hasValidationError('assetType')">
+                  <option value="">Select Type</option>
+                  <option *ngFor="let t of assetTypes" [value]="t">{{ t }}</option>
+                </select>
+                <div *ngIf="hasValidationError('assetType')" class="invalid-feedback">{{ getValidationError('assetType') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Sub Type</label>
+                <select class="form-select" [(ngModel)]="createForm.subType">
+                  <option value="">Select Sub Type</option>
+                  <option *ngFor="let s of hardwareSubTypes" [value]="s">{{ s }}</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Make *</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.make"
+                       [class.is-invalid]="hasValidationError('make')" placeholder="Enter make">
+                <div *ngIf="hasValidationError('make')" class="invalid-feedback">{{ getValidationError('make') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Model *</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.model"
+                       [class.is-invalid]="hasValidationError('model')" placeholder="Enter model">
+                <div *ngIf="hasValidationError('model')" class="invalid-feedback">{{ getValidationError('model') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Serial Number</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.serialNumber" placeholder="Enter serial number">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Vendor</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.vendor" placeholder="Enter vendor">
               </div>
             </div>
-
-            <!-- Tab 3: Procurement & Warranty -->
-            <div class="tab-pane fade" [class.show]="currentTab === 3" [class.active]="currentTab === 3">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Procurement Date</label>
-                  <input type="date" class="form-control" [(ngModel)]="createForm.procurementDate">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Procurement Cost</label>
-                  <input type="number" class="form-control" [(ngModel)]="createForm.procurementCost" placeholder="Enter cost">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Warranty Start Date</label>
-                  <input type="date" class="form-control" [(ngModel)]="createForm.warrantyStartDate">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Warranty End Date</label>
-                  <input type="date" class="form-control" [(ngModel)]="createForm.warrantyEndDate">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Commissioning Date</label>
-                  <input type="date" class="form-control" [(ngModel)]="createForm.commissioningDate">
-                </div>
+            <!-- Hardware Tab 3 -->
+            <div *ngIf="currentTab===3" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Procurement Date</label>
+                <input type="date" class="form-control" [(ngModel)]="createForm.procurementDate">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Procurement Cost</label>
+                <input type="number" class="form-control" [(ngModel)]="createForm.procurementCost" placeholder="Enter cost">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Warranty Start Date</label>
+                <input type="date" class="form-control" [(ngModel)]="createForm.warrantyStartDate">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Warranty End Date</label>
+                <input type="date" class="form-control" [(ngModel)]="createForm.warrantyEndDate">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Commissioning Date</label>
+                <input type="date" class="form-control" [(ngModel)]="createForm.commissioningDate">
               </div>
             </div>
           </ng-container>
 
-          <!-- licensing asset Form -->
+          <!-- Licensing Tab 1 -->
           <ng-container *ngIf="selectedAssetType === 'Licensing'">
-            <!-- Tab 1: License Details -->
-            <div class="tab-pane fade" [class.show]="licensingTab === 1" [class.active]="licensingTab === 1">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Licensing Name *</label>
-                  <input type="text" 
-                         class="form-control" 
-                         [(ngModel)]="licensingForm.licenseName"
-                         [class.is-invalid]="hasValidationError('licenseName')"
-                         placeholder="Enter Licensing name">
-                  <div *ngIf="hasValidationError('licenseName')" class="invalid-feedback">
-                    {{ getValidationError('licenseName') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Version *</label>
-                  <input type="text" 
-                         class="form-control" 
-                         [(ngModel)]="licensingForm.version"
-                         [class.is-invalid]="hasValidationError('version')"
-                         placeholder="Enter version">
-                  <div *ngIf="hasValidationError('version')" class="invalid-feedback">
-                    {{ getValidationError('version') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">License Key *</label>
-                  <input type="text" 
-                         class="form-control" 
-                         [(ngModel)]="licensingForm.licenseKey"
-                         [class.is-invalid]="hasValidationError('licenseKey')"
-                         placeholder="Enter license key">
-                  <div *ngIf="hasValidationError('licenseKey')" class="invalid-feedback">
-                    {{ getValidationError('licenseKey') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">License Type *</label>
-                  <select class="form-select" 
-                          [(ngModel)]="licensingForm.licenseType"
-                          [class.is-invalid]="hasValidationError('licenseType')">
-                    <option value="">Select License Type</option>
-                    <option *ngFor="let type of licenseTypes" [value]="type.value">{{ type.label }}</option>
-                  </select>
-                  <div *ngIf="hasValidationError('licenseType')" class="invalid-feedback">
-                    {{ getValidationError('licenseType') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Vendor *</label>
-                  <input type="text" 
-                         class="form-control" 
-                         [(ngModel)]="licensingForm.vendor"
-                         [class.is-invalid]="hasValidationError('vendor')"
-                         placeholder="Enter vendor name">
-                  <div *ngIf="hasValidationError('vendor')" class="invalid-feedback">
-                    {{ getValidationError('vendor') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Publisher *</label>
-                  <input type="text" 
-                         class="form-control" 
-                         [(ngModel)]="licensingForm.publisher"
-                         [class.is-invalid]="hasValidationError('publisher')"
-                         placeholder="Enter publisher name">
-                  <div *ngIf="hasValidationError('publisher')" class="invalid-feedback">
-                    {{ getValidationError('publisher') }}
-                  </div>
-                </div>
+            <div *ngIf="licensingTab===1" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">License Name *</label>
+                <input type="text" class="form-control" [(ngModel)]="licensingForm.licenseName"
+                       [class.is-invalid]="hasValidationError('licenseName')" placeholder="Enter license name">
+                <div *ngIf="hasValidationError('licenseName')" class="invalid-feedback">{{ getValidationError('licenseName') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Version *</label>
+                <input type="text" class="form-control" [(ngModel)]="licensingForm.version"
+                       [class.is-invalid]="hasValidationError('version')" placeholder="Enter version">
+                <div *ngIf="hasValidationError('version')" class="invalid-feedback">{{ getValidationError('version') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">License Key *</label>
+                <input type="text" class="form-control" [(ngModel)]="licensingForm.licenseKey"
+                       [class.is-invalid]="hasValidationError('licenseKey')" placeholder="Enter license key">
+                <div *ngIf="hasValidationError('licenseKey')" class="invalid-feedback">{{ getValidationError('licenseKey') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">License Type *</label>
+                <select class="form-select" [(ngModel)]="licensingForm.licenseType" [class.is-invalid]="hasValidationError('licenseType')">
+                  <option value="">Select License Type</option>
+                  <option *ngFor="let t of licenseTypes" [value]="t.value">{{ t.label }}</option>
+                </select>
+                <div *ngIf="hasValidationError('licenseType')" class="invalid-feedback">{{ getValidationError('licenseType') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Vendor *</label>
+                <input type="text" class="form-control" [(ngModel)]="licensingForm.vendor"
+                       [class.is-invalid]="hasValidationError('vendor')" placeholder="Enter vendor">
+                <div *ngIf="hasValidationError('vendor')" class="invalid-feedback">{{ getValidationError('vendor') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Publisher *</label>
+                <input type="text" class="form-control" [(ngModel)]="licensingForm.publisher"
+                       [class.is-invalid]="hasValidationError('publisher')" placeholder="Enter publisher">
+                <div *ngIf="hasValidationError('publisher')" class="invalid-feedback">{{ getValidationError('publisher') }}</div>
               </div>
             </div>
-
-            <!-- Tab 2: Validity & Dates -->
-            <div class="tab-pane fade" [class.show]="licensingTab === 2" [class.active]="licensingTab === 2">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Purchase Date *</label>
-                  <input type="date" 
-                         class="form-control" 
-                         [(ngModel)]="licensingForm.purchaseDate"
-                         [class.is-invalid]="hasValidationError('purchaseDate')">
-                  <div *ngIf="hasValidationError('purchaseDate')" class="invalid-feedback">
-                    {{ getValidationError('purchaseDate') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Number of Licenses *</label>
-                  <input type="number" 
-                         class="form-control" 
-                         [(ngModel)]="licensingForm.numberOfLicenses"
-                         [class.is-invalid]="hasValidationError('numberOfLicenses')"
-                         placeholder="Enter number of licenses"
-                         min="1">
-                  <div *ngIf="hasValidationError('numberOfLicenses')" class="invalid-feedback">
-                    {{ getValidationError('numberOfLicenses') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Validity Start Date *</label>
-                  <input type="date" 
-                         class="form-control" 
-                         [(ngModel)]="licensingForm.validityStartDate"
-                         [class.is-invalid]="hasValidationError('validityStartDate')">
-                  <div *ngIf="hasValidationError('validityStartDate')" class="invalid-feedback">
-                    {{ getValidationError('validityStartDate') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Validity End Date *</label>
-                  <input type="date" 
-                         class="form-control" 
-                         [(ngModel)]="licensingForm.validityEndDate"
-                         [class.is-invalid]="hasValidationError('validityEndDate')">
-                  <div *ngIf="hasValidationError('validityEndDate')" class="invalid-feedback">
-                    {{ getValidationError('validityEndDate') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Validity Type *</label>
-                  <select class="form-select" 
-                          [(ngModel)]="licensingForm.validityType"
-                          [class.is-invalid]="hasValidationError('validityType')">
-                    <option value="">Select Validity Type</option>
-                    <option *ngFor="let type of validityTypes" [value]="type.value">{{ type.label }}</option>
-                  </select>
-                  <div *ngIf="hasValidationError('validityType')" class="invalid-feedback">
-                    {{ getValidationError('validityType') }}
-                  </div>
-                </div>
+            <!-- Licensing Tab 2 -->
+            <div *ngIf="licensingTab===2" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Purchase Date *</label>
+                <input type="date" class="form-control" [(ngModel)]="licensingForm.purchaseDate" [class.is-invalid]="hasValidationError('purchaseDate')">
+                <div *ngIf="hasValidationError('purchaseDate')" class="invalid-feedback">{{ getValidationError('purchaseDate') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Number of Licenses *</label>
+                <input type="number" class="form-control" [(ngModel)]="licensingForm.numberOfLicenses"
+                       [class.is-invalid]="hasValidationError('numberOfLicenses')" min="1">
+                <div *ngIf="hasValidationError('numberOfLicenses')" class="invalid-feedback">{{ getValidationError('numberOfLicenses') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Validity Start Date *</label>
+                <input type="date" class="form-control" [(ngModel)]="licensingForm.validityStartDate" [class.is-invalid]="hasValidationError('validityStartDate')">
+                <div *ngIf="hasValidationError('validityStartDate')" class="invalid-feedback">{{ getValidationError('validityStartDate') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Validity End Date *</label>
+                <input type="date" class="form-control" [(ngModel)]="licensingForm.validityEndDate" [class.is-invalid]="hasValidationError('validityEndDate')">
+                <div *ngIf="hasValidationError('validityEndDate')" class="invalid-feedback">{{ getValidationError('validityEndDate') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Validity Type *</label>
+                <select class="form-select" [(ngModel)]="licensingForm.validityType" [class.is-invalid]="hasValidationError('validityType')">
+                  <option value="">Select Validity Type</option>
+                  <option *ngFor="let t of validityTypes" [value]="t.value">{{ t.label }}</option>
+                </select>
+                <div *ngIf="hasValidationError('validityType')" class="invalid-feedback">{{ getValidationError('validityType') }}</div>
               </div>
             </div>
-
-            <!-- Tab 3: Asset & Publisher -->
-            <div class="tab-pane fade" [class.show]="licensingTab === 3" [class.active]="licensingTab === 3">
-              <div class="row g-3">
-                <div class="col-md-12">
-                  <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Asset ID will be auto-generated</strong> when you create this licensing asset.
-                  </div>
+            <!-- Licensing Tab 3 -->
+            <div *ngIf="licensingTab===3" class="row g-3">
+              <div class="col-12">
+                <div class="alert alert-info mb-2">
+                  <i class="fas fa-info-circle me-2"></i>Asset ID will be auto-generated on creation.
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">Status *</label>
-                  <select class="form-select" 
-                          [(ngModel)]="licensingForm.status"
-                          [class.is-invalid]="hasValidationError('status')">
-                    <option value="">Select Status</option>
-                    <option *ngFor="let status of licensingStatuses" [value]="status.value">{{ status.label }}</option>
-                  </select>
-                  <div *ngIf="hasValidationError('status')" class="invalid-feedback">
-                    {{ getValidationError('status') }}
-                  </div>
-                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status *</label>
+                <select class="form-select" [(ngModel)]="licensingForm.status" [class.is-invalid]="hasValidationError('status')">
+                  <option value="">Select Status</option>
+                  <option *ngFor="let s of licensingStatuses" [value]="s.value">{{ s.label }}</option>
+                </select>
+                <div *ngIf="hasValidationError('status')" class="invalid-feedback">{{ getValidationError('status') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Usage Category *</label>
+                <select class="form-select" [(ngModel)]="licensingForm.usageCategory">
+                  <option *ngFor="let u of usageCategories" [value]="u.value">{{ u.label }}</option>
+                </select>
               </div>
             </div>
           </ng-container>
         </div>
       </div>
 
-      <!-- Modal Footer -->
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-        
-        <!-- Hardware Asset Buttons -->
-        <button *ngIf="selectedAssetType === 'Hardware' && currentTab > 1" type="button" class="btn btn-outline-primary" (click)="previousTab()">
-          <i class="fas fa-arrow-left me-2"></i>Previous
+        <button *ngIf="selectedAssetType==='Hardware' && currentTab>1" type="button" class="btn btn-outline-primary" (click)="previousTab()">
+          <i class="fas fa-arrow-left me-1"></i>Previous
         </button>
-        <button *ngIf="selectedAssetType === 'Hardware' && currentTab < 3" type="button" class="btn btn-primary" (click)="nextTab()">
-          Next<i class="fas fa-arrow-right ms-2"></i>
+        <button *ngIf="selectedAssetType==='Hardware' && currentTab<3" type="button" class="btn btn-primary" (click)="nextTab()">
+          Next<i class="fas fa-arrow-right ms-1"></i>
         </button>
-        <button *ngIf="selectedAssetType === 'Hardware' && currentTab === 3" type="button" class="btn btn-success" 
-                [disabled]="loading" 
-                (click)="createAsset()">
-          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-          <i *ngIf="!loading" class="fas fa-save me-2"></i>Create Asset
+        <button *ngIf="selectedAssetType==='Hardware' && currentTab===3" type="button" class="btn btn-success" [disabled]="loading" (click)="createAsset()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!loading" class="fas fa-save me-1"></i>Create Asset
         </button>
-
-        <!-- licensing asset Buttons -->
-        <button *ngIf="selectedAssetType === 'Licensing' && licensingTab > 1" type="button" class="btn btn-outline-primary" (click)="previouslicensingTab()">
-          <i class="fas fa-arrow-left me-2"></i>Previous
+        <button *ngIf="selectedAssetType==='Licensing' && licensingTab>1" type="button" class="btn btn-outline-primary" (click)="previouslicensingTab()">
+          <i class="fas fa-arrow-left me-1"></i>Previous
         </button>
-        <button *ngIf="selectedAssetType === 'Licensing' && licensingTab < 3" type="button" class="btn btn-primary" (click)="nextlicensingTab()">
-          Next<i class="fas fa-arrow-right ms-2"></i>
+        <button *ngIf="selectedAssetType==='Licensing' && licensingTab<3" type="button" class="btn btn-primary" (click)="nextlicensingTab()">
+          Next<i class="fas fa-arrow-right ms-1"></i>
         </button>
-        <button *ngIf="selectedAssetType === 'Licensing' && licensingTab === 3" type="button" class="btn btn-success" 
-                [disabled]="loading" 
-                (click)="createAsset()">
-          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-          <i *ngIf="!loading" class="fas fa-save me-2"></i>Create licensing asset
+        <button *ngIf="selectedAssetType==='Licensing' && licensingTab===3" type="button" class="btn btn-success" [disabled]="loading" (click)="createAsset()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!loading" class="fas fa-save me-1"></i>Create Licensing Asset
         </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal Backdrop -->
-<div *ngIf="showCreateModal || showEditModal || showViewModal || showBulkUploadModal" 
-     class="modal-backdrop fade show" 
-     (click)="closeModals()"></div>
-
-<!-- View Asset Modal -->
-<div class="modal fade" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" tabindex="-1">
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- HARDWARE VIEW MODAL                                                        -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" [class.show]="showViewModal && selectedAsset && !selectedAsset.licenseName"
+     [style.display]="showViewModal && selectedAsset && !selectedAsset.licenseName ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fas fa-eye me-2"></i>Asset Details
-        </h5>
+        <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Asset Details</h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
-      <div class="modal-body" *ngIf="selectedAsset">
-        <!-- Tab Navigation -->
+      <div class="modal-body" *ngIf="selectedAsset && !selectedAsset.licenseName">
         <ul class="nav nav-tabs mb-3">
-          <li class="nav-item">
-            <a class="nav-link" [class.active]="viewTab === 1" (click)="setViewTab(1)" style="cursor: pointer;">
-              <i class="fas fa-info-circle me-1"></i>Basic & Location
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" [class.active]="viewTab === 2" (click)="setViewTab(2)" style="cursor: pointer;">
-              <i class="fas fa-cogs me-1"></i>Technical
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" [class.active]="viewTab === 3" (click)="setViewTab(3)" style="cursor: pointer;">
-              <i class="fas fa-user-check me-1"></i>User & Status
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" [class.active]="viewTab === 4" (click)="setViewTab(4)" style="cursor: pointer;">
-              <i class="fas fa-shopping-cart me-1"></i>Procurement
-            </a>
-          </li>
+          <li class="nav-item"><a class="nav-link" [class.active]="viewTab===1" (click)="setViewTab(1)" style="cursor:pointer;"><i class="fas fa-info-circle me-1"></i>Basic & Location</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="viewTab===2" (click)="setViewTab(2)" style="cursor:pointer;"><i class="fas fa-cogs me-1"></i>Technical</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="viewTab===3" (click)="setViewTab(3)" style="cursor:pointer;"><i class="fas fa-user-check me-1"></i>User & Status</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="viewTab===4" (click)="setViewTab(4)" style="cursor:pointer;"><i class="fas fa-shopping-cart me-1"></i>Procurement</a></li>
         </ul>
-
-        <!-- Tab Content -->
-        <div class="tab-content">
-          <!-- Tab 1: Basic & Location -->
-          <div *ngIf="viewTab === 1" class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label text-muted">Asset ID</label>
-              <p class="fw-bold">{{ selectedAsset.assetId }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Asset Tag</label>
-              <p class="fw-bold">{{ selectedAsset.assetTag }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Classification</label>
-              <p>{{ selectedAsset.classification || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Region</label>
-              <p>{{ selectedAsset.region || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">State</label>
-              <p>{{ selectedAsset.state || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Plaza Name</label>
-              <p>{{ selectedAsset.plazaName || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Placing</label>
-              <p>{{ selectedAsset.placing || 'N/A' }}</p>
-            </div>
+        <div *ngIf="viewTab===1" class="row g-3">
+          <div class="col-md-6"><label class="form-label text-muted">Asset ID</label><p class="fw-bold">{{ selectedAsset.assetId }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Asset Tag</label><p class="fw-bold">{{ selectedAsset.assetTag }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Classification</label><p>{{ selectedAsset.classification || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Region</label><p>{{ selectedAsset.region || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">State</label><p>{{ selectedAsset.state || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Plaza Name</label><p>{{ selectedAsset.plazaName || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Placing</label><p>{{ selectedAsset.placing || 'N/A' }}</p></div>
+        </div>
+        <div *ngIf="viewTab===2" class="row g-3">
+          <div class="col-md-6"><label class="form-label text-muted">Asset Type</label><p>{{ selectedAsset.assetType }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Sub Type</label><p>{{ selectedAsset.subType || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Make</label><p>{{ selectedAsset.make }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Model</label><p>{{ selectedAsset.model }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Serial Number</label><p>{{ selectedAsset.serialNumber || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">OS Type</label><p>{{ selectedAsset.osType || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">IP Address</label><p>{{ selectedAsset.ipAddress || 'N/A' }}</p></div>
+        </div>
+        <div *ngIf="viewTab===3" class="row g-3">
+          <div class="col-md-6"><label class="form-label text-muted">Assigned User</label><p>{{ selectedAsset.assignedUserText || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">User Role</label><p>{{ selectedAsset.userRole || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Status</label>
+            <p><span class="badge" [class.bg-success]="selectedAsset.status==='In Use'" [class.bg-info]="selectedAsset.status==='Spare'" [class.bg-warning]="selectedAsset.status==='Repair'" [class.bg-secondary]="selectedAsset.status==='Decommissioned'">{{ selectedAsset.status }}</span></p>
           </div>
-
-          <!-- Tab 2: Technical Details -->
-          <div *ngIf="viewTab === 2" class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label text-muted">Asset Type</label>
-              <p>{{ selectedAsset.assetType }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Sub Type</label>
-              <p>{{ selectedAsset.subType || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Make</label>
-              <p>{{ selectedAsset.make }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Model</label>
-              <p>{{ selectedAsset.model }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Serial Number</label>
-              <p>{{ selectedAsset.serialNumber || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">OS Type</label>
-              <p>{{ selectedAsset.osType || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">OS Version</label>
-              <p>{{ selectedAsset.osVersion || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">DB Type</label>
-              <p>{{ selectedAsset.dbType || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">DB Version</label>
-              <p>{{ selectedAsset.dbVersion || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">IP Address</label>
-              <p>{{ selectedAsset.ipAddress || 'N/A' }}</p>
-            </div>
-          </div>
-
-          <!-- Tab 3: User & Status -->
-          <div *ngIf="viewTab === 3" class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label text-muted">Assigned User</label>
-              <p>{{ selectedAsset.assignedUserText || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">User Role</label>
-              <p>{{ selectedAsset.userRole || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Asset Status</label>
-              <p>
-                <span class="badge" 
-                      [class.bg-success]="selectedAsset.status === 'In Use'"
-                      [class.bg-info]="selectedAsset.status === 'Spare'"
-                      [class.bg-warning]="selectedAsset.status === 'Repair'"
-                      [class.bg-secondary]="selectedAsset.status === 'Decommissioned'">
-                  {{ selectedAsset.status }}
-                </span>
-              </p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Patch Status</label>
-              <p>{{ selectedAsset.patchStatus || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">USB Blocking Status</label>
-              <p>{{ selectedAsset.usbBlockingStatus || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Procured By</label>
-              <p>{{ selectedAsset.procuredBy || 'N/A' }}</p>
-            </div>
-          </div>
-
-          <!-- Tab 4: Procurement & Warranty -->
-          <div *ngIf="viewTab === 4" class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label text-muted">Commissioning Date</label>
-              <p>{{ selectedAsset.commissioningDate ? (selectedAsset.commissioningDate | date:'mediumDate') : 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Procurement Date</label>
-              <p>{{ selectedAsset.procurementDate ? (selectedAsset.procurementDate | date:'mediumDate') : 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Procurement Cost</label>
-              <p>{{ selectedAsset.procurementCost ? ('₹' + selectedAsset.procurementCost) : 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Vendor</label>
-              <p>{{ selectedAsset.vendor || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Warranty Start Date</label>
-              <p>{{ selectedAsset.warrantyStartDate ? (selectedAsset.warrantyStartDate | date:'mediumDate') : 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Warranty End Date</label>
-              <p>{{ selectedAsset.warrantyEndDate ? (selectedAsset.warrantyEndDate | date:'mediumDate') : 'N/A' }}</p>
-            </div>
-            <div class="col-12">
-              <label class="form-label text-muted">Remarks</label>
-              <p>{{ selectedAsset.remarks || 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Created At</label>
-              <p>{{ selectedAsset.createdAt | date:'medium' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Updated At</label>
-              <p>{{ selectedAsset.updatedAt ? (selectedAsset.updatedAt | date:'medium') : 'N/A' }}</p>
-            </div>
-          </div>
+          <div class="col-md-6"><label class="form-label text-muted">Patch Status</label><p>{{ selectedAsset.patchStatus || 'N/A' }}</p></div>
+        </div>
+        <div *ngIf="viewTab===4" class="row g-3">
+          <div class="col-md-6"><label class="form-label text-muted">Procurement Date</label><p>{{ selectedAsset.procurementDate ? (selectedAsset.procurementDate | date:'mediumDate') : 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Procurement Cost</label><p>{{ selectedAsset.procurementCost ? ('₹' + selectedAsset.procurementCost) : 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Vendor</label><p>{{ selectedAsset.vendor || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Warranty Start</label><p>{{ selectedAsset.warrantyStartDate ? (selectedAsset.warrantyStartDate | date:'mediumDate') : 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Warranty End</label><p>{{ selectedAsset.warrantyEndDate ? (selectedAsset.warrantyEndDate | date:'mediumDate') : 'N/A' }}</p></div>
+          <div class="col-12"><label class="form-label text-muted">Remarks</label><p>{{ selectedAsset.remarks || 'N/A' }}</p></div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
-        <button type="button" class="btn btn-primary" (click)="closeModals(); openEditModal(selectedAsset!)">
-          <i class="fas fa-edit me-2"></i>Edit Asset
-        </button>
+        <button type="button" class="btn btn-primary" (click)="closeModals(); openEditModal(selectedAsset!)"><i class="fas fa-edit me-1"></i>Edit Asset</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Edit Asset Modal -->
-<div class="modal fade" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" tabindex="-1">
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- HARDWARE EDIT MODAL                                                        -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" [class.show]="showEditModal && selectedAsset && !selectedAsset.licenseName"
+     [style.display]="showEditModal && selectedAsset && !selectedAsset.licenseName ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fas fa-edit me-2"></i>Edit Asset
-        </h5>
+        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Asset</h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
-      <div class="modal-body" *ngIf="selectedAsset">
-        <form>
-          <!-- Tab Navigation -->
-          <ul class="nav nav-tabs mb-3">
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="editTab === 1" (click)="setEditTab(1)" style="cursor: pointer;">
-                <i class="fas fa-info-circle me-1"></i>Basic & Location
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="editTab === 2" (click)="setEditTab(2)" style="cursor: pointer;">
-                <i class="fas fa-cogs me-1"></i>Technical
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="editTab === 3" (click)="setEditTab(3)" style="cursor: pointer;">
-                <i class="fas fa-user-check me-1"></i>User & Status
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="editTab === 4" (click)="setEditTab(4)" style="cursor: pointer;">
-                <i class="fas fa-shopping-cart me-1"></i>Procurement
-              </a>
-            </li>
-          </ul>
-
-          <!-- Tab Content -->
-          <div class="tab-content">
-            <!-- Tab 1: Basic & Location -->
-            <div *ngIf="editTab === 1" class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Asset Tag</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.assetTag" name="assetTag">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Classification</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.classification" name="classification" placeholder="e.g., TMS Critical, IT General">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Region</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.region" name="region">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">State</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.state" name="state">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Plaza Name</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.plazaName" name="plazaName">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Placing</label>
-                <select class="form-select" [(ngModel)]="editForm.placing" name="placing">
-                  <option value="">Select Placing</option>
-                  <option *ngFor="let placing of placingOptions" [value]="placing">{{ placing }}</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Location</label>
-                <select class="form-select" [(ngModel)]="editForm.locationId" name="locationId">
-                  <option [value]="null">Select Location</option>
-                  <option [value]="location.id" *ngFor="let location of locations">
-                    {{ location.name }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Tab 2: Technical Details -->
-            <div *ngIf="editTab === 2" class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Asset Type</label>
-                <select class="form-select" [(ngModel)]="editForm.assetType" name="assetType">
-                  <option value="">Select Asset Type</option>
-                  <option value="Hardware">Hardware</option>
-                  <option value="Licensing">Licensing</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Sub Type</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.subType" name="subType">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Make</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.make" name="make">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Model</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.model" name="model">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Serial Number</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.serialNumber" name="serialNumber">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">OS Type</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.osType" name="osType">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">OS Version</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.osVersion" name="osVersion">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">DB Type</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.dbType" name="dbType">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">DB Version</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.dbVersion" name="dbVersion">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">IP Address</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.ipAddress" name="ipAddress">
-              </div>
-            </div>
-
-            <!-- Tab 3: User & Status -->
-            <div *ngIf="editTab === 3" class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Assigned User</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.assignedUserText" name="assignedUserText">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">User Role</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.userRole" name="userRole">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Status</label>
-                <select class="form-select" [(ngModel)]="editForm.status" name="status">
-                  <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Patch Status</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.patchStatus" name="patchStatus">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">USB Blocking Status</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.usbBlockingStatus" name="usbBlockingStatus">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Procured By</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.procuredBy" name="procuredBy">
-              </div>
-              <div class="col-md-12">
-                <label class="form-label">Remarks</label>
-                <textarea class="form-control" [(ngModel)]="editForm.remarks" name="remarks" rows="3"></textarea>
-              </div>
-            </div>
-
-            <!-- Tab 4: Procurement & Warranty -->
-            <div *ngIf="editTab === 4" class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Commissioning Date</label>
-                <input type="date" class="form-control" [(ngModel)]="editForm.commissioningDate" name="commissioningDate">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Procurement Date</label>
-                <input type="date" class="form-control" [(ngModel)]="editForm.procurementDate" name="procurementDate">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Procurement Cost</label>
-                <input type="number" class="form-control" [(ngModel)]="editForm.procurementCost" name="procurementCost">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Vendor</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.vendor" name="vendor">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Warranty Start Date</label>
-                <input type="date" class="form-control" [(ngModel)]="editForm.warrantyStartDate" name="warrantyStartDate">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Warranty End Date</label>
-                <input type="date" class="form-control" [(ngModel)]="editForm.warrantyEndDate" name="warrantyEndDate">
-              </div>
-            </div>
+      <div class="modal-body" *ngIf="selectedAsset && !selectedAsset.licenseName">
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item"><a class="nav-link" [class.active]="editTab===1" (click)="setEditTab(1)" style="cursor:pointer;">Basic & Location</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="editTab===2" (click)="setEditTab(2)" style="cursor:pointer;">Technical</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="editTab===3" (click)="setEditTab(3)" style="cursor:pointer;">User & Status</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="editTab===4" (click)="setEditTab(4)" style="cursor:pointer;">Procurement</a></li>
+        </ul>
+        <div *ngIf="editTab===1" class="row g-3">
+          <div class="col-md-6"><label class="form-label">Asset Tag</label><input type="text" class="form-control" [(ngModel)]="editForm.assetTag" name="assetTag"></div>
+          <div class="col-md-6"><label class="form-label">Usage Category</label>
+            <select class="form-select" [(ngModel)]="editForm.usageCategory" name="usageCategory">
+              <option *ngFor="let u of usageCategories" [value]="u.value">{{ u.label }}</option>
+            </select>
           </div>
-
-          <div *ngIf="error" class="alert alert-danger mt-3">{{ error }}</div>
-          <div *ngIf="success" class="alert alert-success mt-3">{{ success }}</div>
-        </form>
+          <div class="col-md-6"><label class="form-label">Classification</label><input type="text" class="form-control" [(ngModel)]="editForm.classification" name="classification"></div>
+          <div class="col-md-6"><label class="form-label">Region</label><input type="text" class="form-control" [(ngModel)]="editForm.region" name="region"></div>
+          <div class="col-md-6"><label class="form-label">State</label><input type="text" class="form-control" [(ngModel)]="editForm.state" name="state"></div>
+          <div class="col-md-6"><label class="form-label">Plaza Name</label><input type="text" class="form-control" [(ngModel)]="editForm.plazaName" name="plazaName"></div>
+          <div class="col-md-6"><label class="form-label">Placing</label>
+            <select class="form-select" [(ngModel)]="editForm.placing" name="placing">
+              <option value="">Select Placing</option>
+              <option *ngFor="let p of placingOptions" [value]="p">{{ p }}</option>
+            </select>
+          </div>
+          <div class="col-md-6"><label class="form-label">Location</label>
+            <select class="form-select" [(ngModel)]="editForm.locationId" name="locationId">
+              <option [value]="null">Select Location</option>
+              <option [value]="loc.id" *ngFor="let loc of locations">{{ loc.name }}</option>
+            </select>
+          </div>
+        </div>
+        <div *ngIf="editTab===2" class="row g-3">
+          <div class="col-md-6"><label class="form-label">Sub Type</label><input type="text" class="form-control" [(ngModel)]="editForm.subType" name="subType"></div>
+          <div class="col-md-6"><label class="form-label">Make</label><input type="text" class="form-control" [(ngModel)]="editForm.make" name="make"></div>
+          <div class="col-md-6"><label class="form-label">Model</label><input type="text" class="form-control" [(ngModel)]="editForm.model" name="model"></div>
+          <div class="col-md-6"><label class="form-label">Serial Number</label><input type="text" class="form-control" [(ngModel)]="editForm.serialNumber" name="serialNumber"></div>
+          <div class="col-md-6"><label class="form-label">OS Type</label><input type="text" class="form-control" [(ngModel)]="editForm.osType" name="osType"></div>
+          <div class="col-md-6"><label class="form-label">OS Version</label><input type="text" class="form-control" [(ngModel)]="editForm.osVersion" name="osVersion"></div>
+          <div class="col-md-6"><label class="form-label">IP Address</label><input type="text" class="form-control" [(ngModel)]="editForm.ipAddress" name="ipAddress"></div>
+        </div>
+        <div *ngIf="editTab===3" class="row g-3">
+          <div class="col-md-6"><label class="form-label">Assigned User</label><input type="text" class="form-control" [(ngModel)]="editForm.assignedUserText" name="assignedUserText"></div>
+          <div class="col-md-6"><label class="form-label">User Role</label><input type="text" class="form-control" [(ngModel)]="editForm.userRole" name="userRole"></div>
+          <div class="col-md-6"><label class="form-label">Status</label>
+            <select class="form-select" [(ngModel)]="editForm.status" name="status">
+              <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
+            </select>
+          </div>
+          <div class="col-md-6"><label class="form-label">Patch Status</label><input type="text" class="form-control" [(ngModel)]="editForm.patchStatus" name="patchStatus"></div>
+          <div class="col-md-6"><label class="form-label">USB Blocking Status</label><input type="text" class="form-control" [(ngModel)]="editForm.usbBlockingStatus" name="usbBlockingStatus"></div>
+          <div class="col-md-6"><label class="form-label">Procured By</label><input type="text" class="form-control" [(ngModel)]="editForm.procuredBy" name="procuredBy"></div>
+          <div class="col-12"><label class="form-label">Remarks</label><textarea class="form-control" [(ngModel)]="editForm.remarks" name="remarks" rows="3"></textarea></div>
+        </div>
+        <div *ngIf="editTab===4" class="row g-3">
+          <div class="col-md-6"><label class="form-label">Commissioning Date</label><input type="date" class="form-control" [(ngModel)]="editForm.commissioningDate" name="commissioningDate"></div>
+          <div class="col-md-6"><label class="form-label">Procurement Date</label><input type="date" class="form-control" [(ngModel)]="editForm.procurementDate" name="procurementDate"></div>
+          <div class="col-md-6"><label class="form-label">Procurement Cost</label><input type="number" class="form-control" [(ngModel)]="editForm.procurementCost" name="procurementCost"></div>
+          <div class="col-md-6"><label class="form-label">Vendor</label><input type="text" class="form-control" [(ngModel)]="editForm.vendor" name="vendor"></div>
+          <div class="col-md-6"><label class="form-label">Warranty Start Date</label><input type="date" class="form-control" [(ngModel)]="editForm.warrantyStartDate" name="warrantyStartDate"></div>
+          <div class="col-md-6"><label class="form-label">Warranty End Date</label><input type="date" class="form-control" [(ngModel)]="editForm.warrantyEndDate" name="warrantyEndDate"></div>
+        </div>
+        <div *ngIf="error" class="alert alert-danger mt-3">{{ error }}</div>
+        <div *ngIf="success" class="alert alert-success mt-3">{{ success }}</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
         <button type="button" class="btn btn-primary" [disabled]="loading" (click)="updateAsset()">
-          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-          <i *ngIf="!loading" class="fas fa-save me-2"></i>Save Changes
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!loading" class="fas fa-save me-1"></i>Save Changes
         </button>
       </div>
     </div>
   </div>
 </div>
 
-
-<!-- licensing asset View Modal -->
-<div class="modal fade" [class.show]="showViewModal && selectedAsset && selectedAsset.licenseName" [style.display]="showViewModal && selectedAsset && selectedAsset.licenseName ? 'block' : 'none'" tabindex="-1">
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- LICENSING VIEW MODAL                                                       -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" [class.show]="showViewModal && selectedAsset && selectedAsset.licenseName"
+     [style.display]="showViewModal && selectedAsset && selectedAsset.licenseName ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fas fa-eye me-2"></i>licensing asset Details
-        </h5>
+        <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Licensing Asset Details</h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
       <div class="modal-body" *ngIf="selectedAsset && selectedAsset.licenseName">
-        <!-- Tab Navigation -->
         <ul class="nav nav-tabs mb-3">
-          <li class="nav-item">
-            <a class="nav-link" [class.active]="viewTab === 1" (click)="setViewTab(1)" style="cursor: pointer;">
-              <i class="fas fa-info-circle me-1"></i>License Details
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" [class.active]="viewTab === 2" (click)="setViewTab(2)" style="cursor: pointer;">
-              <i class="fas fa-calendar me-1"></i>Validity & Dates
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" [class.active]="viewTab === 3" (click)="setViewTab(3)" style="cursor: pointer;">
-              <i class="fas fa-tag me-1"></i>Asset & Status
-            </a>
-          </li>
+          <li class="nav-item"><a class="nav-link" [class.active]="viewTab===1" (click)="setViewTab(1)" style="cursor:pointer;"><i class="fas fa-info-circle me-1"></i>License Details</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="viewTab===2" (click)="setViewTab(2)" style="cursor:pointer;"><i class="fas fa-calendar me-1"></i>Validity & Dates</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="viewTab===3" (click)="setViewTab(3)" style="cursor:pointer;"><i class="fas fa-tag me-1"></i>Asset & Status</a></li>
         </ul>
-
-        <!-- Tab Content -->
-        <div class="tab-content">
-          <!-- Tab 1: License Details -->
-          <div *ngIf="viewTab === 1" class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label text-muted">Licensing Name</label>
-              <p class="fw-bold">{{ selectedAsset.licenseName }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Version</label>
-              <p class="fw-bold">{{ selectedAsset.version }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">License Key</label>
-              <p>{{ selectedAsset.licenseKey }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">License Type</label>
-              <p>{{ selectedAsset.licenseType }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Vendor</label>
-              <p>{{ selectedAsset.vendor }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Publisher</label>
-              <p>{{ selectedAsset.publisher }}</p>
-            </div>
+        <div *ngIf="viewTab===1" class="row g-3">
+          <div class="col-md-6"><label class="form-label text-muted">License Name</label><p class="fw-bold">{{ selectedAsset.licenseName }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Version</label><p class="fw-bold">{{ selectedAsset.version }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">License Key</label><p>{{ selectedAsset.licenseKey }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">License Type</label><p>{{ selectedAsset.licenseType }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Vendor</label><p>{{ selectedAsset.vendor }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Publisher</label><p>{{ selectedAsset.publisher }}</p></div>
+        </div>
+        <div *ngIf="viewTab===2" class="row g-3">
+          <div class="col-md-6"><label class="form-label text-muted">Purchase Date</label><p>{{ selectedAsset.purchaseDate ? (selectedAsset.purchaseDate | date:'mediumDate') : 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Number of Licenses</label><p>{{ selectedAsset.numberOfLicenses }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Validity Start</label><p>{{ selectedAsset.validityStartDate ? (selectedAsset.validityStartDate | date:'mediumDate') : 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Validity End</label><p>{{ selectedAsset.validityEndDate ? (selectedAsset.validityEndDate | date:'mediumDate') : 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Validity Type</label><p>{{ selectedAsset.validityType }}</p></div>
+        </div>
+        <div *ngIf="viewTab===3" class="row g-3">
+          <div class="col-md-6"><label class="form-label text-muted">Asset ID</label><p class="fw-bold">{{ selectedAsset.assetId }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Status</label>
+            <p><span class="badge" [class.bg-success]="selectedAsset.status==='Active'" [class.bg-warning]="selectedAsset.status==='Expired'" [class.bg-info]="selectedAsset.status==='Available'">{{ selectedAsset.status }}</span></p>
           </div>
-
-          <!-- Tab 2: Validity & Dates -->
-          <div *ngIf="viewTab === 2" class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label text-muted">Purchase Date</label>
-              <p>{{ selectedAsset.purchaseDate ? (selectedAsset.purchaseDate | date:'mediumDate') : 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Number of Licenses</label>
-              <p>{{ selectedAsset.numberOfLicenses }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Validity Start Date</label>
-              <p>{{ selectedAsset.validityStartDate ? (selectedAsset.validityStartDate | date:'mediumDate') : 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Validity End Date</label>
-              <p>{{ selectedAsset.validityEndDate ? (selectedAsset.validityEndDate | date:'mediumDate') : 'N/A' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Validity Type</label>
-              <p>{{ selectedAsset.validityType }}</p>
-            </div>
-          </div>
-
-          <!-- Tab 3: Asset & Status -->
-          <div *ngIf="viewTab === 3" class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label text-muted">Asset ID</label>
-              <p class="fw-bold">{{ selectedAsset.assetId }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Status</label>
-              <p>
-                <span class="badge" 
-                      [class.bg-success]="selectedAsset.status === 'Active'"
-                      [class.bg-warning]="selectedAsset.status === 'Expired'"
-                      [class.bg-info]="selectedAsset.status === 'Available'">
-                  {{ selectedAsset.status }}
-                </span>
-              </p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Created At</label>
-              <p>{{ selectedAsset.createdAt | date:'medium' }}</p>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label text-muted">Updated At</label>
-              <p>{{ selectedAsset.updatedAt ? (selectedAsset.updatedAt | date:'medium') : 'N/A' }}</p>
-            </div>
-          </div>
+          <div class="col-md-6"><label class="form-label text-muted">Created At</label><p>{{ selectedAsset.createdAt | date:'medium' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Updated At</label><p>{{ selectedAsset.updatedAt ? (selectedAsset.updatedAt | date:'medium') : 'N/A' }}</p></div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
-        <button type="button" class="btn btn-primary" (click)="closeModals(); openLicensingAssetEditModal(selectedAsset!)">
-          <i class="fas fa-edit me-2"></i>Edit Asset
-        </button>
+        <button type="button" class="btn btn-primary" (click)="closeModals(); openLicensingAssetEditModal(selectedAsset!)"><i class="fas fa-edit me-1"></i>Edit Asset</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- licensing asset Edit Modal -->
-<div class="modal fade" [class.show]="showEditModal && selectedAsset && selectedAsset.licenseName" [style.display]="showEditModal && selectedAsset && selectedAsset.licenseName ? 'block' : 'none'" tabindex="-1">
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- LICENSING EDIT MODAL                                                       -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" [class.show]="showEditModal && selectedAsset && selectedAsset.licenseName"
+     [style.display]="showEditModal && selectedAsset && selectedAsset.licenseName ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fas fa-edit me-2"></i>Edit licensing asset
-        </h5>
+        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Licensing Asset</h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
       <div class="modal-body" *ngIf="selectedAsset && selectedAsset.licenseName">
-        <form>
-          <!-- Tab Navigation -->
-          <ul class="nav nav-tabs mb-3">
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="editTab === 1" (click)="setEditTab(1)" style="cursor: pointer;">
-                <i class="fas fa-info-circle me-1"></i>License Details
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="editTab === 2" (click)="setEditTab(2)" style="cursor: pointer;">
-                <i class="fas fa-calendar me-1"></i>Validity & Dates
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="editTab === 3" (click)="setEditTab(3)" style="cursor: pointer;">
-                <i class="fas fa-tag me-1"></i>Asset & Status
-              </a>
-            </li>
-          </ul>
-
-          <!-- Tab Content -->
-          <div class="tab-content">
-            <!-- Tab 1: License Details (Read-only) -->
-            <div *ngIf="editTab === 1" class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Licensing Name</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.licenseName" name="licenseName" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Version</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.version" name="version" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">License Key</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.licenseKey" name="licenseKey" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">License Type</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.licenseType" name="licenseType" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Vendor</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.vendor" name="vendor" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Publisher</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.publisher" name="publisher" disabled>
-              </div>
-            </div>
-
-            <!-- Tab 2: Validity & Dates (Read-only) -->
-            <div *ngIf="editTab === 2" class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Purchase Date</label>
-                <input type="date" class="form-control" [(ngModel)]="editForm.purchaseDate" name="purchaseDate" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Number of Licenses</label>
-                <input type="number" class="form-control" [(ngModel)]="editForm.numberOfLicenses" name="numberOfLicenses" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Validity Start Date</label>
-                <input type="date" class="form-control" [(ngModel)]="editForm.validityStartDate" name="validityStartDate" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Validity End Date</label>
-                <input type="date" class="form-control" [(ngModel)]="editForm.validityEndDate" name="validityEndDate" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Validity Type</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.validityType" name="validityType" disabled>
-              </div>
-            </div>
-
-            <!-- Tab 3: Asset & Status (Editable) -->
-            <div *ngIf="editTab === 3" class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Asset ID</label>
-                <input type="text" class="form-control" [(ngModel)]="editForm.assetId" name="assetId" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Status *</label>
-                <select class="form-select" [(ngModel)]="editForm.status" name="status">
-                  <option *ngFor="let status of licensingStatuses" [value]="status.value">{{ status.label }}</option>
-                </select>
-              </div>
-            </div>
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item"><a class="nav-link" [class.active]="editTab===1" (click)="setEditTab(1)" style="cursor:pointer;">License Details</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="editTab===2" (click)="setEditTab(2)" style="cursor:pointer;">Validity & Dates</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="editTab===3" (click)="setEditTab(3)" style="cursor:pointer;">Asset & Status</a></li>
+        </ul>
+        <div *ngIf="editTab===1" class="row g-3">
+          <div class="col-md-6"><label class="form-label">License Name</label><input type="text" class="form-control" [(ngModel)]="editForm.licenseName" name="licenseName" disabled></div>
+          <div class="col-md-6"><label class="form-label">Version</label><input type="text" class="form-control" [(ngModel)]="editForm.version" name="version" disabled></div>
+          <div class="col-md-6"><label class="form-label">License Key</label><input type="text" class="form-control" [(ngModel)]="editForm.licenseKey" name="licenseKey" disabled></div>
+          <div class="col-md-6"><label class="form-label">License Type</label><input type="text" class="form-control" [(ngModel)]="editForm.licenseType" name="licenseType" disabled></div>
+          <div class="col-md-6"><label class="form-label">Vendor</label><input type="text" class="form-control" [(ngModel)]="editForm.vendor" name="vendor" disabled></div>
+          <div class="col-md-6"><label class="form-label">Publisher</label><input type="text" class="form-control" [(ngModel)]="editForm.publisher" name="publisher" disabled></div>
+        </div>
+        <div *ngIf="editTab===2" class="row g-3">
+          <div class="col-md-6"><label class="form-label">Purchase Date</label><input type="date" class="form-control" [(ngModel)]="editForm.purchaseDate" name="purchaseDate" disabled></div>
+          <div class="col-md-6"><label class="form-label">Number of Licenses</label><input type="number" class="form-control" [(ngModel)]="editForm.numberOfLicenses" name="numberOfLicenses" disabled></div>
+          <div class="col-md-6"><label class="form-label">Validity Start Date</label><input type="date" class="form-control" [(ngModel)]="editForm.validityStartDate" name="validityStartDate" disabled></div>
+          <div class="col-md-6"><label class="form-label">Validity End Date</label><input type="date" class="form-control" [(ngModel)]="editForm.validityEndDate" name="validityEndDate" disabled></div>
+          <div class="col-md-6"><label class="form-label">Validity Type</label><input type="text" class="form-control" [(ngModel)]="editForm.validityType" name="validityType" disabled></div>
+        </div>
+        <div *ngIf="editTab===3" class="row g-3">
+          <div class="col-md-6"><label class="form-label">Asset ID</label><input type="text" class="form-control" [(ngModel)]="editForm.assetId" name="assetId" disabled></div>
+          <div class="col-md-6"><label class="form-label">Status *</label>
+            <select class="form-select" [(ngModel)]="editForm.status" name="status">
+              <option *ngFor="let s of licensingStatuses" [value]="s.value">{{ s.label }}</option>
+            </select>
           </div>
-
-          <div *ngIf="error" class="alert alert-danger mt-3">{{ error }}</div>
-          <div *ngIf="success" class="alert alert-success mt-3">{{ success }}</div>
-        </form>
+          <div class="col-md-6"><label class="form-label">Usage Category</label>
+            <select class="form-select" [(ngModel)]="editForm.usageCategory" name="usageCategory" disabled>
+              <option *ngFor="let u of usageCategories" [value]="u.value">{{ u.label }}</option>
+            </select>
+          </div>
+        </div>
+        <div *ngIf="error" class="alert alert-danger mt-3">{{ error }}</div>
+        <div *ngIf="success" class="alert alert-success mt-3">{{ success }}</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
         <button type="button" class="btn btn-primary" [disabled]="loading" (click)="updateLicensingAsset()">
-          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-          <i *ngIf="!loading" class="fas fa-save me-2"></i>Save Changes
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!loading" class="fas fa-save me-1"></i>Save Changes
         </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Bulk Upload Modal -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- BULK UPLOAD MODAL                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <div class="modal fade" [class.show]="showBulkUploadModal" [style.display]="showBulkUploadModal ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
-          <i class="fas fa-file-upload me-2"></i>Bulk Asset Upload
+          <i class="fas fa-file-upload me-2"></i>
+          Bulk Upload —
+          <span *ngIf="selectedCategory === 'hardware'">Hardware Assets</span>
+          <span *ngIf="selectedCategory === 'licensing'">Licensing Assets</span>
+          <span *ngIf="selectedCategory === 'services'">Services</span>
         </h5>
         <button type="button" class="btn-close" (click)="closeModals()"></button>
       </div>
       <div class="modal-body">
-        <!-- Error Message -->
-        <div *ngIf="error" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <div *ngIf="error" class="alert alert-danger alert-dismissible fade show mb-3">
           <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
           <button type="button" class="btn-close" (click)="clearMessages()"></button>
         </div>
-
-        <!-- Success Message -->
-        <div *ngIf="success && !uploadResult" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <div *ngIf="success && !uploadResult" class="alert alert-success alert-dismissible fade show mb-3">
           <i class="fas fa-check-circle me-2"></i>{{ success }}
           <button type="button" class="btn-close" (click)="clearMessages()"></button>
         </div>
-
-        <!-- File Requirements -->
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div class="d-flex gap-4 text-muted">
-            <small><i class="fas fa-file-excel me-1"></i> Excel files only (.xlsx)</small>
-            <small><i class="fas fa-weight-hanging me-1"></i> Max size: 50MB</small>
+            <small><i class="fas fa-file-excel me-1"></i>Excel files only (.xlsx)</small>
+            <small><i class="fas fa-weight-hanging me-1"></i>Max size: 50MB</small>
           </div>
           <button type="button" class="btn btn-sm btn-outline-primary" (click)="downloadTemplate()">
             <i class="fas fa-download me-2"></i>Download Template
           </button>
         </div>
-
-        <!-- File Upload Area -->
-        <div class="upload-area mb-4" 
-             [class.drag-over]="dragOver"
-             (dragover)="onDragOver($event)"
-             (dragleave)="onDragLeave($event)"
-             (drop)="onDrop($event)">
+        <div class="upload-area mb-4" [class.drag-over]="dragOver"
+             (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
           <div class="upload-content text-center p-5">
             <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
             <h5>Drag & Drop Excel File Here</h5>
             <p class="text-muted">or</p>
-            <input #fileInput 
-                   type="file" 
-                   accept=".xlsx" 
-                   (change)="onFileSelected($event)" 
-                   style="display: none;">
+            <input #fileInput type="file" accept=".xlsx" (change)="onFileSelected($event)" style="display:none;">
             <button type="button" class="btn btn-primary" (click)="fileInput.click()">
               <i class="fas fa-folder-open me-2"></i>Select File
             </button>
           </div>
         </div>
-
-        <!-- Selected File Info -->
         <div *ngIf="selectedFile" class="selected-file-info alert alert-success d-flex justify-content-between align-items-center">
-          <div>
-            <i class="fas fa-file-excel me-2"></i>
-            <strong>{{ getFileName() }}</strong>
-            <span class="text-muted ms-2">({{ getFileSize() }})</span>
-          </div>
-          <button class="btn btn-sm btn-outline-danger" (click)="clearFile()">
-            <i class="fas fa-times"></i> Remove
-          </button>
+          <div><i class="fas fa-file-excel me-2"></i><strong>{{ getFileName() }}</strong><span class="text-muted ms-2">({{ getFileSize() }})</span></div>
+          <button class="btn btn-sm btn-outline-danger" (click)="clearFile()"><i class="fas fa-times"></i> Remove</button>
         </div>
-
-        <!-- Upload Button -->
         <div *ngIf="selectedFile && !uploadResult" class="text-center mb-4">
-          <button class="btn btn-success btn-lg" 
-                  [disabled]="uploading" 
-                  (click)="uploadFile()">
+          <button class="btn btn-success btn-lg" [disabled]="uploading" (click)="uploadFile()">
             <span *ngIf="uploading" class="spinner-border spinner-border-sm me-2"></span>
             <i *ngIf="!uploading" class="fas fa-upload me-2"></i>
-            {{ uploading ? 'Uploading...' : 'Upload Assets' }}
+            {{ uploading ? 'Uploading...' : 'Upload ' + (selectedCategory === 'licensing' ? 'Licensing Assets' : selectedCategory === 'services' ? 'Services' : 'Assets') }}
           </button>
         </div>
-
-        <!-- Upload Results -->
         <div *ngIf="uploadResult" class="upload-results">
-          <div class="alert" 
-               [class.alert-success]="uploadResult.failedCount === 0"
-               [class.alert-warning]="uploadResult.failedCount > 0">
-            <h6 class="alert-heading">
-              <i class="fas" 
-                 [class.fa-check-circle]="uploadResult.failedCount === 0"
-                 [class.fa-exclamation-triangle]="uploadResult.failedCount > 0"
-                 class="me-2"></i>
-              Upload Results
-            </h6>
+          <div class="alert" [class.alert-success]="uploadResult.failedCount===0" [class.alert-warning]="uploadResult.failedCount>0">
+            <h6 class="alert-heading"><i class="fas me-2" [class.fa-check-circle]="uploadResult.failedCount===0" [class.fa-exclamation-triangle]="uploadResult.failedCount>0"></i>Upload Results</h6>
             <div class="row text-center mt-3">
-              <div class="col-4">
-                <h3 class="mb-0">{{ uploadResult.totalRows }}</h3>
-                <small class="text-muted">Total Rows</small>
-              </div>
-              <div class="col-4">
-                <h3 class="mb-0 text-success">{{ uploadResult.successCount }}</h3>
-                <small class="text-muted">Success</small>
-              </div>
-              <div class="col-4">
-                <h3 class="mb-0 text-danger">{{ uploadResult.failedCount }}</h3>
-                <small class="text-muted">Failed</small>
-              </div>
+              <div class="col-4"><h3 class="mb-0">{{ uploadResult.totalRows }}</h3><small class="text-muted">Total Rows</small></div>
+              <div class="col-4"><h3 class="mb-0 text-success">{{ uploadResult.successCount }}</h3><small class="text-muted">Success</small></div>
+              <div class="col-4"><h3 class="mb-0 text-danger">{{ uploadResult.failedCount }}</h3><small class="text-muted">Failed</small></div>
             </div>
           </div>
-
-          <!-- Error Details -->
           <div *ngIf="uploadResult.errors && uploadResult.errors.length > 0" class="error-details mt-3">
-            <h6 class="text-danger">
-              <i class="fas fa-exclamation-circle me-2"></i>Failed Rows
-            </h6>
-            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+            <h6 class="text-danger"><i class="fas fa-exclamation-circle me-2"></i>Failed Rows</h6>
+            <div class="table-responsive" style="max-height:300px;overflow-y:auto;">
               <table class="table table-sm table-bordered">
-                <thead class="table-light">
-                  <tr>
-                    <th>Row #</th>
-                    <th>Asset Tag</th>
-                    <th>Error Message</th>
-                  </tr>
-                </thead>
+                <thead class="table-light"><tr><th>Row #</th><th>Asset Tag</th><th>Error</th></tr></thead>
                 <tbody>
-                  <tr *ngFor="let error of uploadResult.errors">
-                    <td>{{ error.rowNumber }}</td>
-                    <td>{{ error.assetTag || 'N/A' }}</td>
-                    <td class="text-danger">{{ error.errorMessage }}</td>
+                  <tr *ngFor="let err of uploadResult.errors">
+                    <td>{{ err.rowNumber }}</td><td>{{ err.assetTag || 'N/A' }}</td><td class="text-danger">{{ err.errorMessage }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -1413,10 +943,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
-        <button *ngIf="uploadResult && uploadResult.successCount > 0" 
-                type="button" 
-                class="btn btn-primary" 
-                (click)="closeModals()">
+        <button *ngIf="uploadResult && uploadResult.successCount > 0" type="button" class="btn btn-primary" (click)="closeModals()">
           <i class="fas fa-check me-2"></i>Done
         </button>
       </div>
@@ -1424,3 +951,6 @@
   </div>
 </div>
 
+<!-- Modal Backdrop -->
+<div *ngIf="showCreateModal || showEditModal || showViewModal || showBulkUploadModal"
+     class="modal-backdrop fade show" (click)="closeModals()"></div>

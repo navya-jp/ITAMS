@@ -14,15 +14,19 @@ public class LicensingAssetsController : BaseController
     private readonly ITAMSDbContext _context;
     private readonly ILogger<LicensingAssetsController> _logger;
     private readonly IAssetIdGeneratorService _assetIdGeneratorService;
+    private readonly IBulkUploadService _bulkUploadService;
+    private const long MaxFileSize = 50 * 1024 * 1024;
 
     public LicensingAssetsController(
         ITAMSDbContext context,
         ILogger<LicensingAssetsController> logger,
-        IAssetIdGeneratorService assetIdGeneratorService)
+        IAssetIdGeneratorService assetIdGeneratorService,
+        IBulkUploadService bulkUploadService)
     {
         _context = context;
         _logger = logger;
         _assetIdGeneratorService = assetIdGeneratorService;
+        _bulkUploadService = bulkUploadService;
     }
 
     // GET: api/licensingassets
@@ -65,7 +69,7 @@ public class LicensingAssetsController : BaseController
     }
 
     // GET: api/LicensingAssets/{id}
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<ActionResult<LicensingAssetDto>> GetLicensingAsset(int id)
     {
         try
@@ -201,7 +205,7 @@ public class LicensingAssetsController : BaseController
     }
 
     // PUT: api/LicensingAssets/{id}
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateLicensingAsset(int id, [FromBody] UpdateLicensingAssetDto updateDto)
     {
         try
@@ -271,7 +275,7 @@ public class LicensingAssetsController : BaseController
     }
 
     // DELETE: api/LicensingAssets/{id}
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteLicensingAsset(int id)
     {
         try
@@ -294,6 +298,38 @@ public class LicensingAssetsController : BaseController
             _logger.LogError(ex, "Error deleting software asset {Id}", id);
             return StatusCode(500, new { message = "Error deleting software asset" });
         }
+    }
+
+    // POST: api/licensingassets/bulk-upload
+    [HttpPost("bulk-upload")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> BulkUpload([FromForm] IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "No file provided" });
+            if (file.Length > MaxFileSize)
+                return BadRequest(new { message = "File size exceeds 50MB limit" });
+
+            var userId = GetCurrentUserId() ?? 1;
+            using var stream = file.OpenReadStream();
+            var result = await _bulkUploadService.ProcessLicensingExcelAsync(stream, userId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during licensing bulk upload");
+            return StatusCode(500, new { message = "Error processing bulk upload", error = ex.Message });
+        }
+    }
+
+    // GET: api/licensingassets/download-template
+    [HttpGet("download-template")]
+    public IActionResult DownloadTemplate()
+    {
+        var bytes = _bulkUploadService.GenerateLicensingTemplate();
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "licensing-assets-template.xlsx");
     }
 }
 

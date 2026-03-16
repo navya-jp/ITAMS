@@ -163,7 +163,7 @@ public class AssetsController : BaseController
     }
 
     // GET: api/assets/{id}
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<ActionResult<AssetDto>> GetAsset(int id)
     {
         try
@@ -283,7 +283,7 @@ public class AssetsController : BaseController
     }
 
     // PUT: api/assets/{id}
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateAsset(int id, [FromBody] UpdateAssetDto updateDto)
     {
         try
@@ -364,7 +364,7 @@ public class AssetsController : BaseController
     }
 
     // DELETE: api/assets/{id}
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAsset(int id)
     {
         try

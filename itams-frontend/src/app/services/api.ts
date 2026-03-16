@@ -216,6 +216,7 @@ export interface Asset {
   assignedUserId?: number;
   assignedUserName?: string;
   assignedUserRole?: string;
+  assetCategory?: string;
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -255,6 +256,7 @@ export interface CreateAsset {
   remarks?: string;
   assignedUserId?: number;
   assignedUserRole?: string;
+  assetCategory?: 'hardware' | 'software' | 'services';
 }
 
 @Injectable({
@@ -507,6 +509,57 @@ export class Api {
 
   deleteLicensingAsset(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/licensingassets/${id}`, this.getAuthHeaders());
+  }
+
+  // Service Assets
+  getServiceAssets(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/serviceassets`, this.getAuthHeaders());
+  }
+
+  getServiceAsset(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/serviceassets/${id}`, this.getAuthHeaders());
+  }
+
+  createServiceAsset(asset: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/serviceassets`, asset, this.getAuthHeaders());
+  }
+
+  updateServiceAsset(id: number, asset: any): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/serviceassets/${id}`, asset, this.getAuthHeaders());
+  }
+
+  renewService(id: number, data: { newEndDate: Date; renewalCost?: number; remarks?: string }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/serviceassets/${id}/renew`, data, this.getAuthHeaders());
+  }
+
+  getExpiringServices(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/serviceassets/expiring`, this.getAuthHeaders());
+  }
+
+  getExpiredServices(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/serviceassets/expired`, this.getAuthHeaders());
+  }
+
+  getServiceTypes(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/masterdata/service-types`, this.getAuthHeaders());
+  }
+
+  bulkUploadLicensing(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('auth_token');
+    return this.http.post<any>(`${this.baseUrl}/licensingassets/bulk-upload`, formData, {
+      headers: new HttpHeaders({ 'Authorization': `Bearer ${token}` })
+    });
+  }
+
+  bulkUploadServices(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('auth_token');
+    return this.http.post<any>(`${this.baseUrl}/serviceassets/bulk-upload`, formData, {
+      headers: new HttpHeaders({ 'Authorization': `Bearer ${token}` })
+    });
   }
 }
 

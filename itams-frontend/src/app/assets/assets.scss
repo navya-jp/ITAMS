@@ -8,14 +8,12 @@
 
 .assets-content {
   background-color: white;
-  margin: 1rem;
+  margin: 0.75rem;
   border-radius: 0.5rem;
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
-.table {
-  margin-bottom: 0;
-}
+.table { margin-bottom: 0; }
 
 .modal-content {
   max-height: 90vh;
@@ -29,26 +27,75 @@
   max-height: calc(90vh - 120px);
 }
 
-.modal-dialog {
-  z-index: 1050;
-}
-
-.form-select {
-  position: relative;
-  z-index: 1;
-}
-
-.tab-content {
-  min-height: 300px;
-}
+.modal-dialog { z-index: 1050; }
+.form-select { position: relative; z-index: 1; }
+.tab-content { min-height: 300px; }
 
 .badge {
   font-size: 0.875rem;
   padding: 0.375rem 0.75rem;
 }
 
+// ── Location Type Selection ──────────────────────────────────────────────────
+.location-select-view {
+  background-color: #f8f9fa;
+}
 
-// Bulk Upload Styles
+.location-type-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  border-radius: 1rem;
+
+  &:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-color: #0d6efd;
+    transform: translateY(-2px);
+  }
+
+  &.selected {
+    border-color: #0d6efd;
+    background-color: #f0f6ff;
+  }
+
+  .card-body {
+    min-height: 200px;
+  }
+}
+
+// ── Category Dashboard ───────────────────────────────────────────────────────
+.category-dashboard-view {
+  background-color: #f8f9fa;
+}
+
+.category-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 1rem;
+  border: 2px solid #e9ecef;
+
+  .category-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border-color: #dee2e6;
+  }
+
+  .card-body {
+    min-height: 240px;
+  }
+}
+
+// ── Asset List View ──────────────────────────────────────────────────────────
+.asset-list-view {
+  background-color: #f8f9fa;
+}
+
+// ── Bulk Upload ──────────────────────────────────────────────────────────────
 .upload-area {
   border: 2px dashed #dee2e6;
   border-radius: 0.5rem;
@@ -56,45 +103,15 @@
   transition: all 0.3s ease;
   cursor: pointer;
 
-  &:hover {
-    border-color: #0d6efd;
-    background-color: #e7f1ff;
-  }
-
-  &.drag-over {
+  &:hover, &.drag-over {
     border-color: #0d6efd;
     background-color: #e7f1ff;
     border-style: solid;
   }
 }
 
-.upload-content {
-  i {
-    opacity: 0.7;
-  }
-}
-
-.selected-file-info {
-  border-radius: 0.5rem;
-  padding: 1rem;
-}
-
-.upload-results {
-  .alert {
-    border-radius: 0.5rem;
-  }
-
-  h3 {
-    font-weight: 600;
-  }
-}
-
-.error-details {
-  .table {
-    font-size: 0.875rem;
-  }
-
-  td {
-    vertical-align: middle;
-  }
-}
+.selected-file-info { border-radius: 0.5rem; padding: 1rem; }
+.upload-results .alert { border-radius: 0.5rem; }
+.upload-results h3 { font-weight: 600; }
+.error-details .table { font-size: 0.875rem; }
+.error-details td { vertical-align: middle; }

@@ -459,6 +459,240 @@ public class BulkUploadService : IBulkUploadService
         return DateTime.TryParse(dateStr, out var date) ? date : null;
     }
 
+    // ── Licensing Bulk Upload ─────────────────────────────────────────────────
+
+    public async Task<BulkUploadResult> ProcessLicensingExcelAsync(Stream fileStream, int userId)
+    {
+        var result = new BulkUploadResult();
+        var toInsert = new List<ITAMS.Domain.Entities.LicensingAsset>();
+        var errors = new List<BulkUploadError>();
+
+        try
+        {
+            using var package = new ExcelPackage(fileStream);
+            var ws = package.Workbook.Worksheets[0];
+            if (ws?.Dimension == null) { result.Message = "Excel file is empty or invalid"; return result; }
+
+            int rowCount = ws.Dimension.Rows;
+            if (rowCount < 2) { result.Message = "File must have a header row and at least one data row"; return result; }
+
+            result.TotalRows = rowCount - 1;
+
+            // Get last licensing asset id number
+            var lastAsset = await _context.LicensingAssets.OrderByDescending(a => a.AssetId).FirstOrDefaultAsync();
+            int nextNum = 1;
+            if (lastAsset != null && lastAsset.AssetId.Length > 4 && int.TryParse(lastAsset.AssetId.Substring(4), out int n))
+                nextNum = n + 1;
+
+            for (int row = 2; row <= rowCount; row++)
+            {
+                string Get(int col) => ws.Cells[row, col].Value?.ToString()?.Trim() ?? "";
+                string licenseName = Get(1), version = Get(2), licenseKey = Get(3), licenseType = Get(4),
+                       vendor = Get(5), publisher = Get(6), validityType = Get(7),
+                       numStr = Get(8), purchaseDateStr = Get(9), startDateStr = Get(10), endDateStr = Get(11),
+                       status = Get(12), usageCategory = Get(13);
+
+                if (string.IsNullOrWhiteSpace(licenseName) && string.IsNullOrWhiteSpace(licenseKey)) { result.TotalRows--; continue; }
+
+                if (string.IsNullOrWhiteSpace(licenseName)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseKey, ErrorMessage = "LicenseName is required" }); continue; }
+                if (string.IsNullOrWhiteSpace(licenseKey)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "LicenseKey is required" }); continue; }
+                if (!int.TryParse(numStr, out int numLicenses) || numLicenses <= 0) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "NumberOfLicenses must be a positive integer" }); continue; }
+                if (!DateTime.TryParse(startDateStr, out var startDate)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "ValidityStartDate is invalid" }); continue; }
+                if (!DateTime.TryParse(endDateStr, out var endDate)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "ValidityEndDate is invalid" }); continue; }
+                if (endDate <= startDate) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "ValidityEndDate must be after ValidityStartDate" }); continue; }
+
+                DateTime.TryParse(purchaseDateStr, out var purchaseDate);
+                var assetId = $"ASTL{nextNum:D5}";
+
+                toInsert.Add(new ITAMS.Domain.Entities.LicensingAsset
+                {
+                    AssetId = assetId,
+                    LicenseName = licenseName,
+                    Version = string.IsNullOrWhiteSpace(version) ? "N/A" : version,
+                    LicenseKey = licenseKey,
+                    LicenseType = string.IsNullOrWhiteSpace(licenseType) ? "Subscription" : licenseType,
+                    Vendor = string.IsNullOrWhiteSpace(vendor) ? "N/A" : vendor,
+                    Publisher = string.IsNullOrWhiteSpace(publisher) ? "N/A" : publisher,
+                    ValidityType = string.IsNullOrWhiteSpace(validityType) ? "Renewable" : validityType,
+                    NumberOfLicenses = numLicenses,
+                    PurchaseDate = purchaseDate == default ? DateTime.UtcNow : purchaseDate,
+                    ValidityStartDate = startDate,
+                    ValidityEndDate = endDate,
+                    Status = string.IsNullOrWhiteSpace(status) ? "Active" : status,
+                    AssetTag = assetId,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = userId
+                });
+                nextNum++;
+            }
+
+            if (toInsert.Any())
+            {
+                await _context.LicensingAssets.AddRangeAsync(toInsert);
+                await _context.SaveChangesAsync();
+                result.SuccessCount = toInsert.Count;
+            }
+            result.FailedCount = errors.Count;
+            result.Errors = errors;
+            result.Message = $"Processed {result.TotalRows} rows. Success: {result.SuccessCount}, Failed: {result.FailedCount}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing licensing Excel");
+            result.Message = $"Error processing file: {ex.Message}";
+        }
+        return result;
+    }
+
+    // ── Service Bulk Upload ───────────────────────────────────────────────────
+
+    public async Task<BulkUploadResult> ProcessServiceExcelAsync(Stream fileStream, int userId)
+    {
+        var result = new BulkUploadResult();
+        var toInsert = new List<ITAMS.Domain.Entities.ServiceAsset>();
+        var errors = new List<BulkUploadError>();
+
+        try
+        {
+            using var package = new ExcelPackage(fileStream);
+            var ws = package.Workbook.Worksheets[0];
+            if (ws?.Dimension == null) { result.Message = "Excel file is empty or invalid"; return result; }
+
+            int rowCount = ws.Dimension.Rows;
+            if (rowCount < 2) { result.Message = "File must have a header row and at least one data row"; return result; }
+
+            result.TotalRows = rowCount - 1;
+
+            var lastAsset = await _context.ServiceAssets.OrderByDescending(a => a.AssetId).FirstOrDefaultAsync();
+            int nextNum = 1;
+            if (lastAsset != null && lastAsset.AssetId.Length > 4 && int.TryParse(lastAsset.AssetId.Substring(4), out int n))
+                nextNum = n + 1;
+
+            // Pre-load service types for lookup
+            var serviceTypes = await _context.ServiceTypes.ToListAsync();
+
+            for (int row = 2; row <= rowCount; row++)
+            {
+                string Get(int col) => ws.Cells[row, col].Value?.ToString()?.Trim() ?? "";
+                string serviceName = Get(1), serviceTypeName = Get(2), vendorName = Get(3),
+                       contractNumber = Get(4), startDateStr = Get(5), endDateStr = Get(6),
+                       cycleStr = Get(7), reminderStr = Get(8), costStr = Get(9),
+                       billingCycle = Get(10), currency = Get(11), usageCategory = Get(12),
+                       contactPerson = Get(13), slaType = Get(14), description = Get(15);
+
+                if (string.IsNullOrWhiteSpace(serviceName) && string.IsNullOrWhiteSpace(vendorName)) { result.TotalRows--; continue; }
+
+                if (string.IsNullOrWhiteSpace(serviceName)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = vendorName, ErrorMessage = "ServiceName is required" }); continue; }
+                if (string.IsNullOrWhiteSpace(vendorName)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = serviceName, ErrorMessage = "VendorName is required" }); continue; }
+                if (!DateTime.TryParse(startDateStr, out var startDate)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = serviceName, ErrorMessage = "ContractStartDate is invalid" }); continue; }
+                if (!DateTime.TryParse(endDateStr, out var endDate)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = serviceName, ErrorMessage = "ContractEndDate is invalid" }); continue; }
+                if (endDate <= startDate) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = serviceName, ErrorMessage = "ContractEndDate must be after ContractStartDate" }); continue; }
+
+                var serviceType = serviceTypes.FirstOrDefault(t => t.TypeName.Equals(serviceTypeName, StringComparison.OrdinalIgnoreCase))
+                                  ?? serviceTypes.FirstOrDefault();
+                if (serviceType == null) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = serviceName, ErrorMessage = "No ServiceTypes found in database" }); continue; }
+
+                int.TryParse(cycleStr, out int cycle); if (cycle <= 0) cycle = 12;
+                int.TryParse(reminderStr, out int reminder); if (reminder <= 0) reminder = 30;
+                decimal.TryParse(costStr, out decimal cost);
+
+                var assetId = $"ASTV{nextNum:D5}";
+                toInsert.Add(new ITAMS.Domain.Entities.ServiceAsset
+                {
+                    AssetId = assetId,
+                    ServiceName = serviceName,
+                    ServiceTypeId = serviceType.Id,
+                    VendorName = vendorName,
+                    ContractNumber = string.IsNullOrWhiteSpace(contractNumber) ? null : contractNumber,
+                    ContractStartDate = startDate,
+                    ContractEndDate = endDate,
+                    NextRenewalDate = endDate,
+                    RenewalCycleMonths = cycle,
+                    RenewalReminderDays = reminder,
+                    ContractCost = cost > 0 ? cost : null,
+                    BillingCycle = string.IsNullOrWhiteSpace(billingCycle) ? null : billingCycle,
+                    Currency = string.IsNullOrWhiteSpace(currency) ? "INR" : currency,
+                    UsageCategory = string.IsNullOrWhiteSpace(usageCategory) ? "TMS" : usageCategory,
+                    ContactPerson = string.IsNullOrWhiteSpace(contactPerson) ? null : contactPerson,
+                    SLAType = string.IsNullOrWhiteSpace(slaType) ? null : slaType,
+                    Description = string.IsNullOrWhiteSpace(description) ? null : description,
+                    Status = "Active",
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = userId
+                });
+                nextNum++;
+            }
+
+            if (toInsert.Any())
+            {
+                await _context.ServiceAssets.AddRangeAsync(toInsert);
+                await _context.SaveChangesAsync();
+                result.SuccessCount = toInsert.Count;
+            }
+            result.FailedCount = errors.Count;
+            result.Errors = errors;
+            result.Message = $"Processed {result.TotalRows} rows. Success: {result.SuccessCount}, Failed: {result.FailedCount}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing service Excel");
+            result.Message = $"Error processing file: {ex.Message}";
+        }
+        return result;
+    }
+
+    // ── Templates ─────────────────────────────────────────────────────────────
+
+    public byte[] GenerateLicensingTemplate()
+    {
+        using var package = new ExcelPackage();
+        var ws = package.Workbook.Worksheets.Add("Licensing Assets");
+        var headers = new[] { "LicenseName*", "Version", "LicenseKey*", "LicenseType", "Vendor", "Publisher", "ValidityType", "NumberOfLicenses*", "PurchaseDate", "ValidityStartDate*", "ValidityEndDate*", "Status", "UsageCategory" };
+        for (int i = 0; i < headers.Length; i++) { ws.Cells[1, i + 1].Value = headers[i]; ws.Cells[1, i + 1].Style.Font.Bold = true; }
+        // Sample row
+        ws.Cells[2, 1].Value = "Microsoft Office 365";
+        ws.Cells[2, 2].Value = "2024";
+        ws.Cells[2, 3].Value = "XXXX-XXXX-XXXX-XXXX";
+        ws.Cells[2, 4].Value = "Subscription";
+        ws.Cells[2, 5].Value = "Microsoft";
+        ws.Cells[2, 6].Value = "Microsoft";
+        ws.Cells[2, 7].Value = "Renewable";
+        ws.Cells[2, 8].Value = 10;
+        ws.Cells[2, 9].Value = "2025-01-01";
+        ws.Cells[2, 10].Value = "2025-01-01";
+        ws.Cells[2, 11].Value = "2026-01-01";
+        ws.Cells[2, 12].Value = "Active";
+        ws.Cells[2, 13].Value = "TMS";
+        ws.Cells.AutoFitColumns();
+        return package.GetAsByteArray();
+    }
+
+    public byte[] GenerateServiceTemplate()
+    {
+        using var package = new ExcelPackage();
+        var ws = package.Workbook.Worksheets.Add("Services");
+        var headers = new[] { "ServiceName*", "ServiceType", "VendorName*", "ContractNumber", "ContractStartDate*", "ContractEndDate*", "RenewalCycleMonths", "RenewalReminderDays", "ContractCost", "BillingCycle", "Currency", "UsageCategory", "ContactPerson", "SLAType", "Description" };
+        for (int i = 0; i < headers.Length; i++) { ws.Cells[1, i + 1].Value = headers[i]; ws.Cells[1, i + 1].Style.Font.Bold = true; }
+        // Sample row
+        ws.Cells[2, 1].Value = "Annual Server Maintenance";
+        ws.Cells[2, 2].Value = "AMC Comprehensive";
+        ws.Cells[2, 3].Value = "TechCorp Pvt Ltd";
+        ws.Cells[2, 4].Value = "AMC-2025-001";
+        ws.Cells[2, 5].Value = "2025-01-01";
+        ws.Cells[2, 6].Value = "2026-01-01";
+        ws.Cells[2, 7].Value = 12;
+        ws.Cells[2, 8].Value = 30;
+        ws.Cells[2, 9].Value = 150000;
+        ws.Cells[2, 10].Value = "Annually";
+        ws.Cells[2, 11].Value = "INR";
+        ws.Cells[2, 12].Value = "TMS";
+        ws.Cells[2, 13].Value = "John Doe";
+        ws.Cells[2, 14].Value = "8x5";
+        ws.Cells[2, 15].Value = "Comprehensive AMC for all servers";
+        ws.Cells.AutoFitColumns();
+        return package.GetAsByteArray();
+    }
+
     public byte[] GenerateSampleTemplate()
     {
         using var package = new ExcelPackage();

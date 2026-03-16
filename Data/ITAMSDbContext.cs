@@ -23,6 +23,7 @@ public class ITAMSDbContext : DbContext
     public DbSet<Asset> Assets { get; set; }
     public DbSet<LicensingAsset> LicensingAssets { get; set; }
     public DbSet<ServiceAsset> ServiceAssets { get; set; }
+    public DbSet<ServiceRenewal> ServiceRenewals { get; set; }
     public DbSet<AuditEntry> AuditEntries { get; set; }
     public DbSet<LoginAudit> LoginAudits { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
