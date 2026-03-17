@@ -79,13 +79,16 @@ public class BulkUploadService : IBulkUploadService
                 .Select(a => a.SerialNumber!.ToLower())
                 .ToListAsync();
 
-            // Get the last AssetId to generate new ones (parse the numeric part from AssetId like "AST00365")
-            var lastAsset = await _context.Assets.OrderByDescending(a => a.AssetId).FirstOrDefaultAsync();
+            // Get the last AssetId to generate new ones (ASTH prefix)
+            var lastAsset = await _context.Assets
+                .Where(a => a.AssetId.StartsWith("ASTH"))
+                .OrderByDescending(a => a.AssetId)
+                .FirstOrDefaultAsync();
             var nextAssetIdNumber = 1;
-            if (lastAsset != null && !string.IsNullOrEmpty(lastAsset.AssetId))
+            if (lastAsset != null && !string.IsNullOrEmpty(lastAsset.AssetId) && lastAsset.AssetId.Length > 4)
             {
-                // Extract numeric part from AssetId (e.g., "AST00365" -> 365)
-                var numericPart = lastAsset.AssetId.Substring(3); // Skip "AST" prefix
+                // Extract numeric part from AssetId (e.g., "ASTH00365" -> 365)
+                var numericPart = lastAsset.AssetId.Substring(4); // Skip "ASTH" prefix
                 if (int.TryParse(numericPart, out int lastNumber))
                 {
                     nextAssetIdNumber = lastNumber + 1;
@@ -124,7 +127,7 @@ public class BulkUploadService : IBulkUploadService
                     }
 
                     // Map to Asset entity
-                    var asset = await MapToAssetAsync(excelRow, nextAssetIdNumber, userId, usageCategory);
+                    var (asset, mapError) = await MapToAssetAsync(excelRow, nextAssetIdNumber, userId, usageCategory);
                     
                     if (asset != null)
                     {
@@ -133,10 +136,17 @@ public class BulkUploadService : IBulkUploadService
                         if (!asset.AssetTag.Equals("NA", StringComparison.OrdinalIgnoreCase))
                             existingAssetTags.Add(asset.AssetTag.ToLower());
                         if (!string.IsNullOrEmpty(asset.SerialNumber))
-                        {
                             existingSerialNumbers.Add(asset.SerialNumber.ToLower());
-                        }
                         nextAssetIdNumber++;
+                    }
+                    else
+                    {
+                        errors.Add(new BulkUploadError
+                        {
+                            RowNumber = row,
+                            AssetTag = excelRow.Asset_Tag,
+                            ErrorMessage = mapError ?? "Failed to map row to asset"
+                        });
                     }
                 }
                 catch (Exception ex)
@@ -180,31 +190,31 @@ public class BulkUploadService : IBulkUploadService
         // Define all possible column name variations
         var columnVariations = new Dictionary<string, string[]>
         {
-            { "Asset_Tag", new[] { "Asset_Tag", "AssetTag", "Asset Tag", "Tag", "Asset ID" } },
-            { "Serial_Number", new[] { "Serial_Number", "SerialNumber", "Serial Number", "Serial No", "SN" } },
+            { "Asset_Tag", new[] { "Asset_Tag", "AssetTag", "Asset Tag", "Tag", "Asset ID", "Asset No", "Asset No." } },
+            { "Serial_Number", new[] { "Serial_Number", "SerialNumber", "Serial Number", "Serial No", "Serial No.", "SN", "Device Serial No.", "Device Serial No", "Device Serial Number" } },
             { "Region", new[] { "Region" } },
             { "Plaza_Name", new[] { "Plaza_Name", "PlazaName", "Plaza Name", "Plaza", "Site Name", "Site" } },
             { "Location", new[] { "Location", "Site Location", "State", "District" } },
             { "Department", new[] { "Department", "Dept" } },
-            { "Asset_Type", new[] { "Asset_Type", "AssetType", "Asset Type", "Type" } },
-            { "Sub_Type", new[] { "Sub_Type", "SubType", "Sub Type", "Subtype" } },
+            { "Asset_Type", new[] { "Asset_Type", "AssetType", "Asset Type", "Asset type", "Type" } },
+            { "Sub_Type", new[] { "Sub_Type", "SubType", "Sub Type", "Subtype", "Sub type" } },
             { "Make", new[] { "Make", "Manufacturer", "Brand" } },
             { "Model", new[] { "Model", "Model Number" } },
-            { "Asset_Classification", new[] { "Asset_Classification", "AssetClassification", "Asset Classification", "Classification", "Criticality" } },
-            { "OS_Type", new[] { "OS_Type", "OSType", "OS Type", "Operating System", "OS" } },
-            { "OS_Version", new[] { "OS_Version", "OSVersion", "OS Version" } },
+            { "Asset_Classification", new[] { "Asset_Classification", "AssetClassification", "Asset Classification", "Classification", "Criticality", "Asset Classification" } },
+            { "OS_Type", new[] { "OS_Type", "OSType", "OS Type", "Operating System", "OS", "OS type", "OS Type" } },
+            { "OS_Version", new[] { "OS_Version", "OSVersion", "OS Version", "OS Ver", "OS Ver.", "OS version" } },
             { "DB_Type", new[] { "DB_Type", "DBType", "DB Type", "Database Type", "Database" } },
             { "DB_Version", new[] { "DB_Version", "DBVersion", "DB Version", "Database Version" } },
             { "IP_Address", new[] { "IP_Address", "IPAddress", "IP Address", "IP" } },
-            { "Assigned_User_Name", new[] { "Assigned_User_Name", "AssignedUserName", "Assigned User Name", "Assigned User", "User Name", "Username" } },
+            { "Assigned_User_Name", new[] { "Assigned_User_Name", "AssignedUserName", "Assigned User Name", "Assigned User", "User Name", "Username", "Assigned user" } },
             { "User_Role", new[] { "User_Role", "UserRole", "User Role", "Role" } },
-            { "Procured_By", new[] { "Procured_By", "ProcuredBy", "Procured By", "Vendor" } },
-            { "Commissioning_Date", new[] { "Commissioning_Date", "CommissioningDate", "Commissioning Date", "Commission Date", "Date" } },
+            { "Procured_By", new[] { "Procured_By", "ProcuredBy", "Procured By", "Procured by", "Vendor" } },
+            { "Commissioning_Date", new[] { "Commissioning_Date", "CommissioningDate", "Commissioning Date", "Commission Date", "Date", "Issue Date", "Issue Date\\ commissioning", "Issue Date/ commissioning", "Issue Date\\commissioning", "Issue Date/commissioning", "Issue Date\\ Commissioning", "Issue Date/ Commissioning" } },
             { "Status", new[] { "Status", "Asset Status" } },
             { "Criticality", new[] { "Criticality", "Critical Level", "Priority" } },
             { "Placing", new[] { "Placing", "Placement", "Area", "Location Area" } },
             { "Patch_Status", new[] { "Patch_Status", "PatchStatus", "Patch Status" } },
-            { "USB_Blocking_Status", new[] { "USB_Blocking_Status", "USBBlockingStatus", "USB Blocking Status", "USB Status" } },
+            { "USB_Blocking_Status", new[] { "USB_Blocking_Status", "USBBlockingStatus", "USB Blocking Status", "USB Status", "Status of USB Blocking", "Status of USB blocking", "USB Blocking" } },
             { "Remarks", new[] { "Remarks", "Notes", "Comments", "Description" } }
         };
 
@@ -215,10 +225,30 @@ public class BulkUploadService : IBulkUploadService
             if (string.IsNullOrWhiteSpace(headerValue))
                 continue;
 
-            // Try to match with known column variations
+            var h = headerValue.Trim();
+
+            // 1. Try exact match first
+            bool matched = false;
             foreach (var kvp in columnVariations)
             {
-                if (kvp.Value.Any(v => v.Equals(headerValue, StringComparison.OrdinalIgnoreCase)))
+                if (kvp.Value.Any(v => v.Equals(h, StringComparison.OrdinalIgnoreCase)))
+                {
+                    mapping[kvp.Key] = col;
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (matched) continue;
+
+            // 2. Fallback: partial/contains match (e.g. "Asset Type" matches "Asset_Type")
+            var hNorm = h.Replace(" ", "").Replace("_", "").Replace("-", "").ToLower();
+            foreach (var kvp in columnVariations)
+            {
+                if (mapping.ContainsKey(kvp.Key)) continue; // already mapped
+                var keyNorm = kvp.Key.Replace("_", "").ToLower();
+                if (hNorm == keyNorm || kvp.Value.Any(v =>
+                    v.Replace(" ", "").Replace("_", "").ToLower() == hNorm))
                 {
                     mapping[kvp.Key] = col;
                     break;
@@ -296,12 +326,10 @@ public class BulkUploadService : IBulkUploadService
 
     private bool IsRowEmpty(AssetExcelRow row)
     {
-        // A row is considered empty if all critical fields are empty
-        return string.IsNullOrWhiteSpace(row.Asset_Tag) &&
-               string.IsNullOrWhiteSpace(row.Make) &&
+        // Only check fields that are actually required — Asset_Tag may never be in the file
+        return string.IsNullOrWhiteSpace(row.Make) &&
                string.IsNullOrWhiteSpace(row.Model) &&
-               string.IsNullOrWhiteSpace(row.Asset_Type) &&
-               string.IsNullOrWhiteSpace(row.Status);
+               string.IsNullOrWhiteSpace(row.Asset_Type);
     }
 
     private async Task<string> ValidateRow(AssetExcelRow row, List<string> existingAssetTags, List<string> existingSerialNumbers)
@@ -329,10 +357,27 @@ public class BulkUploadService : IBulkUploadService
             existingSerialNumbers.Contains(row.Serial_Number.ToLower()))
             return "Serial_Number already exists";
 
-        // Status validation - check if status exists in database
-        var statusExists = await _context.AssetStatuses.AnyAsync(s => s.StatusName == row.Status);
+        // Status validation - case-insensitive
+        var statusExists = await _context.AssetStatuses.AnyAsync(s => s.StatusName.ToLower() == row.Status.ToLower());
         if (!statusExists)
-            return $"Invalid Status: '{row.Status}' not found in database";
+        {
+            // Try common mappings
+            var statusMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "inuse", "In Use" }, { "in-use", "In Use" }, { "active", "In Use" },
+                { "spare", "Spare" }, { "repair", "Repair" }, { "decommissioned", "Decommissioned" },
+                { "scrap", "Decommissioned" }
+            };
+            if (statusMap.TryGetValue(row.Status.Replace(" ", ""), out var mapped))
+                row.Status = mapped;
+            else
+            {
+                // Last resort: use first available status
+                var firstStatus = await _context.AssetStatuses.FirstOrDefaultAsync();
+                if (firstStatus != null) row.Status = firstStatus.StatusName;
+                else return $"Invalid Status: '{row.Status}'. Valid values: In Use, Spare, Repair, Decommissioned";
+            }
+        }
 
         // Placing validation - only if provided
         if (!string.IsNullOrWhiteSpace(row.Placing))
@@ -353,95 +398,86 @@ public class BulkUploadService : IBulkUploadService
         return string.Empty;
     }
 
-    private async Task<Asset?> MapToAssetAsync(AssetExcelRow row, int nextAssetIdNumber, int userId, string usageCategory = "ITNonTMS")
+    private async Task<(Asset? asset, string? error)> MapToAssetAsync(AssetExcelRow row, int nextAssetIdNumber, int userId, string usageCategory = "ITNonTMS")
     {
-        // Get default project and location for foreign key requirements
         var defaultProject = await _context.Projects.FirstOrDefaultAsync();
         var defaultLocation = await _context.Locations.FirstOrDefaultAsync();
 
         if (defaultProject == null || defaultLocation == null)
-        {
-            _logger.LogWarning("No default project or location found");
-            return null;
-        }
+            return (null, "No project or location found in database");
 
-        // Lookup FK values from master tables using correct property names
-        var assetType = await _context.AssetTypes.FirstOrDefaultAsync(x => x.TypeName == row.Asset_Type);
-        var subType = string.IsNullOrEmpty(row.Sub_Type) ? null : 
-            await _context.AssetSubTypes.FirstOrDefaultAsync(x => x.SubTypeName == row.Sub_Type);
-        var status = await _context.AssetStatuses.FirstOrDefaultAsync(x => x.StatusName == row.Status);
+        // Asset type — try exact match first, then partial
+        var assetTypeName = row.Asset_Type?.Trim() ?? "";
+        var assetType = await _context.AssetTypes.FirstOrDefaultAsync(x => x.TypeName.ToLower() == assetTypeName.ToLower());
+        if (assetType == null && !string.IsNullOrEmpty(assetTypeName))
+            assetType = await _context.AssetTypes.FirstOrDefaultAsync(x => x.TypeName.ToLower().Contains(assetTypeName.ToLower()) || assetTypeName.ToLower().Contains(x.TypeName.ToLower()));
+
+        var subType = string.IsNullOrEmpty(row.Sub_Type) ? null :
+            await _context.AssetSubTypes.FirstOrDefaultAsync(x => x.SubTypeName.ToLower() == row.Sub_Type.ToLower());
+
+        // Status — try exact, then fallback to first
+        var statusName = row.Status?.Trim() ?? "";
+        var status = await _context.AssetStatuses.FirstOrDefaultAsync(x => x.StatusName.ToLower() == statusName.ToLower());
+        if (status == null)
+            status = await _context.AssetStatuses.FirstOrDefaultAsync(); // fallback
+
         var placing = string.IsNullOrWhiteSpace(row.Placing)
-            ? await _context.AssetPlacings.FirstOrDefaultAsync() // fallback to first available placing
-            : await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == row.Placing);
+            ? await _context.AssetPlacings.FirstOrDefaultAsync()
+            : await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name.ToLower() == row.Placing.ToLower())
+              ?? await _context.AssetPlacings.FirstOrDefaultAsync();
+
         var classification = string.IsNullOrEmpty(row.Asset_Classification) ? null :
-            await _context.AssetClassifications.FirstOrDefaultAsync(x => x.Name == row.Asset_Classification);
+            await _context.AssetClassifications.FirstOrDefaultAsync(x => x.Name.ToLower() == row.Asset_Classification.ToLower());
         var osType = string.IsNullOrEmpty(row.OS_Type) ? null :
-            await _context.OperatingSystems.FirstOrDefaultAsync(x => x.Name == row.OS_Type);
+            await _context.OperatingSystems.FirstOrDefaultAsync(x => x.Name.ToLower() == row.OS_Type.ToLower());
         var dbType = string.IsNullOrEmpty(row.DB_Type) ? null :
-            await _context.DatabaseTypes.FirstOrDefaultAsync(x => x.Name == row.DB_Type);
+            await _context.DatabaseTypes.FirstOrDefaultAsync(x => x.Name.ToLower() == row.DB_Type.ToLower());
         var patchStatus = string.IsNullOrEmpty(row.Patch_Status) ? null :
-            await _context.PatchStatuses.FirstOrDefaultAsync(x => x.Name == row.Patch_Status);
+            await _context.PatchStatuses.FirstOrDefaultAsync(x => x.Name.ToLower() == row.Patch_Status.ToLower());
         var usbStatus = string.IsNullOrEmpty(row.USB_Blocking_Status) ? null :
-            await _context.USBBlockingStatuses.FirstOrDefaultAsync(x => x.Name == row.USB_Blocking_Status);
+            await _context.USBBlockingStatuses.FirstOrDefaultAsync(x => x.Name.ToLower() == row.USB_Blocking_Status.ToLower());
 
         if (assetType == null)
-        {
-            _logger.LogError("Asset type '{AssetType}' not found", row.Asset_Type);
-            throw new ArgumentException($"Asset type '{row.Asset_Type}' not found");
-        }
+            return (null, $"Asset type '{row.Asset_Type}' not found in database");
         if (status == null)
-        {
-            _logger.LogError("Status '{Status}' not found", row.Status);
-            throw new ArgumentException($"Status '{row.Status}' not found");
-        }
-        if (placing == null)
-        {
-            _logger.LogError("Placing '{Placing}' not found", row.Placing);
-            throw new ArgumentException($"Placing '{row.Placing}' not found");
-        }
+            return (null, $"No statuses found in database");
 
-        return new Asset
+        return (new Asset
         {
-            AssetId = $"AST{nextAssetIdNumber:D5}",
+            AssetId = $"ASTH{nextAssetIdNumber:D5}",
             AssetTag = string.IsNullOrWhiteSpace(row.Asset_Tag) ? "NA" : row.Asset_Tag,
             SerialNumber = row.Serial_Number,
             ProjectId = defaultProject.Id,
             ProjectIdRef = defaultProject.ProjectId,
             LocationId = defaultLocation.Id,
             LocationIdRef = defaultLocation.LocationId,
-            
-            // Store location data as text from Excel (display as-is)
-            Region = string.IsNullOrWhiteSpace(row.Region) ? "N/A" : row.Region,
-            State = "N/A",
-            Site = "N/A",
-            PlazaName = string.IsNullOrWhiteSpace(row.Plaza_Name) ? "N/A" : row.Plaza_Name,
-            LocationText = string.IsNullOrWhiteSpace(row.Location) ? "N/A" : row.Location,
-            Department = string.IsNullOrWhiteSpace(row.Department) ? "N/A" : row.Department,
-            
-            OSVersion = string.IsNullOrWhiteSpace(row.OS_Version) ? "N/A" : row.OS_Version,
-            DBVersion = string.IsNullOrWhiteSpace(row.DB_Version) ? "N/A" : row.DB_Version,
-            IPAddress = string.IsNullOrWhiteSpace(row.IP_Address) ? "N/A" : row.IP_Address,
-            ProcuredBy = string.IsNullOrWhiteSpace(row.Procured_By) ? "N/A" : row.Procured_By,
-            Remarks = string.IsNullOrWhiteSpace(row.Remarks) ? "N/A" : row.Remarks,
-            
-            // FK assignments
+            Region = string.IsNullOrWhiteSpace(row.Region) ? null : row.Region,
+            State = null,
+            Site = null,
+            PlazaName = string.IsNullOrWhiteSpace(row.Plaza_Name) ? null : row.Plaza_Name,
+            LocationText = string.IsNullOrWhiteSpace(row.Location) ? null : row.Location,
+            Department = string.IsNullOrWhiteSpace(row.Department) ? null : row.Department,
+            OSVersion = string.IsNullOrWhiteSpace(row.OS_Version) ? null : row.OS_Version,
+            DBVersion = string.IsNullOrWhiteSpace(row.DB_Version) ? null : row.DB_Version,
+            IPAddress = string.IsNullOrWhiteSpace(row.IP_Address) ? null : row.IP_Address,
+            ProcuredBy = string.IsNullOrWhiteSpace(row.Procured_By) ? null : row.Procured_By,
+            Remarks = string.IsNullOrWhiteSpace(row.Remarks) ? null : row.Remarks,
             AssetTypeId = assetType.Id,
             AssetSubTypeId = subType?.Id,
             AssetStatusId = status.Id,
-            AssetPlacingId = placing.Id,
+            AssetPlacingId = placing?.Id,
             AssetClassificationId = classification?.Id,
             OperatingSystemId = osType?.Id,
             DatabaseTypeId = dbType?.Id,
             PatchStatusId = patchStatus?.Id,
             USBBlockingStatusId = usbStatus?.Id,
-            
             Make = row.Make,
             Model = row.Model,
             UsageCategory = Enum.TryParse<AssetUsageCategory>(usageCategory, out var parsedCategory) ? parsedCategory : AssetUsageCategory.ITNonTMS,
             CommissioningDate = ParseDate(row.Commissioning_Date),
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
-        };
+        }, null);
     }
 
     private bool IsValidDate(string dateStr)
@@ -487,21 +523,48 @@ public class BulkUploadService : IBulkUploadService
             if (lastAsset != null && lastAsset.AssetId.Length > 4 && int.TryParse(lastAsset.AssetId.Substring(4), out int n))
                 nextNum = n + 1;
 
+            // Build header-based column map (case-insensitive, handles variations)
+            var colMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            int totalCols = ws.Dimension.Columns;
+            for (int c = 1; c <= totalCols; c++)
+            {
+                var h = ws.Cells[1, c].Value?.ToString()?.Trim() ?? "";
+                if (!string.IsNullOrEmpty(h)) colMap[h] = c;
+            }
+
+            string LicGet(int row, string[] names)
+            {
+                foreach (var n in names)
+                    if (colMap.TryGetValue(n, out int ci))
+                        return ws.Cells[row, ci].Value?.ToString()?.Trim() ?? "";
+                return "";
+            }
+
             for (int row = 2; row <= rowCount; row++)
             {
-                string Get(int col) => ws.Cells[row, col].Value?.ToString()?.Trim() ?? "";
-                string licenseName = Get(1), version = Get(2), licenseKey = Get(3), licenseType = Get(4),
-                       vendor = Get(5), publisher = Get(6), validityType = Get(7),
-                       numStr = Get(8), purchaseDateStr = Get(9), startDateStr = Get(10), endDateStr = Get(11),
-                       status = Get(12);
+                string licenseName   = LicGet(row, new[] { "LicenseName", "License Name", "License_Name", "LicenseName*" });
+                string version       = LicGet(row, new[] { "Version" });
+                string licenseKey    = LicGet(row, new[] { "LicenseKey", "License Key", "License_Key", "LicenseKey*" });
+                string licenseType   = LicGet(row, new[] { "LicenseType", "License Type", "License_Type" });
+                string vendor        = LicGet(row, new[] { "Vendor" });
+                string publisher     = LicGet(row, new[] { "Publisher" });
+                string validityType  = LicGet(row, new[] { "ValidityType", "Validity Type", "Validity_Type" });
+                string numStr        = LicGet(row, new[] { "NumberOfLicenses", "Number Of Licenses", "Number_Of_Licenses", "NumberOfLicenses*", "Qty", "Quantity" });
+                string purchaseDateStr = LicGet(row, new[] { "PurchaseDate", "Purchase Date", "Purchase_Date" });
+                string startDateStr  = LicGet(row, new[] { "ValidityStartDate", "Validity Start Date", "Start Date", "ValidityStartDate*" });
+                string endDateStr    = LicGet(row, new[] { "ValidityEndDate", "Validity End Date", "End Date", "ValidityEndDate*" });
+                string status        = LicGet(row, new[] { "Status" });
 
                 if (string.IsNullOrWhiteSpace(licenseName) && string.IsNullOrWhiteSpace(licenseKey)) { result.TotalRows--; continue; }
 
                 if (string.IsNullOrWhiteSpace(licenseName)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseKey, ErrorMessage = "LicenseName is required" }); continue; }
                 if (string.IsNullOrWhiteSpace(licenseKey)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "LicenseKey is required" }); continue; }
-                if (!int.TryParse(numStr, out int numLicenses) || numLicenses <= 0) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "NumberOfLicenses must be a positive integer" }); continue; }
-                if (!DateTime.TryParse(startDateStr, out var startDate)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "ValidityStartDate is invalid" }); continue; }
-                if (!DateTime.TryParse(endDateStr, out var endDate)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "ValidityEndDate is invalid" }); continue; }
+
+                // NumberOfLicenses is optional — default to 1 if missing/invalid
+                if (!int.TryParse(numStr, out int numLicenses) || numLicenses <= 0) numLicenses = 1;
+
+                if (!DateTime.TryParse(startDateStr, out var startDate)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "ValidityStartDate is invalid or missing" }); continue; }
+                if (!DateTime.TryParse(endDateStr, out var endDate)) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "ValidityEndDate is invalid or missing" }); continue; }
                 if (endDate <= startDate) { errors.Add(new BulkUploadError { RowNumber = row, AssetTag = licenseName, ErrorMessage = "ValidityEndDate must be after ValidityStartDate" }); continue; }
 
                 DateTime.TryParse(purchaseDateStr, out var purchaseDate);
