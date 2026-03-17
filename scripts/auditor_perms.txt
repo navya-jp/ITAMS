@@ -1,0 +1,13 @@
+RoleName                                                                                             PermCode                                                                                            
+---------------------------------------------------------------------------------------------------- ----------------------------------------------------------------------------------------------------
+Auditor                                                                                              ASSET_VIEW                                                                                          
+Auditor                                                                                              AUDIT_DOWNLOAD                                                                                      
+Auditor                                                                                              AUDIT_VIEW                                                                                          
+Auditor                                                                                              FINANCIAL_VIEW                                                                                      
+Auditor                                                                                              LIFECYCLE_VIEW                                                                                      
+Auditor                                                                                              REPAIR_VIEW                                                                                         
+Auditor                                                                                              REPORT_EXPORT                                                                                       
+Auditor                                                                                              REPORT_VIEW                                                                                         
+Auditor                                                                                              USER_VIEW                                                                                           
+
+(9 rows affected)

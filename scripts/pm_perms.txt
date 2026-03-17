@@ -1,0 +1,15 @@
+RoleName                                                                                             PermCode                                                                                            
+---------------------------------------------------------------------------------------------------- ----------------------------------------------------------------------------------------------------
+Project Manager                                                                                      ASSET_VIEW                                                                                          
+Project Manager                                                                                      AUDIT_DOWNLOAD                                                                                      
+Project Manager                                                                                      AUDIT_VIEW                                                                                          
+Project Manager                                                                                      FINANCIAL_VIEW                                                                                      
+Project Manager                                                                                      LIFECYCLE_VIEW                                                                                      
+Project Manager                                                                                      MAINTENANCE_SCHEDULE                                                                                
+Project Manager                                                                                      REPAIR_ADD                                                                                          
+Project Manager                                                                                      REPAIR_VIEW                                                                                         
+Project Manager                                                                                      REPORT_EXPORT                                                                                       
+Project Manager                                                                                      REPORT_VIEW                                                                                         
+Project Manager                                                                                      USER_VIEW                                                                                           
+
+(11 rows affected)

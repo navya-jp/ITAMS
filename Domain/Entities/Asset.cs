@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using ITAMS.Domain.Entities.MasterData;
 
 namespace ITAMS.Domain.Entities;
@@ -34,6 +35,10 @@ public class Asset
     // NORMALIZED: AssetType now uses FK instead of text
     public int? AssetTypeId { get; set; }
     
+    [Column("AssetType")]
+    [StringLength(100)]
+    public string AssetTypeName { get; set; } = string.Empty;
+    
     // NORMALIZED: SubType now uses FK instead of text
     public int? AssetSubTypeId { get; set; }
     
@@ -63,6 +68,9 @@ public class Asset
     
     // NORMALIZED: Status now uses FK instead of enum
     public int? AssetStatusId { get; set; }
+    
+    // Legacy status column (kept for DB compatibility)
+    public int Status { get; set; } = 0;
     
     public int? AssignedUserId { get; set; }
     

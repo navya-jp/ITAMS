@@ -1,0 +1,2 @@
+Msg 207, Level 16, State 1, Server KriyaM1208\SQLEXPRESS, Line 1
+Invalid column name 'RoleId'.
