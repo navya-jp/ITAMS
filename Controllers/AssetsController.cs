@@ -392,7 +392,7 @@ public class AssetsController : BaseController
     // POST: api/assets/bulk-upload
     [HttpPost("bulk-upload")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> BulkUpload([FromForm] IFormFile file, [FromForm] int projectId)
+    public async Task<IActionResult> BulkUpload([FromForm] IFormFile file, [FromForm] int projectId, [FromForm] string usageCategory = "ITNonTMS")
     {
         try
         {
@@ -409,7 +409,7 @@ public class AssetsController : BaseController
             var userId = GetCurrentUserId() ?? 1;
             using (var stream = file.OpenReadStream())
             {
-                var result = await _bulkUploadService.ProcessAssetExcelAsync(stream, userId);
+                var result = await _bulkUploadService.ProcessAssetExcelAsync(stream, userId, usageCategory);
                 return Ok(result);
             }
         }
@@ -418,6 +418,14 @@ public class AssetsController : BaseController
             _logger.LogError(ex, "Error during bulk upload");
             return StatusCode(500, new { message = "Error processing bulk upload", error = ex.Message });
         }
+    }
+
+    // GET: api/assets/download-template
+    [HttpGet("download-template")]
+    public IActionResult DownloadTemplate()
+    {
+        var bytes = _bulkUploadService.GenerateSampleTemplate();
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "hardware-assets-template.xlsx");
     }
 
     private async Task<string> GenerateAssetId()

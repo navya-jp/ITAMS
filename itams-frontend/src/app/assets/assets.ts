@@ -68,6 +68,7 @@ export class Assets implements OnInit {
   uploading = false;
   uploadResult: BulkUploadResult | null = null;
   dragOver = false;
+  bulkUploadUsageCategory = 'TMS';
   private baseUrl = '/api';
 
   // Form data
@@ -443,6 +444,7 @@ export class Assets implements OnInit {
     this.showBulkUploadModal = true;
     this.selectedFile = null;
     this.uploadResult = null;
+    this.bulkUploadUsageCategory = 'TMS';
     this.clearMessages();
   }
 
@@ -491,6 +493,7 @@ export class Assets implements OnInit {
     try {
       const formData = new FormData();
       formData.append('file', this.selectedFile);
+      formData.append('usageCategory', this.bulkUploadUsageCategory);
       const token = localStorage.getItem('auth_token');
       const headers = new HttpHeaders({ 'Authorization': `Bearer ${token}` });
 

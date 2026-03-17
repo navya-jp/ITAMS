@@ -19,7 +19,7 @@ public class BulkUploadService : IBulkUploadService
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
     }
 
-    public async Task<BulkUploadResult> ProcessAssetExcelAsync(Stream fileStream, int userId)
+    public async Task<BulkUploadResult> ProcessAssetExcelAsync(Stream fileStream, int userId, string usageCategory = "ITNonTMS")
     {
         var result = new BulkUploadResult();
         var assetsToInsert = new List<Asset>();
@@ -124,7 +124,7 @@ public class BulkUploadService : IBulkUploadService
                     }
 
                     // Map to Asset entity
-                    var asset = await MapToAssetAsync(excelRow, nextAssetIdNumber, userId);
+                    var asset = await MapToAssetAsync(excelRow, nextAssetIdNumber, userId, usageCategory);
                     
                     if (asset != null)
                     {
@@ -352,7 +352,7 @@ public class BulkUploadService : IBulkUploadService
         return string.Empty;
     }
 
-    private async Task<Asset?> MapToAssetAsync(AssetExcelRow row, int nextAssetIdNumber, int userId)
+    private async Task<Asset?> MapToAssetAsync(AssetExcelRow row, int nextAssetIdNumber, int userId, string usageCategory = "ITNonTMS")
     {
         // Get default project and location for foreign key requirements
         var defaultProject = await _context.Projects.FirstOrDefaultAsync();
@@ -434,7 +434,7 @@ public class BulkUploadService : IBulkUploadService
             
             Make = row.Make,
             Model = row.Model,
-            UsageCategory = AssetUsageCategory.ITNonTMS,
+            UsageCategory = Enum.TryParse<AssetUsageCategory>(usageCategory, out var parsedCategory) ? parsedCategory : AssetUsageCategory.ITNonTMS,
             CommissioningDate = ParseDate(row.Commissioning_Date),
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
@@ -461,7 +461,7 @@ public class BulkUploadService : IBulkUploadService
 
     // ── Licensing Bulk Upload ─────────────────────────────────────────────────
 
-    public async Task<BulkUploadResult> ProcessLicensingExcelAsync(Stream fileStream, int userId)
+    public async Task<BulkUploadResult> ProcessLicensingExcelAsync(Stream fileStream, int userId, string usageCategory = "TMS")
     {
         var result = new BulkUploadResult();
         var toInsert = new List<ITAMS.Domain.Entities.LicensingAsset>();
@@ -490,7 +490,7 @@ public class BulkUploadService : IBulkUploadService
                 string licenseName = Get(1), version = Get(2), licenseKey = Get(3), licenseType = Get(4),
                        vendor = Get(5), publisher = Get(6), validityType = Get(7),
                        numStr = Get(8), purchaseDateStr = Get(9), startDateStr = Get(10), endDateStr = Get(11),
-                       status = Get(12), usageCategory = Get(13);
+                       status = Get(12);
 
                 if (string.IsNullOrWhiteSpace(licenseName) && string.IsNullOrWhiteSpace(licenseKey)) { result.TotalRows--; continue; }
 
@@ -546,7 +546,7 @@ public class BulkUploadService : IBulkUploadService
 
     // ── Service Bulk Upload ───────────────────────────────────────────────────
 
-    public async Task<BulkUploadResult> ProcessServiceExcelAsync(Stream fileStream, int userId)
+    public async Task<BulkUploadResult> ProcessServiceExcelAsync(Stream fileStream, int userId, string usageCategory = "TMS")
     {
         var result = new BulkUploadResult();
         var toInsert = new List<ITAMS.Domain.Entities.ServiceAsset>();
@@ -577,8 +577,8 @@ public class BulkUploadService : IBulkUploadService
                 string serviceName = Get(1), serviceTypeName = Get(2), vendorName = Get(3),
                        contractNumber = Get(4), startDateStr = Get(5), endDateStr = Get(6),
                        cycleStr = Get(7), reminderStr = Get(8), costStr = Get(9),
-                       billingCycle = Get(10), currency = Get(11), usageCategory = Get(12),
-                       contactPerson = Get(13), slaType = Get(14), description = Get(15);
+                       billingCycle = Get(10), currency = Get(11),
+                       contactPerson = Get(12), slaType = Get(13), description = Get(14);
 
                 if (string.IsNullOrWhiteSpace(serviceName) && string.IsNullOrWhiteSpace(vendorName)) { result.TotalRows--; continue; }
 
@@ -612,7 +612,7 @@ public class BulkUploadService : IBulkUploadService
                     ContractCost = cost > 0 ? cost : null,
                     BillingCycle = string.IsNullOrWhiteSpace(billingCycle) ? null : billingCycle,
                     Currency = string.IsNullOrWhiteSpace(currency) ? "INR" : currency,
-                    UsageCategory = string.IsNullOrWhiteSpace(usageCategory) ? "TMS" : usageCategory,
+                    UsageCategory = usageCategory,
                     ContactPerson = string.IsNullOrWhiteSpace(contactPerson) ? null : contactPerson,
                     SLAType = string.IsNullOrWhiteSpace(slaType) ? null : slaType,
                     Description = string.IsNullOrWhiteSpace(description) ? null : description,
@@ -647,7 +647,7 @@ public class BulkUploadService : IBulkUploadService
     {
         using var package = new ExcelPackage();
         var ws = package.Workbook.Worksheets.Add("Licensing Assets");
-        var headers = new[] { "LicenseName*", "Version", "LicenseKey*", "LicenseType", "Vendor", "Publisher", "ValidityType", "NumberOfLicenses*", "PurchaseDate", "ValidityStartDate*", "ValidityEndDate*", "Status", "UsageCategory" };
+        var headers = new[] { "LicenseName*", "Version", "LicenseKey*", "LicenseType", "Vendor", "Publisher", "ValidityType", "NumberOfLicenses*", "PurchaseDate", "ValidityStartDate*", "ValidityEndDate*", "Status" };
         for (int i = 0; i < headers.Length; i++) { ws.Cells[1, i + 1].Value = headers[i]; ws.Cells[1, i + 1].Style.Font.Bold = true; }
         // Sample row
         ws.Cells[2, 1].Value = "Microsoft Office 365";
@@ -662,7 +662,6 @@ public class BulkUploadService : IBulkUploadService
         ws.Cells[2, 10].Value = "2025-01-01";
         ws.Cells[2, 11].Value = "2026-01-01";
         ws.Cells[2, 12].Value = "Active";
-        ws.Cells[2, 13].Value = "TMS";
         ws.Cells.AutoFitColumns();
         return package.GetAsByteArray();
     }
@@ -671,7 +670,7 @@ public class BulkUploadService : IBulkUploadService
     {
         using var package = new ExcelPackage();
         var ws = package.Workbook.Worksheets.Add("Services");
-        var headers = new[] { "ServiceName*", "ServiceType", "VendorName*", "ContractNumber", "ContractStartDate*", "ContractEndDate*", "RenewalCycleMonths", "RenewalReminderDays", "ContractCost", "BillingCycle", "Currency", "UsageCategory", "ContactPerson", "SLAType", "Description" };
+        var headers = new[] { "ServiceName*", "ServiceType", "VendorName*", "ContractNumber", "ContractStartDate*", "ContractEndDate*", "RenewalCycleMonths", "RenewalReminderDays", "ContractCost", "BillingCycle", "Currency", "ContactPerson", "SLAType", "Description" };
         for (int i = 0; i < headers.Length; i++) { ws.Cells[1, i + 1].Value = headers[i]; ws.Cells[1, i + 1].Style.Font.Bold = true; }
         // Sample row
         ws.Cells[2, 1].Value = "Annual Server Maintenance";
@@ -685,10 +684,9 @@ public class BulkUploadService : IBulkUploadService
         ws.Cells[2, 9].Value = 150000;
         ws.Cells[2, 10].Value = "Annually";
         ws.Cells[2, 11].Value = "INR";
-        ws.Cells[2, 12].Value = "TMS";
-        ws.Cells[2, 13].Value = "John Doe";
-        ws.Cells[2, 14].Value = "8x5";
-        ws.Cells[2, 15].Value = "Comprehensive AMC for all servers";
+        ws.Cells[2, 12].Value = "John Doe";
+        ws.Cells[2, 13].Value = "8x5";
+        ws.Cells[2, 14].Value = "Comprehensive AMC for all servers";
         ws.Cells.AutoFitColumns();
         return package.GetAsByteArray();
     }

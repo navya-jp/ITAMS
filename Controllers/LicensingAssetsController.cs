@@ -303,7 +303,7 @@ public class LicensingAssetsController : BaseController
     // POST: api/licensingassets/bulk-upload
     [HttpPost("bulk-upload")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> BulkUpload([FromForm] IFormFile file)
+    public async Task<IActionResult> BulkUpload([FromForm] IFormFile file, [FromForm] string usageCategory = "TMS")
     {
         try
         {
@@ -314,7 +314,7 @@ public class LicensingAssetsController : BaseController
 
             var userId = GetCurrentUserId() ?? 1;
             using var stream = file.OpenReadStream();
-            var result = await _bulkUploadService.ProcessLicensingExcelAsync(stream, userId);
+            var result = await _bulkUploadService.ProcessLicensingExcelAsync(stream, userId, usageCategory);
             return Ok(result);
         }
         catch (Exception ex)

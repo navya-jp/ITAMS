@@ -894,6 +894,23 @@
             <i class="fas fa-download me-2"></i>Download Template
           </button>
         </div>
+        <!-- Usage Category Selector -->
+        <div class="card border-0 bg-light mb-4 p-3">
+          <label class="form-label fw-semibold mb-2"><i class="fas fa-tag me-2 text-primary"></i>Usage Category <span class="text-danger">*</span></label>
+          <div class="d-flex gap-3">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" id="bulkTMS" name="bulkUsageCategory"
+                     value="TMS" [(ngModel)]="bulkUploadUsageCategory">
+              <label class="form-check-label" for="bulkTMS">TMS</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" id="bulkITNonTMS" name="bulkUsageCategory"
+                     value="ITNonTMS" [(ngModel)]="bulkUploadUsageCategory">
+              <label class="form-check-label" for="bulkITNonTMS">IT (Non-TMS)</label>
+            </div>
+          </div>
+          <small class="text-muted mt-1">This category will be applied to all records in this upload batch.</small>
+        </div>
         <div class="upload-area mb-4" [class.drag-over]="dragOver"
              (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
           <div class="upload-content text-center p-5">
