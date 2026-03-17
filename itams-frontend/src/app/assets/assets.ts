@@ -548,7 +548,6 @@ export class Assets implements OnInit {
 
   validateTab1(): boolean {
     let isValid = true;
-    if (!this.createForm.assetTag) { this.validationErrors['assetTag'] = 'Asset tag is required'; isValid = false; }
     if (this.selectedLocationType === 'office') {
       if (!this.createForm.locationId) { this.validationErrors['placing'] = 'Location is required'; isValid = false; }
     } else {
@@ -625,7 +624,7 @@ export class Assets implements OnInit {
   isTabValid(tabNumber: number): boolean {
     if (tabNumber === 1) {
       const locationOk = this.selectedLocationType === 'office' ? !!this.createForm.locationId : !!this.createForm.placing;
-      return !!(this.createForm.assetTag && locationOk);
+      return locationOk;
     }
     if (tabNumber === 2) return !!(this.createForm.assetType && this.createForm.make && this.createForm.model);
     return true;
@@ -645,6 +644,7 @@ export class Assets implements OnInit {
 
   createHardwareAsset() {
     this.loading = true;
+    if (!this.createForm.assetTag) this.createForm.assetTag = 'NA';
     this.api.createAsset(this.createForm).subscribe({
       next: (asset) => { this.assets.push(asset); this.success = 'Hardware asset created successfully'; this.loading = false; this.closeModals(); this.applyFilters(); },
       error: (error) => { this.error = error.error?.message || 'Failed to create asset'; this.loading = false; }

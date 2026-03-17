@@ -129,7 +129,9 @@ public class BulkUploadService : IBulkUploadService
                     if (asset != null)
                     {
                         assetsToInsert.Add(asset);
-                        existingAssetTags.Add(asset.AssetTag.ToLower());
+                        // Only track non-NA tags for duplicate detection
+                        if (!asset.AssetTag.Equals("NA", StringComparison.OrdinalIgnoreCase))
+                            existingAssetTags.Add(asset.AssetTag.ToLower());
                         if (!string.IsNullOrEmpty(asset.SerialNumber))
                         {
                             existingSerialNumbers.Add(asset.SerialNumber.ToLower());
@@ -304,10 +306,7 @@ public class BulkUploadService : IBulkUploadService
 
     private async Task<string> ValidateRow(AssetExcelRow row, List<string> existingAssetTags, List<string> existingSerialNumbers)
     {
-        // Required fields
-        if (string.IsNullOrWhiteSpace(row.Asset_Tag))
-            return "Asset_Tag is required";
-
+        // Required fields (Asset_Tag is optional — defaults to "NA" if missing)
         if (string.IsNullOrWhiteSpace(row.Asset_Type))
             return "Asset_Type is required";
 
@@ -323,8 +322,10 @@ public class BulkUploadService : IBulkUploadService
         if (string.IsNullOrWhiteSpace(row.Placing))
             return "Placing is required";
 
-        // Duplicate check
-        if (existingAssetTags.Contains(row.Asset_Tag.ToLower()))
+        // Duplicate check (skip if tag is empty/NA — will be defaulted)
+        if (!string.IsNullOrWhiteSpace(row.Asset_Tag) &&
+            !row.Asset_Tag.Equals("NA", StringComparison.OrdinalIgnoreCase) &&
+            existingAssetTags.Contains(row.Asset_Tag.ToLower()))
             return "Asset_Tag already exists";
 
         if (!string.IsNullOrWhiteSpace(row.Serial_Number) && 
@@ -400,7 +401,7 @@ public class BulkUploadService : IBulkUploadService
         return new Asset
         {
             AssetId = $"AST{nextAssetIdNumber:D5}",
-            AssetTag = row.Asset_Tag,
+            AssetTag = string.IsNullOrWhiteSpace(row.Asset_Tag) ? "NA" : row.Asset_Tag,
             SerialNumber = row.Serial_Number,
             ProjectId = defaultProject.Id,
             ProjectIdRef = defaultProject.ProjectId,

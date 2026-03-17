@@ -234,7 +234,7 @@ public class AssetsController : BaseController
             var asset = new Asset
             {
                 AssetId = assetId,
-                AssetTag = createDto.AssetTag,
+                AssetTag = string.IsNullOrWhiteSpace(createDto.AssetTag) ? "NA" : createDto.AssetTag,
                 ProjectId = createDto.ProjectId,
                 ProjectIdRef = project.ProjectId,
                 LocationId = createDto.LocationId,
