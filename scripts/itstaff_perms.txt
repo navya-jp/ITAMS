@@ -1,0 +1,18 @@
+RoleName                                                                                             PermCode                                                                                            
+---------------------------------------------------------------------------------------------------- ----------------------------------------------------------------------------------------------------
+IT Staff                                                                                             ASSET_VIEW                                                                                          
+IT Staff                                                                                             AUDIT_DOWNLOAD                                                                                      
+IT Staff                                                                                             AUDIT_VIEW                                                                                          
+IT Staff                                                                                             FINANCIAL_VIEW                                                                                      
+IT Staff                                                                                             LIFECYCLE_APPROVE                                                                                   
+IT Staff                                                                                             LIFECYCLE_LOG                                                                                       
+IT Staff                                                                                             LIFECYCLE_VIEW                                                                                      
+IT Staff                                                                                             MAINTENANCE_SCHEDULE                                                                                
+IT Staff                                                                                             REPAIR_ADD                                                                                          
+IT Staff                                                                                             REPAIR_VIEW                                                                                         
+IT Staff                                                                                             REPORT_EXPORT                                                                                       
+IT Staff                                                                                             REPORT_VIEW                                                                                         
+IT Staff                                                                                             ROLE_VIEW                                                                                           
+IT Staff                                                                                             USER_VIEW                                                                                           
+
+(14 rows affected)

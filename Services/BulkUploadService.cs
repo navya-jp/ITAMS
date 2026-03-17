@@ -49,10 +49,20 @@ public class BulkUploadService : IBulkUploadService
                 return result;
             }
 
+            // Log raw header row for debugging
+            _logger.LogInformation("=== RAW HEADER ROW ===");
+            for (int c = 1; c <= colCount; c++)
+            {
+                var raw = GetCellValue(worksheet, 1, c);
+                _logger.LogInformation("  Col {C}: '{Header}'", c, raw);
+            }
+
             // Build column mapping from header row
             var columnMapping = BuildColumnMapping(worksheet, colCount);
+            int headerRowNum = columnMapping.TryGetValue("__headerRow__", out int hrn) ? hrn : 1;
+            int dataStartRow = headerRowNum + 1;
             
-            _logger.LogInformation("Column mapping built. Found {Count} columns", columnMapping.Count);
+            _logger.LogInformation("Column mapping built. Found {Count} columns, data starts at row {DataStart}", columnMapping.Count, dataStartRow);
             foreach (var col in columnMapping)
             {
                 _logger.LogInformation("  Column: {Name} at position {Position}", col.Key, col.Value);
@@ -67,7 +77,7 @@ public class BulkUploadService : IBulkUploadService
                 return result;
             }
 
-            result.TotalRows = rowCount - 1; // Exclude header row
+            result.TotalRows = 0; // Will be counted during processing (excludes empty rows)
 
             // Get existing asset tags and serial numbers for duplicate check
             var existingAssetTags = await _context.Assets
@@ -93,7 +103,7 @@ public class BulkUploadService : IBulkUploadService
             }
 
             // Process each row (skip header)
-            for (int row = 2; row <= rowCount; row++)
+            for (int row = dataStartRow; row <= rowCount; row++)
             {
                 try
                 {
@@ -102,13 +112,25 @@ public class BulkUploadService : IBulkUploadService
                     _logger.LogInformation("Row {Row}: AssetTag={AssetTag}, Make={Make}, Model={Model}, Type={Type}, Status={Status}", 
                         row, excelRow.Asset_Tag, excelRow.Make, excelRow.Model, excelRow.Asset_Type, excelRow.Status);
                     
+                    // Log raw cell values for first data row
+                    if (row == dataStartRow)
+                    {
+                        _logger.LogInformation("=== RAW DATA ROW {Row} ===", row);
+                        for (int c = 1; c <= colCount; c++)
+                        {
+                            _logger.LogInformation("  Col {C}: '{Value}'", c, GetCellValue(worksheet, row, c));
+                        }
+                    }
+                    
                     // Skip completely empty rows (common in Excel files with formatting)
                     if (IsRowEmpty(excelRow))
                     {
-                        _logger.LogWarning("Skipping empty row {Row}", row);
-                        result.TotalRows--; // Adjust total count
+                        _logger.LogWarning("Skipping empty row {Row} — Tag='{Tag}' Make='{Make}' Model='{Model}' Type='{Type}' Status='{Status}' Region='{Region}' Location='{Location}'",
+                            row, excelRow.Asset_Tag, excelRow.Make, excelRow.Model, excelRow.Asset_Type, excelRow.Status, excelRow.Region, excelRow.Location);
                         continue;
                     }
+
+                    result.TotalRows++; // Count only non-empty rows
                     
                     var validationError = await ValidateRow(excelRow, existingAssetTags, existingSerialNumbers);
 
@@ -129,8 +151,8 @@ public class BulkUploadService : IBulkUploadService
                     if (asset != null)
                     {
                         assetsToInsert.Add(asset);
-                        // Only track non-NA tags for duplicate detection
-                        if (!asset.AssetTag.Equals("NA", StringComparison.OrdinalIgnoreCase))
+                        // Only track non-empty tags for duplicate detection (auto-generated tags are always unique)
+                        if (!string.IsNullOrWhiteSpace(excelRow.Asset_Tag))
                             existingAssetTags.Add(asset.AssetTag.ToLower());
                         if (!string.IsNullOrEmpty(asset.SerialNumber))
                         {
@@ -173,6 +195,53 @@ public class BulkUploadService : IBulkUploadService
         return result;
     }
 
+    // Find the actual header row (scan first 5 rows for the row with most recognized column names)
+    private int FindHeaderRow(ExcelWorksheet worksheet, int colCount)
+    {
+        var knownHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Asset ID", "Asset_Tag", "AssetTag", "Asset Tag", "Tag", "Asset tag",
+            "Make", "Manufacturer", "Brand",
+            "Model", "Model Number",
+            "Status", "Asset Status",
+            "Asset Type", "Asset_Type", "AssetType", "Type", "Asset type",
+            "Serial Number", "Serial_Number", "SerialNumber", "Serial No", "SN",
+            "Device Serial Number", "Device Serial No", "Device Serial No.",
+            "Region", "Location", "Department",
+            "Sub Type", "Sub_Type", "SubType", "Subtype",
+            "OS Type", "OS_Type", "OSType", "Operating System",
+            "OS Version", "OS_Version", "OSVersion",
+            "USB Blocking Status", "USB_Blocking_Status", "Status of USB Blocking",
+            "Asset Classification", "Asset_Classification",
+            "Assigned User", "Assigned_User_Name",
+            "Procured By", "Procured_By",
+            "Issue Date / Commissioning Date", "Commissioning Date", "Commissioning_Date",
+            "Issue Date\\ commissioning", "Issue Date/ commissioning"
+        };
+
+        int bestRow = 1;
+        int bestCount = 0;
+
+        for (int row = 1; row <= Math.Min(5, worksheet.Dimension.Rows); row++)
+        {
+            int count = 0;
+            for (int col = 1; col <= colCount; col++)
+            {
+                var val = GetCellValue(worksheet, row, col);
+                if (knownHeaders.Contains(val)) count++;
+            }
+            _logger.LogInformation("Header scan row {Row}: {Count} recognized columns", row, count);
+            if (count > bestCount)
+            {
+                bestCount = count;
+                bestRow = row;
+            }
+        }
+
+        _logger.LogInformation("Using row {Row} as header row ({Count} matches)", bestRow, bestCount);
+        return bestRow;
+    }
+
     private Dictionary<string, int> BuildColumnMapping(ExcelWorksheet worksheet, int colCount)
     {
         var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -180,13 +249,13 @@ public class BulkUploadService : IBulkUploadService
         // Define all possible column name variations
         var columnVariations = new Dictionary<string, string[]>
         {
-            { "Asset_Tag", new[] { "Asset_Tag", "AssetTag", "Asset Tag", "Tag", "Asset ID" } },
-            { "Serial_Number", new[] { "Serial_Number", "SerialNumber", "Serial Number", "Serial No", "SN" } },
+            { "Asset_Tag", new[] { "Asset_Tag", "AssetTag", "Asset Tag", "Tag", "Asset ID", "Asset tag", "asset tag" } },
+            { "Serial_Number", new[] { "Serial_Number", "SerialNumber", "Serial Number", "Serial No", "SN", "Device Serial Number", "Device Serial No", "Device Serial No." } },
             { "Region", new[] { "Region" } },
             { "Plaza_Name", new[] { "Plaza_Name", "PlazaName", "Plaza Name", "Plaza", "Site Name", "Site" } },
             { "Location", new[] { "Location", "Site Location", "State", "District" } },
             { "Department", new[] { "Department", "Dept" } },
-            { "Asset_Type", new[] { "Asset_Type", "AssetType", "Asset Type", "Type" } },
+            { "Asset_Type", new[] { "Asset_Type", "AssetType", "Asset Type", "Type", "Asset type" } },
             { "Sub_Type", new[] { "Sub_Type", "SubType", "Sub Type", "Subtype" } },
             { "Make", new[] { "Make", "Manufacturer", "Brand" } },
             { "Model", new[] { "Model", "Model Number" } },
@@ -196,24 +265,29 @@ public class BulkUploadService : IBulkUploadService
             { "DB_Type", new[] { "DB_Type", "DBType", "DB Type", "Database Type", "Database" } },
             { "DB_Version", new[] { "DB_Version", "DBVersion", "DB Version", "Database Version" } },
             { "IP_Address", new[] { "IP_Address", "IPAddress", "IP Address", "IP" } },
-            { "Assigned_User_Name", new[] { "Assigned_User_Name", "AssignedUserName", "Assigned User Name", "Assigned User", "User Name", "Username" } },
+            { "Assigned_User_Name", new[] { "Assigned_User_Name", "AssignedUserName", "Assigned User Name", "Assigned User", "User Name", "Username", "User By", "Used By" } },
             { "User_Role", new[] { "User_Role", "UserRole", "User Role", "Role" } },
             { "Procured_By", new[] { "Procured_By", "ProcuredBy", "Procured By", "Vendor" } },
-            { "Commissioning_Date", new[] { "Commissioning_Date", "CommissioningDate", "Commissioning Date", "Commission Date", "Date" } },
+            { "Commissioning_Date", new[] { "Commissioning_Date", "CommissioningDate", "Commissioning Date", "Commission Date", "Date", "Issue Date / Commissioning Date", "Issue Date", "Issue Date/ Commissioning Date", "Issue Date\\ commissioning", "Issue Date\\ Commissioning", "Issue Date/ commissioning" } },
             { "Status", new[] { "Status", "Asset Status" } },
             { "Criticality", new[] { "Criticality", "Critical Level", "Priority" } },
             { "Placing", new[] { "Placing", "Placement", "Area", "Location Area" } },
             { "Patch_Status", new[] { "Patch_Status", "PatchStatus", "Patch Status" } },
-            { "USB_Blocking_Status", new[] { "USB_Blocking_Status", "USBBlockingStatus", "USB Blocking Status", "USB Status" } },
+            { "USB_Blocking_Status", new[] { "USB_Blocking_Status", "USBBlockingStatus", "USB Blocking Status", "USB Status", "Status of USB Blocking", "Status of USB Blo" } },
             { "Remarks", new[] { "Remarks", "Notes", "Comments", "Description" } }
         };
 
-        // Read header row and build mapping
+        // Find actual header row and read it
+        int headerRow = FindHeaderRow(worksheet, colCount);
+        mapping["__headerRow__"] = headerRow; // store for caller
+
         for (int col = 1; col <= colCount; col++)
         {
-            var headerValue = GetCellValue(worksheet, 1, col);
+            var headerValue = GetCellValue(worksheet, headerRow, col);
             if (string.IsNullOrWhiteSpace(headerValue))
                 continue;
+
+            _logger.LogInformation("  Raw header col {Col}: '{Header}'", col, headerValue);
 
             // Try to match with known column variations
             foreach (var kvp in columnVariations)
@@ -296,12 +370,16 @@ public class BulkUploadService : IBulkUploadService
 
     private bool IsRowEmpty(AssetExcelRow row)
     {
-        // A row is considered empty if all critical fields are empty
+        // Only skip if every single mapped field is empty
         return string.IsNullOrWhiteSpace(row.Asset_Tag) &&
                string.IsNullOrWhiteSpace(row.Make) &&
                string.IsNullOrWhiteSpace(row.Model) &&
                string.IsNullOrWhiteSpace(row.Asset_Type) &&
-               string.IsNullOrWhiteSpace(row.Status);
+               string.IsNullOrWhiteSpace(row.Status) &&
+               string.IsNullOrWhiteSpace(row.Serial_Number) &&
+               string.IsNullOrWhiteSpace(row.Region) &&
+               string.IsNullOrWhiteSpace(row.Location) &&
+               string.IsNullOrWhiteSpace(row.Assigned_User_Name);
     }
 
     private async Task<string> ValidateRow(AssetExcelRow row, List<string> existingAssetTags, List<string> existingSerialNumbers)
@@ -310,18 +388,14 @@ public class BulkUploadService : IBulkUploadService
         if (string.IsNullOrWhiteSpace(row.Asset_Type))
             return "Asset_Type is required";
 
-        if (string.IsNullOrWhiteSpace(row.Make))
-            return "Make is required";
-
         if (string.IsNullOrWhiteSpace(row.Model))
             return "Model is required";
 
         if (string.IsNullOrWhiteSpace(row.Status))
             return "Status is required";
 
-        // Duplicate check (skip if tag is empty/NA — will be defaulted)
+        // Duplicate check (skip if tag is empty — will be auto-generated as unique AssetId)
         if (!string.IsNullOrWhiteSpace(row.Asset_Tag) &&
-            !row.Asset_Tag.Equals("NA", StringComparison.OrdinalIgnoreCase) &&
             existingAssetTags.Contains(row.Asset_Tag.ToLower()))
             return "Asset_Tag already exists";
 
@@ -367,11 +441,28 @@ public class BulkUploadService : IBulkUploadService
 
         // Lookup FK values from master tables using correct property names
         var assetType = await _context.AssetTypes.FirstOrDefaultAsync(x => x.TypeName == row.Asset_Type);
+        
+        // Auto-create asset type if it doesn't exist
+        if (assetType == null && !string.IsNullOrWhiteSpace(row.Asset_Type))
+        {
+            assetType = new Domain.Entities.MasterData.AssetType
+            {
+                TypeName = row.Asset_Type,
+                TypeCode = row.Asset_Type.ToUpper().Replace(" ", "_").Substring(0, Math.Min(row.Asset_Type.Length, 50)),
+                CategoryId = 1, // Hardware
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = userId
+            };
+            _context.AssetTypes.Add(assetType);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Auto-created asset type '{TypeName}'", row.Asset_Type);
+        }
         var subType = string.IsNullOrEmpty(row.Sub_Type) ? null : 
             await _context.AssetSubTypes.FirstOrDefaultAsync(x => x.SubTypeName == row.Sub_Type);
         var status = await _context.AssetStatuses.FirstOrDefaultAsync(x => x.StatusName == row.Status);
         var placing = string.IsNullOrWhiteSpace(row.Placing)
-            ? await _context.AssetPlacings.FirstOrDefaultAsync() // fallback to first available placing
+            ? null
             : await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == row.Placing);
         var classification = string.IsNullOrEmpty(row.Asset_Classification) ? null :
             await _context.AssetClassifications.FirstOrDefaultAsync(x => x.Name == row.Asset_Classification);
@@ -384,17 +475,12 @@ public class BulkUploadService : IBulkUploadService
         var usbStatus = string.IsNullOrEmpty(row.USB_Blocking_Status) ? null :
             await _context.USBBlockingStatuses.FirstOrDefaultAsync(x => x.Name == row.USB_Blocking_Status);
 
-        if (assetType == null)
-        {
-            _logger.LogError("Asset type '{AssetType}' not found", row.Asset_Type);
-            throw new ArgumentException($"Asset type '{row.Asset_Type}' not found");
-        }
         if (status == null)
         {
             _logger.LogError("Status '{Status}' not found", row.Status);
             throw new ArgumentException($"Status '{row.Status}' not found");
         }
-        if (placing == null)
+        if (placing == null && !string.IsNullOrWhiteSpace(row.Placing))
         {
             _logger.LogError("Placing '{Placing}' not found", row.Placing);
             throw new ArgumentException($"Placing '{row.Placing}' not found");
@@ -403,7 +489,7 @@ public class BulkUploadService : IBulkUploadService
         return new Asset
         {
             AssetId = $"AST{nextAssetIdNumber:D5}",
-            AssetTag = string.IsNullOrWhiteSpace(row.Asset_Tag) ? "NA" : row.Asset_Tag,
+            AssetTag = string.IsNullOrWhiteSpace(row.Asset_Tag) ? $"AST{nextAssetIdNumber:D5}" : row.Asset_Tag,
             SerialNumber = row.Serial_Number,
             ProjectId = defaultProject.Id,
             ProjectIdRef = defaultProject.ProjectId,
@@ -426,16 +512,17 @@ public class BulkUploadService : IBulkUploadService
             
             // FK assignments
             AssetTypeId = assetType.Id,
+            AssetTypeName = assetType.TypeName,
             AssetSubTypeId = subType?.Id,
             AssetStatusId = status.Id,
-            AssetPlacingId = placing.Id,
+            AssetPlacingId = placing?.Id,
             AssetClassificationId = classification?.Id,
             OperatingSystemId = osType?.Id,
             DatabaseTypeId = dbType?.Id,
             PatchStatusId = patchStatus?.Id,
             USBBlockingStatusId = usbStatus?.Id,
             
-            Make = row.Make,
+            Make = string.IsNullOrWhiteSpace(row.Make) ? "NA" : row.Make,
             Model = row.Model,
             UsageCategory = Enum.TryParse<AssetUsageCategory>(usageCategory, out var parsedCategory) ? parsedCategory : AssetUsageCategory.ITNonTMS,
             CommissioningDate = ParseDate(row.Commissioning_Date),

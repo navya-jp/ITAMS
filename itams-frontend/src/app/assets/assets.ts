@@ -255,6 +255,10 @@ export class Assets implements OnInit {
     // Fallback: use placing field
     const officePlacings = ['Server Room', 'Control Room', 'Admin Building'];
     const sitePlacings = ['Lane Area', 'Booth Area', 'Plaza Area'];
+    // Assets with no placing (e.g. head office bulk uploads) belong to office view
+    if (!asset.placing || asset.placing.trim() === '') {
+      return locationType === 'office';
+    }
     if (locationType === 'office') return officePlacings.includes(asset.placing);
     return sitePlacings.includes(asset.placing);
   }

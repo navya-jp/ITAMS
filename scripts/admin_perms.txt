@@ -1,0 +1,28 @@
+RoleName                                                                                             PermCode                                                                                            
+---------------------------------------------------------------------------------------------------- ----------------------------------------------------------------------------------------------------
+Admin                                                                                                ASSET_CREATE                                                                                        
+Admin                                                                                                ASSET_DECOMMISSION                                                                                  
+Admin                                                                                                ASSET_EDIT                                                                                          
+Admin                                                                                                ASSET_REACTIVATE                                                                                    
+Admin                                                                                                ASSET_TRANSFER                                                                                      
+Admin                                                                                                ASSET_VIEW                                                                                          
+Admin                                                                                                AUDIT_DOWNLOAD                                                                                      
+Admin                                                                                                AUDIT_VIEW                                                                                          
+Admin                                                                                                FINANCIAL_VIEW                                                                                      
+Admin                                                                                                LIFECYCLE_APPROVE                                                                                   
+Admin                                                                                                LIFECYCLE_LOG                                                                                       
+Admin                                                                                                LIFECYCLE_VIEW                                                                                      
+Admin                                                                                                MAINTENANCE_SCHEDULE                                                                                
+Admin                                                                                                PERMISSION_OVERRIDE                                                                                 
+Admin                                                                                                REPAIR_ADD                                                                                          
+Admin                                                                                                REPAIR_VIEW                                                                                         
+Admin                                                                                                REPORT_EXPORT                                                                                       
+Admin                                                                                                REPORT_VIEW                                                                                         
+Admin                                                                                                ROLE_ASSIGN                                                                                         
+Admin                                                                                                USER_CREATE                                                                                         
+Admin                                                                                                USER_DEACTIVATE                                                                                     
+Admin                                                                                                USER_EDIT                                                                                           
+Admin                                                                                                USER_REACTIVATE                                                                                     
+Admin                                                                                                USER_VIEW                                                                                           
+
+(24 rows affected)
