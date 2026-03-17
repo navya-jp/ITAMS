@@ -231,7 +231,7 @@ public class BulkUploadService : IBulkUploadService
 
     private List<string> ValidateRequiredColumns(Dictionary<string, int> columnMapping)
     {
-        var requiredColumns = new[] { "Asset_Tag", "Asset_Type", "Make", "Model", "Status", "Placing" };
+        var requiredColumns = new[] { "Asset_Type", "Make", "Model", "Status" };
         var missingColumns = new List<string>();
 
         foreach (var required in requiredColumns)
@@ -319,9 +319,6 @@ public class BulkUploadService : IBulkUploadService
         if (string.IsNullOrWhiteSpace(row.Status))
             return "Status is required";
 
-        if (string.IsNullOrWhiteSpace(row.Placing))
-            return "Placing is required";
-
         // Duplicate check (skip if tag is empty/NA — will be defaulted)
         if (!string.IsNullOrWhiteSpace(row.Asset_Tag) &&
             !row.Asset_Tag.Equals("NA", StringComparison.OrdinalIgnoreCase) &&
@@ -337,10 +334,13 @@ public class BulkUploadService : IBulkUploadService
         if (!statusExists)
             return $"Invalid Status: '{row.Status}' not found in database";
 
-        // Placing validation - check if placing exists in database
-        var placingExists = await _context.AssetPlacings.AnyAsync(p => p.Name == row.Placing);
-        if (!placingExists)
-            return $"Invalid Placing: '{row.Placing}' not found in database";
+        // Placing validation - only if provided
+        if (!string.IsNullOrWhiteSpace(row.Placing))
+        {
+            var placingExists = await _context.AssetPlacings.AnyAsync(p => p.Name == row.Placing);
+            if (!placingExists)
+                return $"Invalid Placing: '{row.Placing}' not found in database";
+        }
 
         // Date validation
         if (!string.IsNullOrWhiteSpace(row.Commissioning_Date) && !IsValidDate(row.Commissioning_Date))
@@ -370,7 +370,9 @@ public class BulkUploadService : IBulkUploadService
         var subType = string.IsNullOrEmpty(row.Sub_Type) ? null : 
             await _context.AssetSubTypes.FirstOrDefaultAsync(x => x.SubTypeName == row.Sub_Type);
         var status = await _context.AssetStatuses.FirstOrDefaultAsync(x => x.StatusName == row.Status);
-        var placing = await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == row.Placing);
+        var placing = string.IsNullOrWhiteSpace(row.Placing)
+            ? await _context.AssetPlacings.FirstOrDefaultAsync() // fallback to first available placing
+            : await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == row.Placing);
         var classification = string.IsNullOrEmpty(row.Asset_Classification) ? null :
             await _context.AssetClassifications.FirstOrDefaultAsync(x => x.Name == row.Asset_Classification);
         var osType = string.IsNullOrEmpty(row.OS_Type) ? null :
@@ -697,15 +699,12 @@ public class BulkUploadService : IBulkUploadService
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add("Assets");
 
-        // Headers
         var headers = new[]
         {
-            "Asset_Tag", "Serial_Number", "Region", "Plaza_Name", "Location",
-            "Department", "Asset_Type", "Sub_Type", "Make", "Model",
-            "Asset_Classification", "OS_Type", "OS_Version", "DB_Type", "DB_Version",
-            "IP_Address", "Assigned_User_Name", "User_Role", "Procured_By",
-            "Commissioning_Date", "Status", "Criticality", "Placing", 
-            "Patch_Status", "USB_Blocking_Status", "Remarks"
+            "Region", "Location", "Asset_Type*", "Asset_Tag", "Sub_Type",
+            "Make*", "Model*", "Serial_Number", "Assigned_User_Name", "Status*",
+            "Procured_By", "Commissioning_Date", "OS_Type", "OS_Version",
+            "USB_Blocking_Status", "Asset_Classification", "Placing", "Remarks"
         };
 
         for (int i = 0; i < headers.Length; i++)
@@ -714,21 +713,25 @@ public class BulkUploadService : IBulkUploadService
             worksheet.Cells[1, i + 1].Style.Font.Bold = true;
         }
 
-        // Sample data
-        worksheet.Cells[2, 1].Value = "ASSET001";
-        worksheet.Cells[2, 2].Value = "SN123456";
-        worksheet.Cells[2, 3].Value = "North";
-        worksheet.Cells[2, 4].Value = "Plaza A";
-        worksheet.Cells[2, 5].Value = "Maharashtra";
-        worksheet.Cells[2, 6].Value = "IT";
-        worksheet.Cells[2, 7].Value = "Laptop";
-        worksheet.Cells[2, 8].Value = "Business";
-        worksheet.Cells[2, 9].Value = "Dell";
-        worksheet.Cells[2, 10].Value = "Latitude 5420";
-        worksheet.Cells[2, 20].Value = "2024-01-15";
-        worksheet.Cells[2, 21].Value = "inuse";
-        worksheet.Cells[2, 22].Value = "IT general";
-        worksheet.Cells[2, 23].Value = "server room";
+        // Sample data row
+        worksheet.Cells[2, 1].Value = "North";
+        worksheet.Cells[2, 2].Value = "Head Office";
+        worksheet.Cells[2, 3].Value = "Laptop";
+        worksheet.Cells[2, 4].Value = ""; // Leave blank if tag not yet assigned
+        worksheet.Cells[2, 5].Value = "Business";
+        worksheet.Cells[2, 6].Value = "Dell";
+        worksheet.Cells[2, 7].Value = "Latitude 5420";
+        worksheet.Cells[2, 8].Value = "SN123456";
+        worksheet.Cells[2, 9].Value = "John Doe";
+        worksheet.Cells[2, 10].Value = "In Use";
+        worksheet.Cells[2, 11].Value = "IT Department";
+        worksheet.Cells[2, 12].Value = "2024-01-15";
+        worksheet.Cells[2, 13].Value = "Windows 11";
+        worksheet.Cells[2, 14].Value = "22H2";
+        worksheet.Cells[2, 15].Value = "Enabled";
+        worksheet.Cells[2, 16].Value = "TMS Critical";
+        worksheet.Cells[2, 17].Value = ""; // Leave blank for head office
+        worksheet.Cells[2, 18].Value = "";
 
         worksheet.Cells.AutoFitColumns();
 
