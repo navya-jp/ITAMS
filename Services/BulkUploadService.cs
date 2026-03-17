@@ -49,8 +49,29 @@ public class BulkUploadService : IBulkUploadService
                 return result;
             }
 
-            // Build column mapping from header row
-            var columnMapping = BuildColumnMapping(worksheet, colCount);
+            // Auto-detect header row (first row where we find known column names)
+            int headerRow = 1;
+            for (int r = 1; r <= Math.Min(5, rowCount); r++)
+            {
+                var testMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                for (int c = 1; c <= colCount; c++)
+                {
+                    var h = GetCellValue(worksheet, r, c).Trim();
+                    if (!string.IsNullOrEmpty(h))
+                        testMap[h] = c;
+                }
+                // If this row contains at least 2 known field names, it's the header
+                var knownHeaders = new[] { "Make", "Model", "Status", "Asset type", "Asset Type", "Asset_Type", "Region", "Location", "SubType", "Sub Type" };
+                if (knownHeaders.Count(k => testMap.ContainsKey(k)) >= 2)
+                {
+                    headerRow = r;
+                    break;
+                }
+            }
+            _logger.LogInformation("Detected header row at row {HeaderRow}", headerRow);
+
+            // Build column mapping from detected header row
+            var columnMapping = BuildColumnMapping(worksheet, colCount, headerRow);
             
             _logger.LogInformation("Column mapping built. Found {Count} columns", columnMapping.Count);
             foreach (var col in columnMapping)
@@ -67,7 +88,19 @@ public class BulkUploadService : IBulkUploadService
                 return result;
             }
 
-            result.TotalRows = rowCount - 1; // Exclude header row
+            result.TotalRows = rowCount - headerRow; // Exclude header row(s)
+
+            // Debug: log what columns were mapped
+            _logger.LogInformation("Column mapping result: {Mapping}", 
+                string.Join(", ", columnMapping.Select(x => $"{x.Key}=col{x.Value}")));
+            
+            // Debug: log first data row raw values
+            if (rowCount > headerRow)
+            {
+                var debugVals = string.Join(" | ", Enumerable.Range(1, Math.Min(colCount, 18))
+                    .Select(c => $"C{c}={GetCellValue(worksheet, headerRow + 1, c)}"));
+                _logger.LogInformation("First data row raw values: {Vals}", debugVals);
+            }
 
             // Get existing asset tags and serial numbers for duplicate check
             var existingAssetTags = await _context.Assets
@@ -96,7 +129,7 @@ public class BulkUploadService : IBulkUploadService
             }
 
             // Process each row (skip header)
-            for (int row = 2; row <= rowCount; row++)
+            for (int row = headerRow + 1; row <= rowCount; row++)
             {
                 try
                 {
@@ -165,9 +198,19 @@ public class BulkUploadService : IBulkUploadService
             // Bulk insert
             if (assetsToInsert.Any())
             {
-                await _context.Assets.AddRangeAsync(assetsToInsert);
-                await _context.SaveChangesAsync();
-                result.SuccessCount = assetsToInsert.Count;
+                try
+                {
+                    await _context.Assets.AddRangeAsync(assetsToInsert);
+                    await _context.SaveChangesAsync();
+                    result.SuccessCount = assetsToInsert.Count;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Bulk insert failed");
+                    result.Message = $"Database error during insert: {ex.InnerException?.Message ?? ex.Message}";
+                    result.FailedCount = assetsToInsert.Count;
+                    return result;
+                }
             }
 
             result.FailedCount = errors.Count;
@@ -183,7 +226,7 @@ public class BulkUploadService : IBulkUploadService
         return result;
     }
 
-    private Dictionary<string, int> BuildColumnMapping(ExcelWorksheet worksheet, int colCount)
+    private Dictionary<string, int> BuildColumnMapping(ExcelWorksheet worksheet, int colCount, int headerRow = 1)
     {
         var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         
@@ -221,7 +264,7 @@ public class BulkUploadService : IBulkUploadService
         // Read header row and build mapping
         for (int col = 1; col <= colCount; col++)
         {
-            var headerValue = GetCellValue(worksheet, 1, col);
+            var headerValue = GetCellValue(worksheet, headerRow, col);
             if (string.IsNullOrWhiteSpace(headerValue))
                 continue;
 
