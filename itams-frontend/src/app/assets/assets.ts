@@ -76,11 +76,12 @@ export class Assets implements OnInit {
 
   createForm: CreateAsset = {
     assetTag: '', projectId: 0, locationId: 0, usageCategory: 'TMS',
-    classification: '', assetType: '', subType: '', make: '', model: '',
+    classification: '', region: '', assetType: '', subType: '', make: '', model: '',
     serialNumber: '', procurementDate: undefined, procurementCost: undefined,
     vendor: '', warrantyStartDate: undefined, warrantyEndDate: undefined,
     commissioningDate: undefined, status: 'In Use', placing: '',
-    assignedUserId: undefined, assignedUserRole: ''
+    osType: '', osVersion: '', usbBlockingStatus: '', procuredBy: '',
+    assignedUserId: undefined, assignedUserRole: '', remarks: ''
   };
 
   licensingForm: any = {
@@ -191,6 +192,7 @@ export class Assets implements OnInit {
     this.loadAssets();
     this.loadLocations();
     this.loadServiceTypes();
+    this.loadAllUsers();
   }
 
   selectLocationType(type: 'office' | 'site') {
@@ -349,6 +351,17 @@ export class Assets implements OnInit {
     this.api.getServiceTypes().subscribe({
       next: (types) => { this.serviceTypes = types; },
       error: (err) => console.error('Error loading service types:', err)
+    });
+  }
+
+  loadAllUsers() {
+    this.api.getUsers().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.projectUsers = response.data;
+        }
+      },
+      error: () => { this.projectUsers = []; }
     });
   }
 
@@ -698,11 +711,12 @@ export class Assets implements OnInit {
     this.selectedAssetType = 'Hardware';
     this.createForm = {
       assetTag: '', projectId: 0, locationId: 0, usageCategory: 'TMS',
-      classification: '', assetType: '', subType: '', make: '', model: '',
+      classification: '', region: '', assetType: '', subType: '', make: '', model: '',
       serialNumber: '', procurementDate: undefined, procurementCost: undefined,
       vendor: '', warrantyStartDate: undefined, warrantyEndDate: undefined,
       commissioningDate: undefined, status: 'In Use', placing: '',
-      assignedUserId: undefined, assignedUserRole: ''
+      osType: '', osVersion: '', usbBlockingStatus: '', procuredBy: '',
+      assignedUserId: undefined, assignedUserRole: '', remarks: ''
     };
     this.licensingForm = {
       licenseName: '', version: '', licenseKey: '', licenseType: '',

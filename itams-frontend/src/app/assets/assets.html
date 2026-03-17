@@ -377,10 +377,9 @@
           <ng-container *ngIf="selectedAssetType === 'Hardware'">
             <div *ngIf="currentTab===1" class="row g-3">
               <div class="col-md-6">
-                <label class="form-label">Asset Tag *</label>
-                <input type="text" class="form-control" [(ngModel)]="createForm.assetTag"
-                       [class.is-invalid]="hasValidationError('assetTag')" placeholder="Enter asset tag">
-                <div *ngIf="hasValidationError('assetTag')" class="invalid-feedback">{{ getValidationError('assetTag') }}</div>
+                <label class="form-label">Asset Tag</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.assetTag" placeholder="Leave blank to auto-assign NA">
+                <small class="text-muted">Leave blank if not yet assigned</small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Usage Category *</label>
@@ -389,14 +388,8 @@
                 </select>
               </div>
               <div class="col-md-6">
-                <label class="form-label">Classification</label>
-                <input type="text" class="form-control" [(ngModel)]="createForm.classification" placeholder="e.g., TMS Critical">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Status *</label>
-                <select class="form-select" [(ngModel)]="createForm.status">
-                  <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
-                </select>
+                <label class="form-label">Region</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.region" placeholder="e.g., North, South">
               </div>
               <!-- Office: Location dropdown | Site: Placing dropdown -->
               <div class="col-md-6" *ngIf="selectedLocationType === 'office'">
@@ -405,6 +398,7 @@
                   <option [value]="0">Select Location</option>
                   <option *ngFor="let loc of locations" [value]="loc.id">{{ loc.name }}</option>
                 </select>
+                <div *ngIf="hasValidationError('placing')" class="invalid-feedback">{{ getValidationError('placing') }}</div>
               </div>
               <div class="col-md-6" *ngIf="selectedLocationType === 'site'">
                 <label class="form-label">Placing *</label>
@@ -413,6 +407,16 @@
                   <option *ngFor="let p of placingOptions" [value]="p">{{ p }}</option>
                 </select>
                 <div *ngIf="hasValidationError('placing')" class="invalid-feedback">{{ getValidationError('placing') }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status *</label>
+                <select class="form-select" [(ngModel)]="createForm.status">
+                  <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Asset Classification</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.classification" placeholder="e.g., TMS Critical">
               </div>
             </div>
             <!-- Hardware Tab 2 -->
@@ -435,33 +439,22 @@
               <div class="col-md-6">
                 <label class="form-label">Make *</label>
                 <input type="text" class="form-control" [(ngModel)]="createForm.make"
-                       [class.is-invalid]="hasValidationError('make')" placeholder="Enter make">
+                       [class.is-invalid]="hasValidationError('make')" placeholder="e.g., Dell, HP">
                 <div *ngIf="hasValidationError('make')" class="invalid-feedback">{{ getValidationError('make') }}</div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Model *</label>
                 <input type="text" class="form-control" [(ngModel)]="createForm.model"
-                       [class.is-invalid]="hasValidationError('model')" placeholder="Enter model">
+                       [class.is-invalid]="hasValidationError('model')" placeholder="e.g., Latitude 5420">
                 <div *ngIf="hasValidationError('model')" class="invalid-feedback">{{ getValidationError('model') }}</div>
               </div>
               <div class="col-md-6">
-                <label class="form-label">Serial Number</label>
+                <label class="form-label">Device Serial No.</label>
                 <input type="text" class="form-control" [(ngModel)]="createForm.serialNumber" placeholder="Enter serial number">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Vendor</label>
                 <input type="text" class="form-control" [(ngModel)]="createForm.vendor" placeholder="Enter vendor">
-              </div>
-            </div>
-            <!-- Hardware Tab 3 -->
-            <div *ngIf="currentTab===3" class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Procurement Date</label>
-                <input type="date" class="form-control" [(ngModel)]="createForm.procurementDate">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Procurement Cost</label>
-                <input type="number" class="form-control" [(ngModel)]="createForm.procurementCost" placeholder="Enter cost">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Warranty Start Date</label>
@@ -471,9 +464,48 @@
                 <label class="form-label">Warranty End Date</label>
                 <input type="date" class="form-control" [(ngModel)]="createForm.warrantyEndDate">
               </div>
+            </div>
+            <!-- Hardware Tab 3 -->
+            <div *ngIf="currentTab===3" class="row g-3">
               <div class="col-md-6">
-                <label class="form-label">Commissioning Date</label>
+                <label class="form-label">OS Type</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.osType" placeholder="e.g., Windows 11">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">OS Version</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.osVersion" placeholder="e.g., 22H2">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">USB Blocking Status</label>
+                <select class="form-select" [(ngModel)]="createForm.usbBlockingStatus">
+                  <option value="">Select Status</option>
+                  <option value="Enabled">Enabled</option>
+                  <option value="Disabled">Disabled</option>
+                  <option value="Not Applicable">Not Applicable</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Assigned User</label>
+                <select class="form-select" [(ngModel)]="createForm.assignedUserId">
+                  <option [value]="undefined">Select User</option>
+                  <option *ngFor="let u of projectUsers" [value]="u.id">{{ u.firstName }} {{ u.lastName }}</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Procured By</label>
+                <input type="text" class="form-control" [(ngModel)]="createForm.procuredBy" placeholder="Enter procured by">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Issue / Commissioning Date</label>
                 <input type="date" class="form-control" [(ngModel)]="createForm.commissioningDate">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Procurement Cost</label>
+                <input type="number" class="form-control" [(ngModel)]="createForm.procurementCost" placeholder="Enter cost (₹)">
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">Remarks</label>
+                <textarea class="form-control" [(ngModel)]="createForm.remarks" rows="2" placeholder="Any additional notes"></textarea>
               </div>
             </div>
           </ng-container>
