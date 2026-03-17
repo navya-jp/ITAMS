@@ -70,8 +70,15 @@ public class CreateAssetDto
     public DateTime? WarrantyStartDate { get; set; }
     public DateTime? WarrantyEndDate { get; set; }
     public DateTime? CommissioningDate { get; set; }
-    public string Status { get; set; } = "In Use"; // Display: In Use, Spare, Repair, Decommissioned
-    public string Placing { get; set; } = string.Empty; // Required: lane area, booth area, plaza area, server room, control room, admin building
+    public string Status { get; set; } = "In Use";
+    public string? Placing { get; set; }
+    public string? Region { get; set; }
+    public string? Classification { get; set; }
+    public string? OsType { get; set; }
+    public string? OsVersion { get; set; }
+    public string? UsbBlockingStatus { get; set; }
+    public string? ProcuredBy { get; set; }
+    public string? Remarks { get; set; }
     public int? AssignedUserId { get; set; }
     public string? AssignedUserRole { get; set; }
 }

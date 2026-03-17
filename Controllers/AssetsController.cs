@@ -212,17 +212,28 @@ public class AssetsController : BaseController
             var vendor = string.IsNullOrEmpty(createDto.Vendor) ? null :
                 await _context.Vendors.FirstOrDefaultAsync(x => x.VendorName == createDto.Vendor);
             var status = await _context.AssetStatuses.FirstOrDefaultAsync(x => x.StatusName == createDto.Status);
-            var placing = await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == createDto.Placing);
+            var placing = string.IsNullOrWhiteSpace(createDto.Placing) ? null :
+                await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == createDto.Placing);
 
             if (assetType == null)
                 return BadRequest(new { message = $"Asset type '{createDto.AssetType}' not found" });
             if (status == null)
                 return BadRequest(new { message = $"Status '{createDto.Status}' not found" });
-            if (placing == null)
-                return BadRequest(new { message = $"Placing '{createDto.Placing}' not found" });
 
-            var project = await _context.Projects.FindAsync(createDto.ProjectId);
-            var location = await _context.Locations.FindAsync(createDto.LocationId);
+            // Lookup optional FK values
+            var classification = string.IsNullOrEmpty(createDto.Classification) ? null :
+                await _context.AssetClassifications.FirstOrDefaultAsync(x => x.Name.ToLower() == createDto.Classification.ToLower());
+            var osType = string.IsNullOrEmpty(createDto.OsType) ? null :
+                await _context.OperatingSystems.FirstOrDefaultAsync(x => x.Name.ToLower() == createDto.OsType.ToLower());
+            var usbStatus = string.IsNullOrEmpty(createDto.UsbBlockingStatus) ? null :
+                await _context.USBBlockingStatuses.FirstOrDefaultAsync(x => x.Name.ToLower() == createDto.UsbBlockingStatus.ToLower());
+
+            var project = createDto.ProjectId > 0
+                ? await _context.Projects.FindAsync(createDto.ProjectId)
+                : await _context.Projects.FirstOrDefaultAsync();
+            var location = createDto.LocationId > 0
+                ? await _context.Locations.FindAsync(createDto.LocationId)
+                : await _context.Locations.FirstOrDefaultAsync();
 
             if (project == null)
                 return BadRequest(new { message = "Project not found" });
@@ -235,9 +246,9 @@ public class AssetsController : BaseController
             {
                 AssetId = assetId,
                 AssetTag = string.IsNullOrWhiteSpace(createDto.AssetTag) ? "NA" : createDto.AssetTag,
-                ProjectId = createDto.ProjectId,
+                ProjectId = project.Id,
                 ProjectIdRef = project.ProjectId,
-                LocationId = createDto.LocationId,
+                LocationId = location.Id,
                 LocationIdRef = location.LocationId,
                 UsageCategory = Enum.Parse<AssetUsageCategory>(createDto.UsageCategory),
                 AssetTypeId = assetType.Id,
@@ -252,7 +263,14 @@ public class AssetsController : BaseController
                 WarrantyEndDate = createDto.WarrantyEndDate,
                 CommissioningDate = createDto.CommissioningDate,
                 AssetStatusId = status.Id,
-                AssetPlacingId = placing.Id,
+                AssetPlacingId = placing?.Id,
+                AssetClassificationId = classification?.Id,
+                OperatingSystemId = osType?.Id,
+                USBBlockingStatusId = usbStatus?.Id,
+                Region = createDto.Region,
+                OSVersion = createDto.OsVersion,
+                ProcuredBy = createDto.ProcuredBy,
+                Remarks = createDto.Remarks,
                 AssignedUserId = createDto.AssignedUserId,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = GetCurrentUserId() ?? 1
