@@ -458,22 +458,71 @@ public class BulkUploadService : IBulkUploadService
             await _context.SaveChangesAsync();
             _logger.LogInformation("Auto-created asset type '{TypeName}'", row.Asset_Type);
         }
-        var subType = string.IsNullOrEmpty(row.Sub_Type) ? null : 
-            await _context.AssetSubTypes.FirstOrDefaultAsync(x => x.SubTypeName == row.Sub_Type);
+        // SubType — auto-create if missing
+        Domain.Entities.MasterData.AssetSubType? subType = null;
+        if (!string.IsNullOrWhiteSpace(row.Sub_Type))
+        {
+            subType = await _context.AssetSubTypes.FirstOrDefaultAsync(x => x.SubTypeName == row.Sub_Type);
+            if (subType == null && assetType != null)
+            {
+                var code = row.Sub_Type.ToUpper().Replace(" ", "_").Substring(0, Math.Min(row.Sub_Type.Length, 50));
+                subType = new Domain.Entities.MasterData.AssetSubType { SubTypeName = row.Sub_Type, SubTypeCode = code, TypeId = assetType.Id, IsActive = true, CreatedAt = DateTime.UtcNow, CreatedBy = userId };
+                _context.AssetSubTypes.Add(subType);
+                await _context.SaveChangesAsync();
+            }
+        }
+
         var status = await _context.AssetStatuses.FirstOrDefaultAsync(x => x.StatusName == row.Status);
         var placing = string.IsNullOrWhiteSpace(row.Placing)
             ? null
             : await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == row.Placing);
-        var classification = string.IsNullOrEmpty(row.Asset_Classification) ? null :
-            await _context.AssetClassifications.FirstOrDefaultAsync(x => x.Name == row.Asset_Classification);
-        var osType = string.IsNullOrEmpty(row.OS_Type) ? null :
-            await _context.OperatingSystems.FirstOrDefaultAsync(x => x.Name == row.OS_Type);
+
+        // Classification — auto-create if missing
+        Domain.Entities.MasterData.AssetClassification? classification = null;
+        if (!string.IsNullOrWhiteSpace(row.Asset_Classification))
+        {
+            classification = await _context.AssetClassifications.FirstOrDefaultAsync(x => x.Name == row.Asset_Classification);
+            if (classification == null)
+            {
+                var cid = row.Asset_Classification.ToUpper().Replace(" ", "_").Substring(0, Math.Min(row.Asset_Classification.Length, 50));
+                classification = new Domain.Entities.MasterData.AssetClassification { Name = row.Asset_Classification, ClassificationId = cid, IsActive = true, CreatedAt = DateTime.UtcNow };
+                _context.AssetClassifications.Add(classification);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        // OS Type — auto-create if missing
+        Domain.Entities.MasterData.OperatingSystem? osType = null;
+        if (!string.IsNullOrWhiteSpace(row.OS_Type))
+        {
+            osType = await _context.OperatingSystems.FirstOrDefaultAsync(x => x.Name == row.OS_Type);
+            if (osType == null)
+            {
+                var oid = row.OS_Type.ToUpper().Replace(" ", "_").Substring(0, Math.Min(row.OS_Type.Length, 50));
+                osType = new Domain.Entities.MasterData.OperatingSystem { Name = row.OS_Type, OSId = oid, IsActive = true, CreatedAt = DateTime.UtcNow };
+                _context.OperatingSystems.Add(osType);
+                await _context.SaveChangesAsync();
+            }
+        }
+
         var dbType = string.IsNullOrEmpty(row.DB_Type) ? null :
             await _context.DatabaseTypes.FirstOrDefaultAsync(x => x.Name == row.DB_Type);
         var patchStatus = string.IsNullOrEmpty(row.Patch_Status) ? null :
             await _context.PatchStatuses.FirstOrDefaultAsync(x => x.Name == row.Patch_Status);
-        var usbStatus = string.IsNullOrEmpty(row.USB_Blocking_Status) ? null :
-            await _context.USBBlockingStatuses.FirstOrDefaultAsync(x => x.Name == row.USB_Blocking_Status);
+
+        // USB Blocking Status — auto-create if missing
+        Domain.Entities.MasterData.USBBlockingStatus? usbStatus = null;
+        if (!string.IsNullOrWhiteSpace(row.USB_Blocking_Status))
+        {
+            usbStatus = await _context.USBBlockingStatuses.FirstOrDefaultAsync(x => x.Name == row.USB_Blocking_Status);
+            if (usbStatus == null)
+            {
+                var uid = row.USB_Blocking_Status.ToUpper().Replace(" ", "_").Substring(0, Math.Min(row.USB_Blocking_Status.Length, 50));
+                usbStatus = new Domain.Entities.MasterData.USBBlockingStatus { Name = row.USB_Blocking_Status, StatusId = uid, IsActive = true, CreatedAt = DateTime.UtcNow };
+                _context.USBBlockingStatuses.Add(usbStatus);
+                await _context.SaveChangesAsync();
+            }
+        }
 
         if (status == null)
         {
@@ -524,6 +573,7 @@ public class BulkUploadService : IBulkUploadService
             
             Make = string.IsNullOrWhiteSpace(row.Make) ? "NA" : row.Make,
             Model = row.Model,
+            AssignedUserText = string.IsNullOrWhiteSpace(row.Assigned_User_Name) ? null : row.Assigned_User_Name,
             UsageCategory = Enum.TryParse<AssetUsageCategory>(usageCategory, out var parsedCategory) ? parsedCategory : AssetUsageCategory.ITNonTMS,
             CommissioningDate = ParseDate(row.Commissioning_Date),
             CreatedAt = DateTime.UtcNow,

@@ -49,7 +49,7 @@ public class AssetsController : BaseController
             DBType = a.DatabaseType?.Name,
             DBVersion = a.DBVersion,
             IPAddress = a.IPAddress,
-            AssignedUserText = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : null,
+            AssignedUserText = a.AssignedUser != null ? $"{a.AssignedUser.FirstName} {a.AssignedUser.LastName}" : a.AssignedUserText,
             UserRole = a.AssignedUser?.Role?.Name,
             ProcuredBy = a.ProcuredBy,
             PatchStatus = a.PatchStatus?.Name,

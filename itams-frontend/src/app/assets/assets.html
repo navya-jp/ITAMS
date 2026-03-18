@@ -660,6 +660,7 @@
           <div class="col-md-6"><label class="form-label text-muted">Asset Tag</label><p class="fw-bold">{{ selectedAsset.assetTag }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Classification</label><p>{{ selectedAsset.classification || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Region</label><p>{{ selectedAsset.region || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Location</label><p>{{ selectedAsset.locationText || selectedAsset.locationName || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">State</label><p>{{ selectedAsset.state || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Plaza Name</label><p>{{ selectedAsset.plazaName || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Placing</label><p>{{ selectedAsset.placing || 'N/A' }}</p></div>
@@ -671,6 +672,7 @@
           <div class="col-md-6"><label class="form-label text-muted">Model</label><p>{{ selectedAsset.model }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Serial Number</label><p>{{ selectedAsset.serialNumber || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">OS Type</label><p>{{ selectedAsset.osType || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">OS Version</label><p>{{ selectedAsset.osVersion || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">IP Address</label><p>{{ selectedAsset.ipAddress || 'N/A' }}</p></div>
         </div>
         <div *ngIf="viewTab===3" class="row g-3">
@@ -679,9 +681,12 @@
           <div class="col-md-6"><label class="form-label text-muted">Status</label>
             <p><span class="badge" [class.bg-success]="selectedAsset.status==='In Use'" [class.bg-info]="selectedAsset.status==='Spare'" [class.bg-warning]="selectedAsset.status==='Repair'" [class.bg-secondary]="selectedAsset.status==='Decommissioned'">{{ selectedAsset.status }}</span></p>
           </div>
+          <div class="col-md-6"><label class="form-label text-muted">USB Blocking Status</label><p>{{ selectedAsset.usbBlockingStatus || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Patch Status</label><p>{{ selectedAsset.patchStatus || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Procured By</label><p>{{ selectedAsset.procuredBy || 'N/A' }}</p></div>
         </div>
         <div *ngIf="viewTab===4" class="row g-3">
+          <div class="col-md-6"><label class="form-label text-muted">Issue / Commissioning Date</label><p>{{ selectedAsset.commissioningDate ? (selectedAsset.commissioningDate | date:'mediumDate') : 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Procurement Date</label><p>{{ selectedAsset.procurementDate ? (selectedAsset.procurementDate | date:'mediumDate') : 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Procurement Cost</label><p>{{ selectedAsset.procurementCost ? ('₹' + selectedAsset.procurementCost) : 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Vendor</label><p>{{ selectedAsset.vendor || 'N/A' }}</p></div>

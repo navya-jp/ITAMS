@@ -73,6 +73,9 @@ public class Asset
     public int Status { get; set; } = 0;
     
     public int? AssignedUserId { get; set; }
+
+    [StringLength(200)]
+    public string? AssignedUserText { get; set; } // Raw text from bulk upload (user may not exist in system)
     
     // Location text fields (from Excel import - display as-is, NOT used for queries)
     [StringLength(100)]

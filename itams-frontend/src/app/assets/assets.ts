@@ -248,7 +248,7 @@ export class Assets implements OnInit {
 
   matchesLocationType(asset: Asset, locationType: 'office' | 'site'): boolean {
     const loc = this.locations.find(l => l.id === asset.locationId);
-    if (loc) {
+    if (loc && loc.type) {
       if (locationType === 'office') return loc.type === 'office';
       return loc.type === 'plaza' || loc.type !== 'office';
     }
