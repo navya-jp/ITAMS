@@ -687,13 +687,20 @@
           <div class="col-md-6"><label class="form-label text-muted">Procured By</label><p>{{ selectedAsset.procuredBy || 'N/A' }}</p></div>
         </div>
         <div *ngIf="viewTab===4" class="row g-3">
-          <div class="col-md-6"><label class="form-label text-muted">Issue / Commissioning Date</label><p>{{ selectedAsset.commissioningDateText || (selectedAsset.commissioningDate ? (selectedAsset.commissioningDate | date:'mediumDate') : 'N/A') }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Issue / Commissioning Date</label><p>{{ selectedAsset.commissioningDateText || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Procurement Date</label><p>{{ selectedAsset.procurementDate ? (selectedAsset.procurementDate | date:'mediumDate') : 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Procurement Cost</label><p>{{ selectedAsset.procurementCost ? ('₹' + selectedAsset.procurementCost) : 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Vendor</label><p>{{ selectedAsset.vendor || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Warranty Start</label><p>{{ selectedAsset.warrantyStartDate ? (selectedAsset.warrantyStartDate | date:'mediumDate') : 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Warranty End</label><p>{{ selectedAsset.warrantyEndDate ? (selectedAsset.warrantyEndDate | date:'mediumDate') : 'N/A' }}</p></div>
           <div class="col-12"><label class="form-label text-muted">Remarks</label><p>{{ selectedAsset.remarks || 'N/A' }}</p></div>
+          <ng-container *ngIf="selectedAsset.extraFields && objectKeys(selectedAsset.extraFields).length > 0">
+            <div class="col-12"><hr class="my-2"><small class="text-muted fw-semibold">Additional Fields</small></div>
+            <div class="col-md-6" *ngFor="let key of objectKeys(selectedAsset.extraFields)">
+              <label class="form-label text-muted">{{ key }}</label>
+              <p>{{ selectedAsset.extraFields[key] }}</p>
+            </div>
+          </ng-container>
         </div>
       </div>
       <div class="modal-footer">

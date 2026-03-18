@@ -149,20 +149,14 @@ public class BulkUploadService : IBulkUploadService
                     }
 
                     // Map to Asset entity
-                    var asset = await MapToAssetAsync(excelRow, nextAssetIdNumber, userId, usageCategory);
+                    var asset = await MapToAssetAsync(excelRow, nextAssetIdNumber, userId, usageCategory, worksheet, row, columnMapping);
                     
                     if (asset != null)
-                    {
-                        assetsToInsert.Add(asset);
-                        // Only track non-empty tags for duplicate detection (auto-generated tags are always unique)
-                        if (!string.IsNullOrWhiteSpace(excelRow.Asset_Tag))
-                            existingAssetTags.Add(asset.AssetTag.ToLower());
-                        if (!string.IsNullOrEmpty(asset.SerialNumber))
-                        {
-                            existingSerialNumbers.Add(asset.SerialNumber.ToLower());
-                        }
-                        nextAssetIdNumber++;
-                    }
+            if (asset != null)
+            {
+                assetsToInsert.Add(asset);
+                nextAssetIdNumber++;
+            }
                 }
                 catch (Exception ex)
                 {
@@ -303,6 +297,22 @@ public class BulkUploadService : IBulkUploadService
             }
         }
 
+        // Store all column headers (including unmapped ones) for extra fields capture
+        mapping["__colCount__"] = colCount;
+        // Store unmapped column headers as "__extra_N__" = colIndex
+        for (int col = 1; col <= colCount; col++)
+        {
+            var headerValue = GetCellValue(worksheet, headerRow, col);
+            if (string.IsNullOrWhiteSpace(headerValue)) continue;
+            // If this column wasn't mapped to a known field, store it as extra
+            bool isMapped = mapping.Values.Contains(col);
+            if (!isMapped)
+            {
+                mapping[$"__extra__{headerValue}"] = col;
+                _logger.LogInformation("  Unmapped column '{Header}' at col {Col} — will store as extra field", headerValue, col);
+            }
+        }
+
         return mapping;
     }
 
@@ -368,7 +378,32 @@ public class BulkUploadService : IBulkUploadService
     private string GetCellValue(ExcelWorksheet worksheet, int row, int col)
     {
         var cell = worksheet.Cells[row, col];
-        return cell.Value?.ToString()?.Trim() ?? string.Empty;
+        if (cell.Value == null) return string.Empty;
+
+        // If the cell value is a double (Excel date serial), use the formatted Text instead
+        if (cell.Value is double)
+        {
+            var text = cell.Text?.Trim();
+            if (!string.IsNullOrEmpty(text))
+            {
+                // EPPlus sometimes returns full datetime string for MMM-YY formatted cells
+                // e.g. "01/10/2015 00:00:00" when sheet shows "Oct-15"
+                // Convert back to MMM-yy if time is midnight and it looks like a date
+                if (text.EndsWith("00:00:00") &&
+                    DateTime.TryParse(text, out var dt))
+                {
+                    // Check if the Excel number format suggests MMM-YY style
+                    var fmt = cell.Style?.Numberformat?.Format ?? "";
+                    if (fmt.Contains("mmm") || fmt.Contains("MMM") || fmt.ToLower().Contains("yy"))
+                        return dt.ToString("MMM-yy");
+                    // Otherwise just return date part without time
+                    return dt.ToString("dd/MM/yyyy");
+                }
+                return text;
+            }
+        }
+
+        return cell.Value.ToString()?.Trim() ?? string.Empty;
     }
 
     private bool IsRowEmpty(AssetExcelRow row)
@@ -397,19 +432,16 @@ public class BulkUploadService : IBulkUploadService
         if (string.IsNullOrWhiteSpace(row.Status))
             return "Status is required";
 
-        // Duplicate check (skip if tag is empty — will be auto-generated as unique AssetId)
-        if (!string.IsNullOrWhiteSpace(row.Asset_Tag) &&
-            existingAssetTags.Contains(row.Asset_Tag.ToLower()))
-            return "Asset_Tag already exists";
+        // No duplicate checks — all rows are uploaded regardless
 
-        if (!string.IsNullOrWhiteSpace(row.Serial_Number) && 
-            existingSerialNumbers.Contains(row.Serial_Number.ToLower()))
-            return "Serial_Number already exists";
-
-        // Status validation - check if status exists in database
-        var statusExists = await _context.AssetStatuses.AnyAsync(s => s.StatusName == row.Status);
-        if (!statusExists)
+        // Status validation - normalize before lookup (handles "in-use", "In Use", "in use" etc.)
+        var normalizedStatus = NormalizeStatus(row.Status);
+        var matchedStatus = await _context.AssetStatuses
+            .FirstOrDefaultAsync(s => s.StatusName.ToLower().Replace("-", " ").Replace("  ", " ") == normalizedStatus);
+        if (matchedStatus == null)
             return $"Invalid Status: '{row.Status}' not found in database";
+        // Store normalized name back so MapToAssetAsync finds it
+        row.Status = matchedStatus.StatusName;
 
         // Placing validation - only if provided
         if (!string.IsNullOrWhiteSpace(row.Placing))
@@ -429,7 +461,7 @@ public class BulkUploadService : IBulkUploadService
         return string.Empty;
     }
 
-    private async Task<Asset?> MapToAssetAsync(AssetExcelRow row, int nextAssetIdNumber, int userId, string usageCategory = "ITNonTMS")
+    private async Task<Asset?> MapToAssetAsync(AssetExcelRow row, int nextAssetIdNumber, int userId, string usageCategory, ExcelWorksheet worksheet, int rowNum, Dictionary<string, int> columnMapping)
     {
         // Get default project and location for foreign key requirements
         var defaultProject = await _context.Projects.FirstOrDefaultAsync();
@@ -539,6 +571,22 @@ public class BulkUploadService : IBulkUploadService
             throw new ArgumentException($"Placing '{row.Placing}' not found");
         }
 
+        // Collect extra fields (unmapped columns)
+        var extraFields = new Dictionary<string, string>();
+        foreach (var kvp in columnMapping)
+        {
+            if (kvp.Key.StartsWith("__extra__"))
+            {
+                var fieldName = kvp.Key.Substring("__extra__".Length);
+                var value = GetCellValue(worksheet, rowNum, kvp.Value);
+                if (!string.IsNullOrWhiteSpace(value))
+                    extraFields[fieldName] = value;
+            }
+        }
+        var extraFieldsJson = extraFields.Count > 0
+            ? System.Text.Json.JsonSerializer.Serialize(extraFields)
+            : null;
+
         return new Asset
         {
             AssetId = $"ASTH{nextAssetIdNumber:D5}",
@@ -582,7 +630,8 @@ public class BulkUploadService : IBulkUploadService
             UsageCategory = Enum.TryParse<AssetUsageCategory>(usageCategory, out var parsedCategory) ? parsedCategory : AssetUsageCategory.ITNonTMS,
             CommissioningDate = ParseDate(row.Commissioning_Date),
             CreatedAt = DateTime.UtcNow,
-            CreatedBy = userId
+            CreatedBy = userId,
+            ExtraFields = extraFieldsJson
         };
     }
 
@@ -594,6 +643,19 @@ public class BulkUploadService : IBulkUploadService
     private bool IsValidIPv4(string ipAddress)
     {
         return IPAddress.TryParse(ipAddress, out var ip) && ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork;
+    }
+
+    // Normalize status string: remove hyphens, insert space before capitals (InUse -> in use), lowercase
+    private string NormalizeStatus(string status)
+    {
+        if (string.IsNullOrWhiteSpace(status)) return string.Empty;
+        // Insert space before uppercase letters that follow lowercase (InUse -> In Use)
+        var spaced = System.Text.RegularExpressions.Regex.Replace(status, "([a-z])([A-Z])", "$1 $2");
+        // Replace hyphens/underscores with space, collapse multiple spaces, lowercase
+        return spaced.Replace("-", " ").Replace("_", " ")
+            .Trim()
+            .ToLower()
+            .Replace("  ", " ");
     }
 
     private DateTime? ParseDate(string? dateStr)

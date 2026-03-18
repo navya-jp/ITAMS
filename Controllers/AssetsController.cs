@@ -68,6 +68,8 @@ public class AssetsController : BaseController
             WarrantyEndDate = a.WarrantyEndDate,
             CommissioningDate = a.CommissioningDate,
             CommissioningDateText = a.CommissioningDateText,
+            ExtraFields = string.IsNullOrEmpty(a.ExtraFields) ? null :
+                System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(a.ExtraFields),
             Status = a.AssetStatus?.StatusName,
             Placing = a.Placing?.Name,
             AssignedUserId = a.AssignedUserId,

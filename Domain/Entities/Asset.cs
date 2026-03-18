@@ -68,6 +68,8 @@ public class Asset
 
     [StringLength(100)]
     public string? CommissioningDateText { get; set; } // Raw text from sheet e.g. "December/2023"
+
+    public string? ExtraFields { get; set; } // JSON: extra columns from sheet not in standard mapping
     
     // NORMALIZED: Status now uses FK instead of enum
     public int? AssetStatusId { get; set; }

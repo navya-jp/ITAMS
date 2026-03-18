@@ -253,14 +253,13 @@ export class Assets implements OnInit {
       return loc.type === 'plaza' || loc.type !== 'office';
     }
     // Fallback: use placing field
-    const officePlacings = ['Server Room', 'Control Room', 'Admin Building'];
-    const sitePlacings = ['Lane Area', 'Booth Area', 'Plaza Area'];
+    const officePlacings: string[] = []; // No placing = office; all named placings = site
     // Assets with no placing (e.g. head office bulk uploads) belong to office view
     if (!asset.placing || asset.placing.trim() === '') {
       return locationType === 'office';
     }
-    if (locationType === 'office') return officePlacings.includes(asset.placing);
-    return sitePlacings.includes(asset.placing);
+    if (locationType === 'office') return false; // has a placing = site asset
+    return true;
   }
 
   applyFilters() {
@@ -741,6 +740,7 @@ export class Assets implements OnInit {
   }
 
   clearMessages() { this.error = ''; this.success = ''; }
+  objectKeys(obj: any): string[] { return obj ? Object.keys(obj) : []; }
   clearValidationErrors() { this.validationErrors = {}; }
   clearValidationError(field: string) { delete this.validationErrors[field]; }
   hasValidationError(field: string): boolean { return !!this.validationErrors[field]; }
