@@ -331,18 +331,10 @@ public class BulkUploadService : IBulkUploadService
 
     private List<string> ValidateRequiredColumns(Dictionary<string, int> columnMapping)
     {
-        var requiredColumns = new[] { "Asset_Type", "Make", "Model", "Status" };
-        var missingColumns = new List<string>();
-
-        foreach (var required in requiredColumns)
-        {
-            if (!columnMapping.ContainsKey(required))
-            {
-                missingColumns.Add(required);
-            }
-        }
-
-        return missingColumns;
+        // Only block if ALL of the key columns are missing (completely wrong file)
+        var requiredColumns = new[] { "Asset_Type", "Make", "Model" };
+        var missingColumns = requiredColumns.Where(r => !columnMapping.ContainsKey(r)).ToList();
+        return missingColumns.Count == requiredColumns.Length ? missingColumns : new List<string>();
     }
 
     private AssetExcelRow ReadExcelRow(ExcelWorksheet worksheet, int row, Dictionary<string, int> columnMapping)
@@ -442,18 +434,21 @@ public class BulkUploadService : IBulkUploadService
         if (string.IsNullOrWhiteSpace(row.Model))
             return "Model is required";
 
+        // Status — default to "In Use" if missing
         if (string.IsNullOrWhiteSpace(row.Status))
-            return "Status is required";
+            row.Status = "In Use";
 
-        // No duplicate checks — all rows are uploaded regardless
-
-        // Status validation - normalize before lookup (handles "in-use", "In Use", "in use" etc.)
+        // Status validation - normalize before lookup
         var normalizedStatus = NormalizeStatus(row.Status);
         var matchedStatus = await _context.AssetStatuses
             .FirstOrDefaultAsync(s => s.StatusName.ToLower().Replace("-", " ").Replace("  ", " ") == normalizedStatus);
         if (matchedStatus == null)
-            return $"Invalid Status: '{row.Status}' not found in database";
-        // Store normalized name back so MapToAssetAsync finds it
+        {
+            // Fall back to first available status rather than failing
+            matchedStatus = await _context.AssetStatuses.FirstOrDefaultAsync();
+            if (matchedStatus == null)
+                return $"No asset statuses found in database";
+        }
         row.Status = matchedStatus.StatusName;
 
         // Placing validation - only if provided
