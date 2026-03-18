@@ -152,11 +152,24 @@ public class BulkUploadService : IBulkUploadService
                     var asset = await MapToAssetAsync(excelRow, nextAssetIdNumber, userId, usageCategory, worksheet, row, columnMapping);
                     
                     if (asset != null)
-            if (asset != null)
-            {
-                assetsToInsert.Add(asset);
-                nextAssetIdNumber++;
-            }
+                    {
+                        assetsToInsert.Add(asset);
+                        // Track tags/serials to avoid duplicates within this batch
+                        if (!asset.AssetTag.Equals("NA", StringComparison.OrdinalIgnoreCase))
+                            existingAssetTags.Add(asset.AssetTag.ToLower());
+                        if (!string.IsNullOrEmpty(asset.SerialNumber))
+                            existingSerialNumbers.Add(asset.SerialNumber.ToLower());
+                        nextAssetIdNumber++;
+                    }
+                    else
+                    {
+                        errors.Add(new BulkUploadError
+                        {
+                            RowNumber = row,
+                            AssetTag = excelRow.Asset_Tag,
+                            ErrorMessage = $"Could not map row — asset type '{excelRow.Asset_Type}' may not exist"
+                        });
+                    }
                 }
                 catch (Exception ex)
                 {
