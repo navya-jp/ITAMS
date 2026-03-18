@@ -89,13 +89,16 @@ public class BulkUploadService : IBulkUploadService
                 .Select(a => a.SerialNumber!.ToLower())
                 .ToListAsync();
 
-            // Get the last AssetId to generate new ones (parse the numeric part from AssetId like "AST00365")
-            var lastAsset = await _context.Assets.OrderByDescending(a => a.AssetId).FirstOrDefaultAsync();
+            // Get the last AssetId to generate new ones (ASTH prefix)
+            var lastAsset = await _context.Assets
+                .Where(a => a.AssetId.StartsWith("ASTH"))
+                .OrderByDescending(a => a.AssetId)
+                .FirstOrDefaultAsync();
             var nextAssetIdNumber = 1;
-            if (lastAsset != null && !string.IsNullOrEmpty(lastAsset.AssetId))
+            if (lastAsset != null && !string.IsNullOrEmpty(lastAsset.AssetId) && lastAsset.AssetId.Length > 4)
             {
-                // Extract numeric part from AssetId (e.g., "AST00365" -> 365)
-                var numericPart = lastAsset.AssetId.Substring(3); // Skip "AST" prefix
+                // Extract numeric part from AssetId (e.g., "ASTH00365" -> 365)
+                var numericPart = lastAsset.AssetId.Substring(4); // Skip "ASTH" prefix
                 if (int.TryParse(numericPart, out int lastNumber))
                 {
                     nextAssetIdNumber = lastNumber + 1;
@@ -431,7 +434,9 @@ public class BulkUploadService : IBulkUploadService
     {
         // Get default project and location for foreign key requirements
         var defaultProject = await _context.Projects.FirstOrDefaultAsync();
-        var defaultLocation = await _context.Locations.FirstOrDefaultAsync();
+        // Prefer a Head Office location (Office field is non-null) for bulk uploads
+        var defaultLocation = await _context.Locations.FirstOrDefaultAsync(l => l.Office != null)
+            ?? await _context.Locations.FirstOrDefaultAsync();
 
         if (defaultProject == null || defaultLocation == null)
         {
@@ -537,8 +542,8 @@ public class BulkUploadService : IBulkUploadService
 
         return new Asset
         {
-            AssetId = $"AST{nextAssetIdNumber:D5}",
-            AssetTag = string.IsNullOrWhiteSpace(row.Asset_Tag) ? $"AST{nextAssetIdNumber:D5}" : row.Asset_Tag,
+            AssetId = $"ASTH{nextAssetIdNumber:D5}",
+            AssetTag = string.IsNullOrWhiteSpace(row.Asset_Tag) ? $"ASTH{nextAssetIdNumber:D5}" : row.Asset_Tag,
             SerialNumber = row.Serial_Number,
             ProjectId = defaultProject.Id,
             ProjectIdRef = defaultProject.ProjectId,

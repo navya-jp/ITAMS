@@ -658,6 +658,7 @@
         <div *ngIf="viewTab===1" class="row g-3">
           <div class="col-md-6"><label class="form-label text-muted">Asset ID</label><p class="fw-bold">{{ selectedAsset.assetId }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Asset Tag</label><p class="fw-bold">{{ selectedAsset.assetTag }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Usage Category</label><p>{{ selectedAsset.usageCategory === 'TMS' ? 'TMS' : 'IT (Non-TMS)' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Classification</label><p>{{ selectedAsset.classification || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Region</label><p>{{ selectedAsset.region || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Location</label><p>{{ selectedAsset.locationText || selectedAsset.locationName || 'N/A' }}</p></div>
@@ -823,6 +824,7 @@
         </div>
         <div *ngIf="viewTab===3" class="row g-3">
           <div class="col-md-6"><label class="form-label text-muted">Asset ID</label><p class="fw-bold">{{ selectedAsset.assetId }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Usage Category</label><p>{{ selectedAsset.usageCategory === 'TMS' ? 'TMS' : 'IT (Non-TMS)' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Status</label>
             <p><span class="badge" [class.bg-success]="selectedAsset.status==='Active'" [class.bg-warning]="selectedAsset.status==='Expired'" [class.bg-info]="selectedAsset.status==='Available'">{{ selectedAsset.status }}</span></p>
           </div>
