@@ -65,6 +65,9 @@ public class Asset
     public DateTime? WarrantyEndDate { get; set; }
     
     public DateTime? CommissioningDate { get; set; }
+
+    [StringLength(100)]
+    public string? CommissioningDateText { get; set; } // Raw text from sheet e.g. "December/2023"
     
     // NORMALIZED: Status now uses FK instead of enum
     public int? AssetStatusId { get; set; }

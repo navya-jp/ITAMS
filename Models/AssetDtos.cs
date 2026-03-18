@@ -45,6 +45,7 @@ public class AssetDto
     public DateTime? WarrantyStartDate { get; set; }
     public DateTime? WarrantyEndDate { get; set; }
     public DateTime? CommissioningDate { get; set; }
+    public string? CommissioningDateText { get; set; }
     public string Status { get; set; } = string.Empty;
     public int? AssignedUserId { get; set; }
     public string? AssignedUserName { get; set; }

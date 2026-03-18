@@ -212,6 +212,7 @@ export interface Asset {
   warrantyStartDate?: Date;
   warrantyEndDate?: Date;
   commissioningDate?: Date;
+  commissioningDateText?: string;
   status: string;
   assignedUserId?: number;
   assignedUserName?: string;

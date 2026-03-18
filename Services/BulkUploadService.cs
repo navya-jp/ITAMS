@@ -419,9 +419,8 @@ public class BulkUploadService : IBulkUploadService
                 return $"Invalid Placing: '{row.Placing}' not found in database";
         }
 
-        // Date validation
-        if (!string.IsNullOrWhiteSpace(row.Commissioning_Date) && !IsValidDate(row.Commissioning_Date))
-            return "Commissioning_Date is not a valid date";
+        // Date validation - skip invalid dates rather than failing the row
+        // (dates like "December/2023" are stored as-is via ParseDate which handles month/year format)
 
         // IP Address validation
         if (!string.IsNullOrWhiteSpace(row.IP_Address) && !IsValidIPv4(row.IP_Address))
@@ -579,6 +578,7 @@ public class BulkUploadService : IBulkUploadService
             Make = string.IsNullOrWhiteSpace(row.Make) ? "NA" : row.Make,
             Model = row.Model,
             AssignedUserText = string.IsNullOrWhiteSpace(row.Assigned_User_Name) ? null : row.Assigned_User_Name,
+            CommissioningDateText = string.IsNullOrWhiteSpace(row.Commissioning_Date) ? null : row.Commissioning_Date,
             UsageCategory = Enum.TryParse<AssetUsageCategory>(usageCategory, out var parsedCategory) ? parsedCategory : AssetUsageCategory.ITNonTMS,
             CommissioningDate = ParseDate(row.Commissioning_Date),
             CreatedAt = DateTime.UtcNow,
@@ -601,7 +601,20 @@ public class BulkUploadService : IBulkUploadService
         if (string.IsNullOrWhiteSpace(dateStr))
             return null;
 
-        return DateTime.TryParse(dateStr, out var date) ? date : null;
+        // Standard parse first
+        if (DateTime.TryParse(dateStr, out var date))
+            return date;
+
+        // Handle "Month/Year" or "Month Year" formats e.g. "December/2023", "November 2015"
+        var normalized = dateStr.Replace("/", " ").Trim();
+        if (DateTime.TryParseExact(normalized, new[] { "MMMM yyyy", "MMM yyyy", "MMMM/yyyy", "MMM/yyyy" },
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var monthYear))
+            return monthYear;
+
+        // If nothing works, store null — don't fail the row
+        _logger.LogWarning("Could not parse date '{DateStr}', storing null", dateStr);
+        return null;
     }
 
     // ── Licensing Bulk Upload ─────────────────────────────────────────────────

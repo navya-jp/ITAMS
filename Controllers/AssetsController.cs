@@ -67,6 +67,7 @@ public class AssetsController : BaseController
             WarrantyStartDate = a.WarrantyStartDate,
             WarrantyEndDate = a.WarrantyEndDate,
             CommissioningDate = a.CommissioningDate,
+            CommissioningDateText = a.CommissioningDateText,
             Status = a.AssetStatus?.StatusName,
             Placing = a.Placing?.Name,
             AssignedUserId = a.AssignedUserId,
