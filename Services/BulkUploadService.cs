@@ -637,7 +637,32 @@ public class BulkUploadService : IBulkUploadService
 
     private bool IsValidDate(string dateStr)
     {
-        return DateTime.TryParse(dateStr, out _);
+        return TryParseFlexibleDate(dateStr, out _);
+    }
+
+    private bool TryParseFlexibleDate(string dateStr, out DateTime result)
+    {
+        result = default;
+        if (string.IsNullOrWhiteSpace(dateStr)) return false;
+
+        // Try standard parse first (handles ISO, MM/DD/YYYY, etc.)
+        if (DateTime.TryParse(dateStr, out result)) return true;
+
+        // DD-MM-YYYY and DD/MM/YYYY (common in Indian Excel files)
+        if (DateTime.TryParseExact(dateStr.Trim(),
+            new[] { "dd-MM-yyyy", "dd/MM/yyyy", "d-M-yyyy", "d/M/yyyy",
+                    "dd-MM-yy", "dd/MM/yy", "yyyy-MM-dd" },
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out result)) return true;
+
+        // Month/Year formats e.g. "December/2023", "November 2015"
+        var normalized = dateStr.Replace("/", " ").Trim();
+        if (DateTime.TryParseExact(normalized,
+            new[] { "MMMM yyyy", "MMM yyyy", "MMMM/yyyy", "MMM/yyyy" },
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out result)) return true;
+
+        return false;
     }
 
     private bool IsValidIPv4(string ipAddress)
@@ -663,18 +688,9 @@ public class BulkUploadService : IBulkUploadService
         if (string.IsNullOrWhiteSpace(dateStr))
             return null;
 
-        // Standard parse first
-        if (DateTime.TryParse(dateStr, out var date))
+        if (TryParseFlexibleDate(dateStr, out var date))
             return date;
 
-        // Handle "Month/Year" or "Month Year" formats e.g. "December/2023", "November 2015"
-        var normalized = dateStr.Replace("/", " ").Trim();
-        if (DateTime.TryParseExact(normalized, new[] { "MMMM yyyy", "MMM yyyy", "MMMM/yyyy", "MMM/yyyy" },
-            System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.None, out var monthYear))
-            return monthYear;
-
-        // If nothing works, store null — don't fail the row
         _logger.LogWarning("Could not parse date '{DateStr}', storing null", dateStr);
         return null;
     }
