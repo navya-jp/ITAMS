@@ -154,21 +154,7 @@ public class BulkUploadService : IBulkUploadService
                     if (asset != null)
                     {
                         assetsToInsert.Add(asset);
-                        // Track tags/serials to avoid duplicates within this batch
-                        if (!asset.AssetTag.Equals("NA", StringComparison.OrdinalIgnoreCase))
-                            existingAssetTags.Add(asset.AssetTag.ToLower());
-                        if (!string.IsNullOrEmpty(asset.SerialNumber))
-                            existingSerialNumbers.Add(asset.SerialNumber.ToLower());
                         nextAssetIdNumber++;
-                    }
-                    else
-                    {
-                        errors.Add(new BulkUploadError
-                        {
-                            RowNumber = row,
-                            AssetTag = excelRow.Asset_Tag,
-                            ErrorMessage = $"Could not map row — asset type '{excelRow.Asset_Type}' may not exist"
-                        });
                     }
                 }
                 catch (Exception ex)
@@ -221,12 +207,18 @@ public class BulkUploadService : IBulkUploadService
             "Sub Type", "Sub_Type", "SubType", "Subtype",
             "OS Type", "OS_Type", "OSType", "Operating System",
             "OS Version", "OS_Version", "OSVersion",
+            "DB Type", "DB_Type", "DB Version", "DB_Version",
             "USB Blocking Status", "USB_Blocking_Status", "Status of USB Blocking",
             "Asset Classification", "Asset_Classification",
             "Assigned User", "Assigned_User_Name",
             "Procured By", "Procured_By",
             "Issue Date / Commissioning Date", "Commissioning Date", "Commissioning_Date",
-            "Issue Date\\ commissioning", "Issue Date/ commissioning"
+            "Issue Date\\ commissioning", "Issue Date/ commissioning", "Issue Date/ Commissioning",
+            "Issue Date\\ Commissioning",
+            "Plaza Name", "Plaza_Name", "PlazaName",
+            "IP Address", "IP_Address", "IP Adress",
+            "Placing", "Placement",
+            "Status of Implement latest patches (OS & DB)"
         };
 
         int bestRow = 1;
@@ -274,11 +266,11 @@ public class BulkUploadService : IBulkUploadService
             { "OS_Version", new[] { "OS_Version", "OSVersion", "OS Version" } },
             { "DB_Type", new[] { "DB_Type", "DBType", "DB Type", "Database Type", "Database" } },
             { "DB_Version", new[] { "DB_Version", "DBVersion", "DB Version", "Database Version" } },
-            { "IP_Address", new[] { "IP_Address", "IPAddress", "IP Address", "IP" } },
+            { "IP_Address", new[] { "IP_Address", "IPAddress", "IP Address", "IP", "IP Adress", "IPAdress" } },
             { "Assigned_User_Name", new[] { "Assigned_User_Name", "AssignedUserName", "Assigned User Name", "Assigned User", "User Name", "Username", "User By", "Used By" } },
             { "User_Role", new[] { "User_Role", "UserRole", "User Role", "Role" } },
             { "Procured_By", new[] { "Procured_By", "ProcuredBy", "Procured By", "Vendor" } },
-            { "Commissioning_Date", new[] { "Commissioning_Date", "CommissioningDate", "Commissioning Date", "Commission Date", "Date", "Issue Date / Commissioning Date", "Issue Date", "Issue Date/ Commissioning Date", "Issue Date\\ commissioning", "Issue Date\\ Commissioning", "Issue Date/ commissioning" } },
+            { "Commissioning_Date", new[] { "Commissioning_Date", "CommissioningDate", "Commissioning Date", "Commission Date", "Issue Date / Commissioning Date", "Issue Date", "Issue Date/ Commissioning Date", "Issue Date\\ commissioning", "Issue Date\\ Commissioning", "Issue Date/ commissioning", "Issue Date/ Commissioning" } },
             { "Status", new[] { "Status", "Asset Status" } },
             { "Criticality", new[] { "Criticality", "Critical Level", "Priority" } },
             { "Placing", new[] { "Placing", "Placement", "Area", "Location Area" } },
@@ -331,10 +323,18 @@ public class BulkUploadService : IBulkUploadService
 
     private List<string> ValidateRequiredColumns(Dictionary<string, int> columnMapping)
     {
-        // Only block if ALL of the key columns are missing (completely wrong file)
-        var requiredColumns = new[] { "Asset_Type", "Make", "Model" };
-        var missingColumns = requiredColumns.Where(r => !columnMapping.ContainsKey(r)).ToList();
-        return missingColumns.Count == requiredColumns.Length ? missingColumns : new List<string>();
+        var requiredColumns = new[] { "Asset_Type", "Make", "Model", "Status" };
+        var missingColumns = new List<string>();
+
+        foreach (var required in requiredColumns)
+        {
+            if (!columnMapping.ContainsKey(required))
+            {
+                missingColumns.Add(required);
+            }
+        }
+
+        return missingColumns;
     }
 
     private AssetExcelRow ReadExcelRow(ExcelWorksheet worksheet, int row, Dictionary<string, int> columnMapping)
@@ -361,7 +361,9 @@ public class BulkUploadService : IBulkUploadService
             Assigned_User_Name = GetMappedCellValue(worksheet, row, columnMapping, "Assigned_User_Name"),
             User_Role = GetMappedCellValue(worksheet, row, columnMapping, "User_Role"),
             Procured_By = GetMappedCellValue(worksheet, row, columnMapping, "Procured_By"),
-            Commissioning_Date = GetMappedCellValue(worksheet, row, columnMapping, "Commissioning_Date"),
+            Commissioning_Date = columnMapping.TryGetValue("Commissioning_Date", out int cdCol)
+                ? GetRawCellText(worksheet, row, cdCol)
+                : string.Empty,
             Status = GetMappedCellValue(worksheet, row, columnMapping, "Status"),
             Criticality = GetMappedCellValue(worksheet, row, columnMapping, "Criticality"),
             Placing = GetMappedCellValue(worksheet, row, columnMapping, "Placing"),
@@ -411,6 +413,16 @@ public class BulkUploadService : IBulkUploadService
         return cell.Value.ToString()?.Trim() ?? string.Empty;
     }
 
+    // Returns the cell's display text exactly as shown in Excel — no reformatting
+    private string GetRawCellText(ExcelWorksheet worksheet, int row, int col)
+    {
+        var cell = worksheet.Cells[row, col];
+        if (cell.Value == null) return string.Empty;
+        var text = cell.Text?.Trim();
+        if (!string.IsNullOrEmpty(text)) return text;
+        return cell.Value.ToString()?.Trim() ?? string.Empty;
+    }
+
     private bool IsRowEmpty(AssetExcelRow row)
     {
         // Only skip if every single mapped field is empty
@@ -434,21 +446,18 @@ public class BulkUploadService : IBulkUploadService
         if (string.IsNullOrWhiteSpace(row.Model))
             return "Model is required";
 
-        // Status — default to "In Use" if missing
         if (string.IsNullOrWhiteSpace(row.Status))
-            row.Status = "In Use";
+            return "Status is required";
 
-        // Status validation - normalize before lookup
+        // No duplicate checks — all rows are uploaded regardless
+
+        // Status validation - normalize before lookup (handles "in-use", "In Use", "in use" etc.)
         var normalizedStatus = NormalizeStatus(row.Status);
         var matchedStatus = await _context.AssetStatuses
             .FirstOrDefaultAsync(s => s.StatusName.ToLower().Replace("-", " ").Replace("  ", " ") == normalizedStatus);
         if (matchedStatus == null)
-        {
-            // Fall back to first available status rather than failing
-            matchedStatus = await _context.AssetStatuses.FirstOrDefaultAsync();
-            if (matchedStatus == null)
-                return $"No asset statuses found in database";
-        }
+            return $"Invalid Status: '{row.Status}' not found in database";
+        // Store normalized name back so MapToAssetAsync finds it
         row.Status = matchedStatus.StatusName;
 
         // Placing validation - only if provided
@@ -462,9 +471,7 @@ public class BulkUploadService : IBulkUploadService
         // Date validation - skip invalid dates rather than failing the row
         // (dates like "December/2023" are stored as-is via ParseDate which handles month/year format)
 
-        // IP Address validation
-        if (!string.IsNullOrWhiteSpace(row.IP_Address) && !IsValidIPv4(row.IP_Address))
-            return "IP_Address is not a valid IPv4 address";
+        // No IP Address validation — store as-is from sheet
 
         return string.Empty;
     }
