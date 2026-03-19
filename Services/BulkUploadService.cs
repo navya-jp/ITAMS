@@ -154,6 +154,12 @@ public class BulkUploadService : IBulkUploadService
                     if (asset != null)
                     {
                         assetsToInsert.Add(asset);
+                        // Track to avoid intra-batch duplicates (skip NA values)
+                        if (!asset.AssetTag.Equals("NA", StringComparison.OrdinalIgnoreCase))
+                            existingAssetTags.Add(asset.AssetTag.ToLower());
+                        if (!string.IsNullOrEmpty(asset.SerialNumber) &&
+                            !asset.SerialNumber.Equals("NA", StringComparison.OrdinalIgnoreCase))
+                            existingSerialNumbers.Add(asset.SerialNumber.ToLower());
                         nextAssetIdNumber++;
                     }
                 }
@@ -438,43 +444,51 @@ public class BulkUploadService : IBulkUploadService
     }
 
     private async Task<string> ValidateRow(AssetExcelRow row, List<string> existingAssetTags, List<string> existingSerialNumbers)
-    {
-        // Required fields (Asset_Tag is optional — defaults to "NA" if missing)
-        if (string.IsNullOrWhiteSpace(row.Asset_Type))
-            return "Asset_Type is required";
-
-        if (string.IsNullOrWhiteSpace(row.Model))
-            return "Model is required";
-
-        if (string.IsNullOrWhiteSpace(row.Status))
-            return "Status is required";
-
-        // No duplicate checks — all rows are uploaded regardless
-
-        // Status validation - normalize before lookup (handles "in-use", "In Use", "in use" etc.)
-        var normalizedStatus = NormalizeStatus(row.Status);
-        var matchedStatus = await _context.AssetStatuses
-            .FirstOrDefaultAsync(s => s.StatusName.ToLower().Replace("-", " ").Replace("  ", " ") == normalizedStatus);
-        if (matchedStatus == null)
-            return $"Invalid Status: '{row.Status}' not found in database";
-        // Store normalized name back so MapToAssetAsync finds it
-        row.Status = matchedStatus.StatusName;
-
-        // Placing validation - only if provided
-        if (!string.IsNullOrWhiteSpace(row.Placing))
         {
-            var placingExists = await _context.AssetPlacings.AnyAsync(p => p.Name == row.Placing);
-            if (!placingExists)
-                return $"Invalid Placing: '{row.Placing}' not found in database";
+            // Only require Asset_Type
+            if (string.IsNullOrWhiteSpace(row.Asset_Type))
+                return "Asset_Type is required";
+
+            // Duplicate asset tag check (skip "NA" tags)
+            if (!string.IsNullOrWhiteSpace(row.Asset_Tag) &&
+                !row.Asset_Tag.Equals("NA", StringComparison.OrdinalIgnoreCase) &&
+                existingAssetTags.Contains(row.Asset_Tag.ToLower()))
+                return $"Duplicate Asset_Tag: '{row.Asset_Tag}' already exists";
+
+            // Duplicate serial number check (skip "NA" serials)
+            if (!string.IsNullOrWhiteSpace(row.Serial_Number) &&
+                !row.Serial_Number.Equals("NA", StringComparison.OrdinalIgnoreCase) &&
+                existingSerialNumbers.Contains(row.Serial_Number.ToLower()))
+                return $"Duplicate Serial_Number: '{row.Serial_Number}' already exists";
+
+            // Default status if missing
+            if (string.IsNullOrWhiteSpace(row.Status))
+                row.Status = "In Use";
+
+            // Normalize status — fallback to first available if not found
+            var normalizedStatus = NormalizeStatus(row.Status);
+            var matchedStatus = await _context.AssetStatuses
+                .FirstOrDefaultAsync(s => s.StatusName.ToLower().Replace("-", " ").Replace("  ", " ") == normalizedStatus)
+                ?? await _context.AssetStatuses.FirstOrDefaultAsync();
+            if (matchedStatus != null)
+                row.Status = matchedStatus.StatusName;
+
+            // Placing — case-insensitive match, normalize to DB value
+            if (!string.IsNullOrWhiteSpace(row.Placing))
+            {
+                var matched = await _context.AssetPlacings
+                    .FirstOrDefaultAsync(p => p.Name.ToLower() == row.Placing.Trim().ToLower());
+                if (matched == null)
+                    return $"Invalid Placing: '{row.Placing}' not found in database";
+                row.Placing = matched.Name;
+            }
+
+            // No IP address validation — store as-is
+            // No date validation — store as-is
+
+            return string.Empty;
         }
 
-        // Date validation - skip invalid dates rather than failing the row
-        // (dates like "December/2023" are stored as-is via ParseDate which handles month/year format)
-
-        // No IP Address validation — store as-is from sheet
-
-        return string.Empty;
-    }
 
     private async Task<Asset?> MapToAssetAsync(AssetExcelRow row, int nextAssetIdNumber, int userId, string usageCategory, ExcelWorksheet worksheet, int rowNum, Dictionary<string, int> columnMapping)
     {
@@ -526,7 +540,7 @@ public class BulkUploadService : IBulkUploadService
         var status = await _context.AssetStatuses.FirstOrDefaultAsync(x => x.StatusName == row.Status);
         var placing = string.IsNullOrWhiteSpace(row.Placing)
             ? null
-            : await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name == row.Placing);
+            : await _context.AssetPlacings.FirstOrDefaultAsync(x => x.Name.ToLower() == row.Placing.Trim().ToLower());
 
         // Classification — auto-create if missing
         Domain.Entities.MasterData.AssetClassification? classification = null;
