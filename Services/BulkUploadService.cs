@@ -619,7 +619,9 @@ public class BulkUploadService : IBulkUploadService
         return new Asset
         {
             AssetId = $"ASTH{nextAssetIdNumber:D5}",
-            AssetTag = string.IsNullOrWhiteSpace(row.Asset_Tag) ? $"ASTH{nextAssetIdNumber:D5}" : row.Asset_Tag,
+            AssetTag = (string.IsNullOrWhiteSpace(row.Asset_Tag) || row.Asset_Tag.Equals("NA", StringComparison.OrdinalIgnoreCase))
+                ? $"ASTH{nextAssetIdNumber:D5}"
+                : row.Asset_Tag,
             SerialNumber = row.Serial_Number,
             ProjectId = defaultProject.Id,
             ProjectIdRef = defaultProject.ProjectId,
@@ -653,7 +655,7 @@ public class BulkUploadService : IBulkUploadService
             USBBlockingStatusId = usbStatus?.Id,
             
             Make = string.IsNullOrWhiteSpace(row.Make) ? "NA" : row.Make,
-            Model = row.Model,
+            Model = string.IsNullOrWhiteSpace(row.Model) ? "NA" : row.Model,
             AssignedUserText = string.IsNullOrWhiteSpace(row.Assigned_User_Name) ? null : row.Assigned_User_Name,
             CommissioningDateText = string.IsNullOrWhiteSpace(row.Commissioning_Date) ? null : row.Commissioning_Date,
             UsageCategory = Enum.TryParse<AssetUsageCategory>(usageCategory, out var parsedCategory) ? parsedCategory : AssetUsageCategory.ITNonTMS,
