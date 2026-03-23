@@ -13,7 +13,6 @@ public class ServiceAsset
 
     // Foreign Keys
     public int ServiceTypeId { get; set; }
-    public int? ContractTypeId { get; set; }
     public int? ProjectId { get; set; }
     public int? LocationId { get; set; }
     public int? VendorId { get; set; }
