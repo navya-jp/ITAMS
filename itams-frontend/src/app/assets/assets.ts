@@ -747,4 +747,165 @@ export class Assets implements OnInit {
   getValidationError(field: string): string { return this.validationErrors[field] || ''; }
   formatDate(date: Date | undefined): string { if (!date) return 'N/A'; return new Date(date).toLocaleDateString(); }
   formatCurrency(amount: number | undefined): string { if (!amount) return 'N/A'; return `₹${amount.toLocaleString()}`; }
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────────
+
+  lifecycle: any = null;
+  lifecycleLoading = false;
+  lifecycleTab = 1;
+
+  // Transfer form
+  showTransferModal = false;
+  transferForm: any = { toLocationId: 0, toUserId: undefined, reason: '', notes: '' };
+
+  // Maintenance form
+  showMaintenanceModal = false;
+  maintenanceForm: any = {
+    requestType: 'Maintenance', description: '', oldSpecifications: '',
+    newSpecifications: '', vendorName: '', cost: undefined,
+    scheduledDate: undefined, remarks: ''
+  };
+  selectedMaintenance: any = null;
+  showMaintenanceUpdateModal = false;
+  maintenanceUpdateForm: any = { status: '', resolution: '', completedDate: undefined, cost: undefined };
+
+  // Compliance form
+  showComplianceModal = false;
+  complianceForm: any = { checkType: '', result: 'Pass', details: '', remediation: '' };
+
+  maintenanceTypes = ['Maintenance', 'Upgrade', 'Repair'];
+  complianceCheckTypes = ['PatchStatus', 'USBBlocking', 'WarrantyExpiry', 'Security', 'Other'];
+
+  loadLifecycle(assetId: number) {
+    this.lifecycleLoading = true;
+    this.api.getAssetLifecycle(assetId).subscribe({
+      next: (data) => { this.lifecycle = data; this.lifecycleLoading = false; },
+      error: () => { this.lifecycleLoading = false; }
+    });
+  }
+
+  openLifecycleTab(asset: Asset) {
+    this.lifecycleTab = 5;
+    this.viewTab = 5;
+    this.loadLifecycle(asset.id);
+  }
+
+  // Transfer
+  openTransferModal() {
+    this.transferForm = { toLocationId: 0, toUserId: undefined, reason: '', notes: '' };
+    this.showTransferModal = true;
+  }
+
+  submitTransfer() {
+    if (!this.selectedAsset || !this.transferForm.toLocationId) return;
+    this.loading = true;
+    this.api.transferAsset(this.selectedAsset.id, this.transferForm).subscribe({
+      next: () => {
+        this.success = 'Asset transferred successfully';
+        this.showTransferModal = false;
+        this.loading = false;
+        this.loadLifecycle(this.selectedAsset.id);
+        this.loadAssets();
+      },
+      error: (err) => { this.error = err.error?.message || 'Transfer failed'; this.loading = false; }
+    });
+  }
+
+  // Maintenance
+  openMaintenanceModal() {
+    this.maintenanceForm = {
+      requestType: 'Maintenance', description: '', oldSpecifications: '',
+      newSpecifications: '', vendorName: '', cost: undefined,
+      scheduledDate: undefined, remarks: ''
+    };
+    this.showMaintenanceModal = true;
+  }
+
+  submitMaintenance() {
+    if (!this.selectedAsset || !this.maintenanceForm.description) return;
+    this.loading = true;
+    this.api.createMaintenanceRequest(this.selectedAsset.id, this.maintenanceForm).subscribe({
+      next: () => {
+        this.success = 'Maintenance request created';
+        this.showMaintenanceModal = false;
+        this.loading = false;
+        this.loadLifecycle(this.selectedAsset.id);
+      },
+      error: (err) => { this.error = err.error?.message || 'Failed to create request'; this.loading = false; }
+    });
+  }
+
+  openMaintenanceUpdate(m: any) {
+    this.selectedMaintenance = m;
+    this.maintenanceUpdateForm = { status: m.status, resolution: m.resolution || '', completedDate: undefined, cost: m.cost };
+    this.showMaintenanceUpdateModal = true;
+  }
+
+  submitMaintenanceUpdate() {
+    if (!this.selectedAsset || !this.selectedMaintenance) return;
+    this.loading = true;
+    this.api.updateMaintenanceRequest(this.selectedAsset.id, this.selectedMaintenance.id, this.maintenanceUpdateForm).subscribe({
+      next: () => {
+        this.success = 'Maintenance request updated';
+        this.showMaintenanceUpdateModal = false;
+        this.loading = false;
+        this.loadLifecycle(this.selectedAsset.id);
+      },
+      error: (err) => { this.error = err.error?.message || 'Update failed'; this.loading = false; }
+    });
+  }
+
+  // Compliance
+  openComplianceModal() {
+    this.complianceForm = { checkType: '', result: 'Pass', details: '', remediation: '' };
+    this.showComplianceModal = true;
+  }
+
+  submitComplianceCheck() {
+    if (!this.selectedAsset || !this.complianceForm.checkType) return;
+    this.loading = true;
+    this.api.createComplianceCheck(this.selectedAsset.id, this.complianceForm).subscribe({
+      next: () => {
+        this.success = 'Compliance check recorded';
+        this.showComplianceModal = false;
+        this.loading = false;
+        this.loadLifecycle(this.selectedAsset.id);
+      },
+      error: (err) => { this.error = err.error?.message || 'Failed to record check'; this.loading = false; }
+    });
+  }
+
+  runAutoCompliance() {
+    if (!this.selectedAsset) return;
+    this.loading = true;
+    this.api.runAutoComplianceCheck(this.selectedAsset.id).subscribe({
+      next: () => {
+        this.success = 'Auto compliance check completed';
+        this.loading = false;
+        this.loadLifecycle(this.selectedAsset.id);
+      },
+      error: (err) => { this.error = err.error?.message || 'Auto check failed'; this.loading = false; }
+    });
+  }
+
+  resolveCompliance(check: any) {
+    if (!this.selectedAsset) return;
+    this.api.resolveComplianceCheck(this.selectedAsset.id, check.id, { resolution: 'Resolved' }).subscribe({
+      next: () => { this.loadLifecycle(this.selectedAsset.id); },
+      error: () => {}
+    });
+  }
+
+  getComplianceBadge(result: string): string {
+    if (result === 'Pass') return 'badge bg-success';
+    if (result === 'Warning') return 'badge bg-warning text-dark';
+    return 'badge bg-danger';
+  }
+
+  getMaintenanceStatusBadge(status: string): string {
+    if (status === 'Completed') return 'badge bg-success';
+    if (status === 'In Progress') return 'badge bg-primary';
+    if (status === 'Cancelled') return 'badge bg-secondary';
+    return 'badge bg-warning text-dark';
+  }
 }

@@ -654,6 +654,7 @@
           <li class="nav-item"><a class="nav-link" [class.active]="viewTab===2" (click)="setViewTab(2)" style="cursor:pointer;"><i class="fas fa-cogs me-1"></i>Technical</a></li>
           <li class="nav-item"><a class="nav-link" [class.active]="viewTab===3" (click)="setViewTab(3)" style="cursor:pointer;"><i class="fas fa-user-check me-1"></i>User & Status</a></li>
           <li class="nav-item"><a class="nav-link" [class.active]="viewTab===4" (click)="setViewTab(4)" style="cursor:pointer;"><i class="fas fa-shopping-cart me-1"></i>Procurement</a></li>
+          <li class="nav-item"><a class="nav-link" [class.active]="viewTab===5" (click)="setViewTab(5); loadLifecycle(selectedAsset.id)" style="cursor:pointer;"><i class="fas fa-history me-1"></i>Lifecycle</a></li>
         </ul>
         <div *ngIf="viewTab===1" class="row g-3">
           <div class="col-md-6"><label class="form-label text-muted">Asset ID</label><p class="fw-bold">{{ selectedAsset.assetId }}</p></div>
@@ -702,6 +703,140 @@
             </div>
           </ng-container>
         </div>
+
+        <!-- ── Lifecycle Tab ─────────────────────────────────────────────── -->
+        <div *ngIf="viewTab===5">
+          <div *ngIf="lifecycleLoading" class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+          <div *ngIf="!lifecycleLoading && lifecycle">
+
+            <!-- Summary badges -->
+            <div class="d-flex gap-2 mb-3">
+              <span class="badge bg-warning text-dark" *ngIf="lifecycle.openMaintenanceCount > 0">
+                <i class="fas fa-tools me-1"></i>{{ lifecycle.openMaintenanceCount }} Open Maintenance
+              </span>
+              <span class="badge bg-danger" *ngIf="lifecycle.failedComplianceCount > 0">
+                <i class="fas fa-exclamation-triangle me-1"></i>{{ lifecycle.failedComplianceCount }} Compliance Issues
+              </span>
+              <span class="badge bg-success" *ngIf="lifecycle.failedComplianceCount === 0 && lifecycle.openMaintenanceCount === 0">
+                <i class="fas fa-check me-1"></i>All Clear
+              </span>
+            </div>
+
+            <!-- Sub-tabs -->
+            <ul class="nav nav-pills mb-3 small">
+              <li class="nav-item"><a class="nav-link py-1 px-2" [class.active]="lifecycleTab===1" (click)="lifecycleTab=1" style="cursor:pointer;">Assignment History</a></li>
+              <li class="nav-item"><a class="nav-link py-1 px-2" [class.active]="lifecycleTab===2" (click)="lifecycleTab=2" style="cursor:pointer;">Transfers</a></li>
+              <li class="nav-item"><a class="nav-link py-1 px-2" [class.active]="lifecycleTab===3" (click)="lifecycleTab=3" style="cursor:pointer;">Maintenance</a></li>
+              <li class="nav-item"><a class="nav-link py-1 px-2" [class.active]="lifecycleTab===4" (click)="lifecycleTab=4" style="cursor:pointer;">Compliance</a></li>
+            </ul>
+
+            <!-- Assignment History -->
+            <div *ngIf="lifecycleTab===1">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted fw-semibold">Assignment History</small>
+              </div>
+              <div *ngIf="lifecycle.assignmentHistory.length === 0" class="text-muted small py-2">No assignment history recorded.</div>
+              <div class="table-responsive" *ngIf="lifecycle.assignmentHistory.length > 0">
+                <table class="table table-sm table-hover">
+                  <thead><tr><th>Date</th><th>From User</th><th>To User</th><th>From Location</th><th>To Location</th><th>Reason</th><th>By</th></tr></thead>
+                  <tbody>
+                    <tr *ngFor="let h of lifecycle.assignmentHistory">
+                      <td class="small">{{ h.changedAt | date:'dd MMM yy' }}</td>
+                      <td class="small">{{ h.previousUserName || '—' }}</td>
+                      <td class="small">{{ h.newUserName || '—' }}</td>
+                      <td class="small">{{ h.previousLocationName || '—' }}</td>
+                      <td class="small">{{ h.newLocationName || '—' }}</td>
+                      <td class="small">{{ h.reason || '—' }}</td>
+                      <td class="small">{{ h.changedByName || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Transfer History -->
+            <div *ngIf="lifecycleTab===2">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted fw-semibold">Transfer History</small>
+                <button class="btn btn-sm btn-outline-primary" (click)="openTransferModal()"><i class="fas fa-exchange-alt me-1"></i>Transfer Asset</button>
+              </div>
+              <div *ngIf="lifecycle.transferHistory.length === 0" class="text-muted small py-2">No transfers recorded.</div>
+              <div class="table-responsive" *ngIf="lifecycle.transferHistory.length > 0">
+                <table class="table table-sm table-hover">
+                  <thead><tr><th>Date</th><th>From</th><th>To</th><th>Reason</th><th>By</th></tr></thead>
+                  <tbody>
+                    <tr *ngFor="let t of lifecycle.transferHistory">
+                      <td class="small">{{ t.transferDate | date:'dd MMM yy' }}</td>
+                      <td class="small">{{ t.fromLocationName }}</td>
+                      <td class="small">{{ t.toLocationName }}</td>
+                      <td class="small">{{ t.reason || '—' }}</td>
+                      <td class="small">{{ t.requestedByName || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Maintenance -->
+            <div *ngIf="lifecycleTab===3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted fw-semibold">Maintenance & Upgrades</small>
+                <button class="btn btn-sm btn-outline-primary" (click)="openMaintenanceModal()"><i class="fas fa-plus me-1"></i>Log Request</button>
+              </div>
+              <div *ngIf="lifecycle.maintenanceRequests.length === 0" class="text-muted small py-2">No maintenance requests.</div>
+              <div *ngFor="let m of lifecycle.maintenanceRequests" class="card mb-2 border-0 bg-light">
+                <div class="card-body py-2 px-3">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <span class="badge bg-secondary me-1">{{ m.requestType }}</span>
+                      <span [class]="getMaintenanceStatusBadge(m.status)">{{ m.status }}</span>
+                      <p class="mb-1 mt-1 small fw-semibold">{{ m.description }}</p>
+                      <small class="text-muted">{{ m.createdAt | date:'dd MMM yy' }} · {{ m.createdByName }}</small>
+                      <span *ngIf="m.vendorName" class="text-muted small"> · {{ m.vendorName }}</span>
+                      <span *ngIf="m.cost" class="text-muted small"> · ₹{{ m.cost }}</span>
+                    </div>
+                    <button *ngIf="m.status !== 'Completed' && m.status !== 'Cancelled'" class="btn btn-xs btn-outline-secondary btn-sm" (click)="openMaintenanceUpdate(m)">Update</button>
+                  </div>
+                  <div *ngIf="m.oldSpecifications || m.newSpecifications" class="mt-1">
+                    <small class="text-muted" *ngIf="m.oldSpecifications"><strong>Old:</strong> {{ m.oldSpecifications }}</small>
+                    <small class="text-muted ms-2" *ngIf="m.newSpecifications"><strong>New:</strong> {{ m.newSpecifications }}</small>
+                  </div>
+                  <div *ngIf="m.resolution" class="mt-1"><small class="text-success"><i class="fas fa-check me-1"></i>{{ m.resolution }}</small></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Compliance -->
+            <div *ngIf="lifecycleTab===4">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted fw-semibold">Compliance & Security</small>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-outline-success" (click)="runAutoCompliance()" [disabled]="loading">
+                    <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+                    <i *ngIf="!loading" class="fas fa-robot me-1"></i>Auto Check
+                  </button>
+                  <button class="btn btn-sm btn-outline-primary" (click)="openComplianceModal()"><i class="fas fa-plus me-1"></i>Manual</button>
+                </div>
+              </div>
+              <div *ngIf="lifecycle.complianceChecks.length === 0" class="text-muted small py-2">No compliance checks recorded.</div>
+              <div *ngFor="let c of lifecycle.complianceChecks" class="d-flex align-items-start gap-2 mb-2 p-2 rounded bg-light">
+                <span [class]="getComplianceBadge(c.result)" class="mt-1">{{ c.result }}</span>
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between">
+                    <span class="small fw-semibold">{{ c.checkType }}</span>
+                    <small class="text-muted">{{ c.checkedAt | date:'dd MMM yy' }}</small>
+                  </div>
+                  <small class="text-muted d-block">{{ c.details }}</small>
+                  <small class="text-warning d-block" *ngIf="c.remediation && c.status === 'Open'"><i class="fas fa-exclamation-circle me-1"></i>{{ c.remediation }}</small>
+                  <small class="text-success d-block" *ngIf="c.status === 'Resolved'"><i class="fas fa-check me-1"></i>Resolved</small>
+                </div>
+                <button *ngIf="c.result !== 'Pass' && c.status === 'Open'" class="btn btn-xs btn-sm btn-outline-success" (click)="resolveCompliance(c)">Resolve</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
@@ -1015,5 +1150,200 @@
 </div>
 
 <!-- Modal Backdrop -->
-<div *ngIf="showCreateModal || showEditModal || showViewModal || showBulkUploadModal"
+<div *ngIf="showCreateModal || showEditModal || showViewModal || showBulkUploadModal || showTransferModal || showMaintenanceModal || showMaintenanceUpdateModal || showComplianceModal"
      class="modal-backdrop fade show" (click)="closeModals()"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- TRANSFER MODAL                                                             -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" [class.show]="showTransferModal" [style.display]="showTransferModal ? 'block' : 'none'" tabindex="-1" style="z-index:1060">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-exchange-alt me-2"></i>Transfer Asset</h5>
+        <button type="button" class="btn-close" (click)="showTransferModal=false"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Transfer To Location <span class="text-danger">*</span></label>
+          <select class="form-select" [(ngModel)]="transferForm.toLocationId" name="toLocationId">
+            <option [value]="0">Select Location</option>
+            <option *ngFor="let loc of locations" [value]="loc.id">{{ loc.name }}</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Assign To User</label>
+          <select class="form-select" [(ngModel)]="transferForm.toUserId" name="toUserId">
+            <option [value]="undefined">Keep current / Unassigned</option>
+            <option *ngFor="let u of projectUsers" [value]="u.id">{{ u.firstName }} {{ u.lastName }}</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Reason</label>
+          <input type="text" class="form-control" [(ngModel)]="transferForm.reason" placeholder="Reason for transfer">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Notes</label>
+          <textarea class="form-control" [(ngModel)]="transferForm.notes" rows="2" placeholder="Additional notes"></textarea>
+        </div>
+        <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showTransferModal=false">Cancel</button>
+        <button class="btn btn-primary" [disabled]="loading || !transferForm.toLocationId" (click)="submitTransfer()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!loading" class="fas fa-exchange-alt me-1"></i>Transfer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- MAINTENANCE REQUEST MODAL                                                  -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" [class.show]="showMaintenanceModal" [style.display]="showMaintenanceModal ? 'block' : 'none'" tabindex="-1" style="z-index:1060">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-tools me-2"></i>Log Maintenance / Upgrade Request</h5>
+        <button type="button" class="btn-close" (click)="showMaintenanceModal=false"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Request Type <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="maintenanceForm.requestType">
+              <option *ngFor="let t of maintenanceTypes" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Vendor / Service Provider</label>
+            <input type="text" class="form-control" [(ngModel)]="maintenanceForm.vendorName" placeholder="Vendor name">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Description <span class="text-danger">*</span></label>
+            <textarea class="form-control" [(ngModel)]="maintenanceForm.description" rows="2" placeholder="Describe the issue or upgrade required"></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Old Specifications</label>
+            <textarea class="form-control" [(ngModel)]="maintenanceForm.oldSpecifications" rows="2" placeholder="Current specs (for upgrades)"></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">New Specifications</label>
+            <textarea class="form-control" [(ngModel)]="maintenanceForm.newSpecifications" rows="2" placeholder="Target specs (for upgrades)"></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Estimated Cost (₹)</label>
+            <input type="number" class="form-control" [(ngModel)]="maintenanceForm.cost" placeholder="0">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Scheduled Date</label>
+            <input type="date" class="form-control" [(ngModel)]="maintenanceForm.scheduledDate">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Remarks</label>
+            <input type="text" class="form-control" [(ngModel)]="maintenanceForm.remarks" placeholder="Additional remarks">
+          </div>
+        </div>
+        <div *ngIf="error" class="alert alert-danger mt-3">{{ error }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showMaintenanceModal=false">Cancel</button>
+        <button class="btn btn-primary" [disabled]="loading || !maintenanceForm.description" (click)="submitMaintenance()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!loading" class="fas fa-save me-1"></i>Submit Request
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- MAINTENANCE UPDATE MODAL                                                   -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" [class.show]="showMaintenanceUpdateModal" [style.display]="showMaintenanceUpdateModal ? 'block' : 'none'" tabindex="-1" style="z-index:1060">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Update Maintenance Request</h5>
+        <button type="button" class="btn-close" (click)="showMaintenanceUpdateModal=false"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Status</label>
+          <select class="form-select" [(ngModel)]="maintenanceUpdateForm.status">
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Resolution / Notes</label>
+          <textarea class="form-control" [(ngModel)]="maintenanceUpdateForm.resolution" rows="3" placeholder="What was done?"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Actual Cost (₹)</label>
+          <input type="number" class="form-control" [(ngModel)]="maintenanceUpdateForm.cost">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Completed Date</label>
+          <input type="date" class="form-control" [(ngModel)]="maintenanceUpdateForm.completedDate">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showMaintenanceUpdateModal=false">Cancel</button>
+        <button class="btn btn-primary" [disabled]="loading" (click)="submitMaintenanceUpdate()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- COMPLIANCE CHECK MODAL                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" [class.show]="showComplianceModal" [style.display]="showComplianceModal ? 'block' : 'none'" tabindex="-1" style="z-index:1060">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-shield-alt me-2"></i>Log Compliance Check</h5>
+        <button type="button" class="btn-close" (click)="showComplianceModal=false"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Check Type <span class="text-danger">*</span></label>
+          <select class="form-select" [(ngModel)]="complianceForm.checkType">
+            <option value="">Select type</option>
+            <option *ngFor="let t of complianceCheckTypes" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Result</label>
+          <select class="form-select" [(ngModel)]="complianceForm.result">
+            <option value="Pass">Pass</option>
+            <option value="Warning">Warning</option>
+            <option value="Fail">Fail</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Details</label>
+          <textarea class="form-control" [(ngModel)]="complianceForm.details" rows="2" placeholder="Check findings"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Remediation Required</label>
+          <input type="text" class="form-control" [(ngModel)]="complianceForm.remediation" placeholder="Action needed to fix">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showComplianceModal=false">Cancel</button>
+        <button class="btn btn-primary" [disabled]="loading || !complianceForm.checkType" (click)="submitComplianceCheck()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!loading" class="fas fa-save me-1"></i>Save Check
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

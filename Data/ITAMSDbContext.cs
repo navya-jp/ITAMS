@@ -24,6 +24,10 @@ public class ITAMSDbContext : DbContext
     public DbSet<LicensingAsset> LicensingAssets { get; set; }
     public DbSet<ServiceAsset> ServiceAssets { get; set; }
     public DbSet<ServiceRenewal> ServiceRenewals { get; set; }
+    public DbSet<AssetAssignmentHistory> AssetAssignmentHistories { get; set; }
+    public DbSet<AssetTransferRequest> AssetTransferRequests { get; set; }
+    public DbSet<MaintenanceRequest> MaintenanceRequests { get; set; }
+    public DbSet<ComplianceCheck> ComplianceChecks { get; set; }
     public DbSet<AuditEntry> AuditEntries { get; set; }
     public DbSet<LoginAudit> LoginAudits { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
@@ -315,6 +319,42 @@ public class ITAMSDbContext : DbContext
                 .WithMany(u => u.AssignedAssets)
                 .HasForeignKey(e => e.AssignedUserId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // AssetAssignmentHistory configuration
+        modelBuilder.Entity<AssetAssignmentHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Asset).WithMany().HasForeignKey(e => e.AssetId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.PreviousUser).WithMany().HasForeignKey(e => e.PreviousUserId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.NewUser).WithMany().HasForeignKey(e => e.NewUserId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.PreviousLocation).WithMany().HasForeignKey(e => e.PreviousLocationId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.NewLocation).WithMany().HasForeignKey(e => e.NewLocationId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // AssetTransferRequest configuration
+        modelBuilder.Entity<AssetTransferRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Asset).WithMany().HasForeignKey(e => e.AssetId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.FromLocation).WithMany().HasForeignKey(e => e.FromLocationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.ToLocation).WithMany().HasForeignKey(e => e.ToLocationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.FromUser).WithMany().HasForeignKey(e => e.FromUserId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.ToUser).WithMany().HasForeignKey(e => e.ToUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // MaintenanceRequest configuration
+        modelBuilder.Entity<MaintenanceRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Asset).WithMany().HasForeignKey(e => e.AssetId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ComplianceCheck configuration
+        modelBuilder.Entity<ComplianceCheck>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Asset).WithMany().HasForeignKey(e => e.AssetId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // AuditEntry entity configuration

@@ -546,6 +546,35 @@ export class Api {
     return this.http.get<any[]>(`${this.baseUrl}/masterdata/service-types`, this.getAuthHeaders());
   }
 
+  // Asset Lifecycle
+  getAssetLifecycle(assetId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/assets/${assetId}/lifecycle`, this.getAuthHeaders());
+  }
+
+  transferAsset(assetId: number, data: { toLocationId: number; toUserId?: number; reason?: string; notes?: string }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/assets/${assetId}/lifecycle/transfer`, data, this.getAuthHeaders());
+  }
+
+  createMaintenanceRequest(assetId: number, data: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/assets/${assetId}/lifecycle/maintenance`, data, this.getAuthHeaders());
+  }
+
+  updateMaintenanceRequest(assetId: number, id: number, data: any): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/assets/${assetId}/lifecycle/maintenance/${id}`, data, this.getAuthHeaders());
+  }
+
+  createComplianceCheck(assetId: number, data: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/assets/${assetId}/lifecycle/compliance`, data, this.getAuthHeaders());
+  }
+
+  resolveComplianceCheck(assetId: number, id: number, data: any): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/assets/${assetId}/lifecycle/compliance/${id}/resolve`, data, this.getAuthHeaders());
+  }
+
+  runAutoComplianceCheck(assetId: number): Observable<any[]> {
+    return this.http.post<any[]>(`${this.baseUrl}/assets/${assetId}/lifecycle/compliance/run-auto`, {}, this.getAuthHeaders());
+  }
+
   bulkUploadLicensing(file: File): Observable<any> {
     const formData = new FormData();
     formData.append('file', file);

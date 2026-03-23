@@ -365,6 +365,36 @@ public class AssetsController : BaseController
                 if (placing != null)
                     asset.AssetPlacingId = placing.Id;
             }
+            // Track assignment/location changes in history
+            bool userChanged = updateDto.AssignedUserId.HasValue && updateDto.AssignedUserId != asset.AssignedUserId;
+            bool locationChanged = updateDto.LocationId.HasValue && updateDto.LocationId != asset.LocationId;
+
+            if (userChanged || locationChanged)
+            {
+                var userId = GetCurrentUserId() ?? 1;
+                var currentUser = await _context.Users.FindAsync(userId);
+                var prevLocation = locationChanged ? await _context.Locations.FindAsync(asset.LocationId) : null;
+                var newLocation = locationChanged && updateDto.LocationId.HasValue ? await _context.Locations.FindAsync(updateDto.LocationId.Value) : null;
+                var prevUser = userChanged ? await _context.Users.FindAsync(asset.AssignedUserId) : null;
+                var newUser = userChanged && updateDto.AssignedUserId.HasValue ? await _context.Users.FindAsync(updateDto.AssignedUserId.Value) : null;
+
+                _context.AssetAssignmentHistories.Add(new Domain.Entities.AssetAssignmentHistory
+                {
+                    AssetId = asset.Id,
+                    PreviousUserId = asset.AssignedUserId,
+                    PreviousUserName = prevUser != null ? $"{prevUser.FirstName} {prevUser.LastName}" : null,
+                    NewUserId = userChanged ? updateDto.AssignedUserId : asset.AssignedUserId,
+                    NewUserName = newUser != null ? $"{newUser.FirstName} {newUser.LastName}" : null,
+                    PreviousLocationId = locationChanged ? asset.LocationId : null,
+                    PreviousLocationName = prevLocation?.Name,
+                    NewLocationId = locationChanged ? updateDto.LocationId : null,
+                    NewLocationName = newLocation?.Name,
+                    ChangedAt = DateTime.UtcNow,
+                    ChangedBy = userId,
+                    ChangedByName = currentUser != null ? $"{currentUser.FirstName} {currentUser.LastName}" : "System"
+                });
+            }
+
             if (updateDto.AssignedUserId.HasValue)
                 asset.AssignedUserId = updateDto.AssignedUserId;
 
