@@ -592,5 +592,36 @@ export class Api {
       headers: new HttpHeaders({ 'Authorization': `Bearer ${token}` })
     });
   }
+
+  // ── Alerts ──────────────────────────────────────────────────────────────────
+
+  getAlerts(params?: { includeResolved?: boolean; severity?: string; alertType?: string; page?: number }): Observable<any> {
+    let query = '';
+    if (params) {
+      const p = new URLSearchParams();
+      if (params.includeResolved !== undefined) p.set('includeResolved', String(params.includeResolved));
+      if (params.severity) p.set('severity', params.severity);
+      if (params.alertType) p.set('alertType', params.alertType);
+      if (params.page) p.set('page', String(params.page));
+      query = '?' + p.toString();
+    }
+    return this.http.get<any>(`${this.baseUrl}/alerts${query}`, this.getAuthHeaders());
+  }
+
+  getAlertUnreadCount(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/alerts/unread-count`, this.getAuthHeaders());
+  }
+
+  acknowledgeAlert(id: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/alerts/${id}/acknowledge`, {}, this.getAuthHeaders());
+  }
+
+  resolveAlert(id: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/alerts/${id}/resolve`, {}, this.getAuthHeaders());
+  }
+
+  getAlertsDashboard(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/alerts/dashboard`, this.getAuthHeaders());
+  }
 }
 

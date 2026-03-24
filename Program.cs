@@ -77,6 +77,7 @@ builder.Services.AddScoped<IAccessControlService, AccessControlService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IBulkUploadService, BulkUploadService>();
 builder.Services.AddScoped<IAssetIdGeneratorService, AssetIdGeneratorService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Add RBAC services
 builder.Services.AddScoped<ITAMS.Services.RBAC.IPermissionResolver, ITAMS.Services.RBAC.PermissionResolver>();
@@ -85,6 +86,7 @@ builder.Services.AddScoped<ITAMS.Services.RBAC.IRoleManagementService, ITAMS.Ser
 
 // Add background services
 builder.Services.AddHostedService<ITAMS.Services.SessionCleanupService>();
+builder.Services.AddHostedService<ITAMS.Services.AutomationEngineService>();
 // Temporarily disabled due to missing column in ApprovalRequests table
 // builder.Services.AddHostedService<ITAMS.Services.ApprovalEscalationService>();
 

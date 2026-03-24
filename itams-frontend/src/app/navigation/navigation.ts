@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { Api } from '../services/api';
 import { Subscription, interval } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -17,6 +18,9 @@ export class Navigation implements OnInit, OnDestroy {
   pageTitle = 'Dashboard';
   currentRoute = '';
   showProfileDropdown = false;
+  showAlertsDropdown = false;
+  alertSummary: any = { totalUnread: 0, critical: 0, high: 0, medium: 0, low: 0 };
+  recentAlerts: any[] = [];
   
   // Properties for time display to avoid change detection issues
   lastActivity = 'Active now';
@@ -32,6 +36,7 @@ export class Navigation implements OnInit, OnDestroy {
     { path: '/admin/user-permissions', icon: 'fas fa-user-cog', label: 'User Permissions', title: 'User Permissions' },
     { path: '/admin/projects', icon: 'fas fa-folder', label: 'Projects & Locations', title: 'Projects & Locations' },
     { path: '/admin/assets', icon: 'fas fa-server', label: 'Assets', title: 'Asset Management' },
+    { path: '/admin/alerts', icon: 'fas fa-bell', label: 'Alerts', title: 'Alerts & Reports' },
     { path: '/admin/audit', icon: 'fas fa-history', label: 'Audit Trail', title: 'Audit Trail' },
     { path: '/admin/settings', icon: 'fas fa-cog', label: 'Settings', title: 'System Settings' }
   ];
@@ -44,6 +49,7 @@ export class Navigation implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
+    private api: Api,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
@@ -75,9 +81,16 @@ export class Navigation implements OnInit, OnDestroy {
     });
     this.subscriptions.push(timeSub);
 
+    // Poll alert count every 5 minutes
+    const alertSub = interval(300000).subscribe(() => {
+      if (this.isAuthenticated) this.loadAlertCount();
+    });
+    this.subscriptions.push(alertSub);
+
     // Initial updates
     this.updatePageTitle();
     this.updateTimeDisplays();
+    this.loadAlertCount();
   }
 
   ngOnDestroy() {
@@ -161,8 +174,49 @@ export class Navigation implements OnInit, OnDestroy {
     this.authService.updateActivity();
   }
 
+  loadAlertCount() {
+    this.api.getAlertUnreadCount().subscribe({
+      next: (data) => { this.alertSummary = data; },
+      error: () => {}
+    });
+  }
+
+  loadRecentAlerts() {
+    this.api.getAlerts({ page: 1 }).subscribe({
+      next: (data) => { this.recentAlerts = data.alerts?.slice(0, 8) ?? []; },
+      error: () => {}
+    });
+  }
+
+  toggleAlertsDropdown() {
+    this.showAlertsDropdown = !this.showAlertsDropdown;
+    if (this.showAlertsDropdown) {
+      this.showProfileDropdown = false;
+      this.loadRecentAlerts();
+    }
+  }
+
+  closeAlertsDropdown() {
+    this.showAlertsDropdown = false;
+  }
+
+  acknowledgeAlert(id: number, event: Event) {
+    event.stopPropagation();
+    this.api.acknowledgeAlert(id).subscribe({
+      next: () => {
+        this.loadAlertCount();
+        this.loadRecentAlerts();
+      }
+    });
+  }
+
+  getSeverityClass(severity: string): string {
+    return { Critical: 'danger', High: 'warning', Medium: 'info', Low: 'secondary' }[severity] ?? 'secondary';
+  }
+
   toggleProfileDropdown() {
     this.showProfileDropdown = !this.showProfileDropdown;
+    if (this.showProfileDropdown) this.showAlertsDropdown = false;
   }
 
   closeProfileDropdown() {
@@ -172,11 +226,11 @@ export class Navigation implements OnInit, OnDestroy {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
-    const clickedInside = target.closest('.user-header-avatar');
+    const clickedInside = target.closest('.user-header-avatar') || target.closest('.alert-bell-wrapper');
     
-    // Close dropdown if clicked outside
-    if (!clickedInside && this.showProfileDropdown) {
+    if (!clickedInside) {
       this.showProfileDropdown = false;
+      this.showAlertsDropdown = false;
     }
   }
 }

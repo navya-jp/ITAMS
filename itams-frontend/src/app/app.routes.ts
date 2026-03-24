@@ -11,6 +11,7 @@ import { UserProjects } from './user-projects/user-projects';
 import { AuditTrail } from './audit-trail/audit-trail';
 import { Settings } from './settings/settings';
 import { Assets } from './assets/assets';
+import { Alerts } from './alerts/alerts';
 import { AuthGuard, AdminGuard, UserGuard, LoginGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -29,6 +30,7 @@ export const routes: Routes = [
   { path: 'admin/projects', component: Projects, canActivate: [AdminGuard] },
   { path: 'admin/assets', component: Assets, canActivate: [AdminGuard] },
   { path: 'admin/audit', component: AuditTrail, canActivate: [AdminGuard] },
+  { path: 'admin/alerts', component: Alerts, canActivate: [AdminGuard] },
   { path: 'admin/settings', component: Settings, canActivate: [AdminGuard] },
   
   // User routes (Regular Users)

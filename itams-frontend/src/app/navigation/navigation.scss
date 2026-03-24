@@ -471,3 +471,31 @@
     transform: translateY(0);
   }
 }
+
+/* Alert Bell Dropdown */
+.alert-bell-wrapper {
+  .alerts-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 360px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 9999;
+    max-height: 480px;
+    overflow-y: auto;
+
+    .dropdown-header {
+      padding: 10px 14px;
+      font-size: 0.9rem;
+    }
+
+    .alert-item {
+      border-bottom: 1px solid #f0f0f0;
+      &:last-child { border-bottom: none; }
+      &:hover { background: #f8f9fa; }
+    }
+  }
+}
