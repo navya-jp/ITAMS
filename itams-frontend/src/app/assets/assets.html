@@ -689,6 +689,7 @@
         </div>
         <div *ngIf="viewTab===4" class="row g-3">
           <div class="col-md-6"><label class="form-label text-muted">Issue / Commissioning Date</label><p>{{ selectedAsset.commissioningDateText || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Asset Age</label><p><span class="badge bg-secondary fs-6">{{ getAssetAge(selectedAsset.commissioningDateText, selectedAsset.commissioningDate) }}</span></p></div>
           <div class="col-md-6"><label class="form-label text-muted">Procurement Date</label><p>{{ selectedAsset.procurementDate ? (selectedAsset.procurementDate | date:'mediumDate') : 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Procurement Cost</label><p>{{ selectedAsset.procurementCost ? ('₹' + selectedAsset.procurementCost) : 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Vendor</label><p>{{ selectedAsset.vendor || 'N/A' }}</p></div>

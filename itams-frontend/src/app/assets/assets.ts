@@ -748,6 +748,22 @@ export class Assets implements OnInit {
   formatDate(date: Date | undefined): string { if (!date) return 'N/A'; return new Date(date).toLocaleDateString(); }
   formatCurrency(amount: number | undefined): string { if (!amount) return 'N/A'; return `₹${amount.toLocaleString()}`; }
 
+  getAssetAge(commissioningDateText: string | undefined, commissioningDate: Date | undefined): string {
+    const raw = commissioningDateText || commissioningDate;
+    if (!raw) return 'N/A';
+    const date = new Date(raw);
+    if (isNaN(date.getTime())) return 'N/A';
+    const now = new Date();
+    let years = now.getFullYear() - date.getFullYear();
+    let months = now.getMonth() - date.getMonth();
+    if (months < 0) { years--; months += 12; }
+    if (years < 0) return 'N/A';
+    if (years === 0 && months === 0) return 'Less than 1 month';
+    if (years === 0) return `${months} month${months !== 1 ? 's' : ''}`;
+    if (months === 0) return `${years} year${years !== 1 ? 's' : ''}`;
+    return `${years} year${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
+  }
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
   lifecycle: any = null;
