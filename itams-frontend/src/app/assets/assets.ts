@@ -749,10 +749,55 @@ export class Assets implements OnInit {
   formatCurrency(amount: number | undefined): string { if (!amount) return 'N/A'; return `₹${amount.toLocaleString()}`; }
 
   getAssetAge(commissioningDateText: string | undefined, commissioningDate: Date | undefined): string {
-    const raw = commissioningDateText || commissioningDate;
-    if (!raw) return 'N/A';
-    const date = new Date(raw);
-    if (isNaN(date.getTime())) return 'N/A';
+    let date: Date | null = null;
+
+    // Try commissioningDateText first with multiple format handlers
+    if (commissioningDateText) {
+      const text = commissioningDateText.trim();
+
+      // Format: "December/2023" or "Dec/2023"
+      const monthYearSlash = text.match(/^([A-Za-z]+)[\/\-](\d{4})$/);
+      if (monthYearSlash) {
+        date = new Date(`${monthYearSlash[1]} 1, ${monthYearSlash[2]}`);
+      }
+
+      // Format: "29-12-2021" or "29/12/2021"
+      if (!date || isNaN(date.getTime())) {
+        const dmyMatch = text.match(/^(\d{1,2})[\/\-_](\d{1,2})[\/\-_](\d{4})$/);
+        if (dmyMatch) {
+          date = new Date(`${dmyMatch[3]}-${dmyMatch[2].padStart(2,'0')}-${dmyMatch[1].padStart(2,'0')}`);
+        }
+      }
+
+      // Format: "2021-12-29" (ISO)
+      if (!date || isNaN(date.getTime())) {
+        const isoMatch = text.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+        if (isoMatch) {
+          date = new Date(`${isoMatch[1]}-${isoMatch[2].padStart(2,'0')}-${isoMatch[3].padStart(2,'0')}`);
+        }
+      }
+
+      // Format: "12/2021" (month/year no day)
+      if (!date || isNaN(date.getTime())) {
+        const myMatch = text.match(/^(\d{1,2})[\/\-](\d{4})$/);
+        if (myMatch) {
+          date = new Date(`${myMatch[2]}-${myMatch[1].padStart(2,'0')}-01`);
+        }
+      }
+
+      // Last resort: native parse
+      if (!date || isNaN(date.getTime())) {
+        date = new Date(text);
+      }
+    }
+
+    // Fall back to commissioningDate field
+    if ((!date || isNaN(date.getTime())) && commissioningDate) {
+      date = new Date(commissioningDate);
+    }
+
+    if (!date || isNaN(date.getTime())) return 'N/A';
+
     const now = new Date();
     let years = now.getFullYear() - date.getFullYear();
     let months = now.getMonth() - date.getMonth();
