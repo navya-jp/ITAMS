@@ -303,9 +303,9 @@ public class AutomationEngineService : BackgroundService
 
             var targetRole = alert.EscalationLevel switch
             {
-                2 => "Admin",       // Project Admin
-                3 => "Super Admin", // Super Admin
-                _ => "IT Staff"
+                2 => "Admin",        // Project Admin (Viju Joseph etc.)
+                3 => "Super Admin",  // Super Admin
+                _ => "Project Manager"
             };
 
             var subject = $"[ESCALATED L{alert.EscalationLevel}] {alert.Title}";
@@ -328,8 +328,8 @@ public class AutomationEngineService : BackgroundService
         alert.CreatedAt = DateTime.UtcNow;
         context.SystemAlerts.Add(alert);
 
-        // Send to IT Staff (Level 1)
-        await email.SendAlertToRoleAsync("IT Staff", $"[ITAMS Alert] {subject}", emailBody, context);
+        // Send to Project Manager (Level 1) first
+        await email.SendAlertToRoleAsync("Project Manager", $"[ITAMS Alert] {subject}", emailBody, context);
         alert.EmailSent = true;
         alert.EmailSentAt = DateTime.UtcNow;
     }

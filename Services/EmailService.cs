@@ -1,7 +1,8 @@
-using System.Net;
-using System.Net.Mail;
 using ITAMS.Data;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.EntityFrameworkCore;
+using MimeKit;
 
 namespace ITAMS.Services;
 
@@ -39,22 +40,18 @@ public class EmailService : IEmailService
                 return;
             }
 
-            using var client = new SmtpClient(host, port)
-            {
-                Credentials = new NetworkCredential(user, pass),
-                EnableSsl = true
-            };
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(fromName, from));
+            message.To.Add(new MailboxAddress("", toEmail));
+            message.Subject = subject;
+            message.Body = new TextPart("html") { Text = body };
 
-            var mail = new MailMessage
-            {
-                From = new MailAddress(from, fromName),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
-            mail.To.Add(toEmail);
+            using var client = new SmtpClient();
+            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(user, pass);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
 
-            await client.SendMailAsync(mail);
             _logger.LogInformation("Alert email sent to {Email}: {Subject}", toEmail, subject);
         }
         catch (Exception ex)
