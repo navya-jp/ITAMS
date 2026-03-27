@@ -487,7 +487,7 @@
               <div class="col-md-6">
                 <label class="form-label">Assigned User</label>
                 <select class="form-select" [(ngModel)]="createForm.assignedUserId">
-                  <option [value]="undefined">Select User</option>
+                  <option [value]="undefined">General (Default)</option>
                   <option *ngFor="let u of projectUsers" [value]="u.id">{{ u.firstName }} {{ u.lastName }}</option>
                 </select>
               </div>
@@ -1165,20 +1165,52 @@
         <button type="button" class="btn-close" (click)="showTransferModal=false"></button>
       </div>
       <div class="modal-body">
+
+        <!-- Transfer Type Toggle -->
         <div class="mb-3">
-          <label class="form-label">Transfer To Location <span class="text-danger">*</span></label>
-          <select class="form-select" [(ngModel)]="transferForm.toLocationId" name="toLocationId">
-            <option [value]="0">Select Location</option>
-            <option *ngFor="let loc of locations" [value]="loc.id">{{ loc.name }}</option>
-          </select>
+          <label class="form-label">Transfer Type <span class="text-danger">*</span></label>
+          <div class="btn-group w-100" role="group">
+            <input type="radio" class="btn-check" name="transferType" id="transferTypePerson" value="person" [(ngModel)]="transferForm.transferType">
+            <label class="btn btn-outline-primary" for="transferTypePerson">
+              <i class="fas fa-user-friends me-2"></i>Person to Person
+            </label>
+            <input type="radio" class="btn-check" name="transferType" id="transferTypePlaza" value="plaza" [(ngModel)]="transferForm.transferType">
+            <label class="btn btn-outline-primary" for="transferTypePlaza">
+              <i class="fas fa-map-marker-alt me-2"></i>Plaza to Plaza
+            </label>
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Assign To User</label>
-          <select class="form-select" [(ngModel)]="transferForm.toUserId" name="toUserId">
-            <option [value]="undefined">Keep current / Unassigned</option>
-            <option *ngFor="let u of projectUsers" [value]="u.id">{{ u.firstName }} {{ u.lastName }}</option>
-          </select>
-        </div>
+
+        <!-- Person to Person -->
+        <ng-container *ngIf="transferForm.transferType === 'person'">
+          <div class="mb-3">
+            <label class="form-label">Transfer From User</label>
+            <input class="form-control" [value]="selectedAsset?.assignedUserText || 'General'" disabled>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Transfer To User <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="transferForm.toUserId" name="toUserId">
+              <option [value]="undefined">General (Unassigned)</option>
+              <option *ngFor="let u of projectUsers" [value]="u.id">{{ u.firstName }} {{ u.lastName }}</option>
+            </select>
+          </div>
+        </ng-container>
+
+        <!-- Plaza to Plaza -->
+        <ng-container *ngIf="transferForm.transferType === 'plaza'">
+          <div class="mb-3">
+            <label class="form-label">Transfer From Location</label>
+            <input class="form-control" [value]="selectedAsset?.locationName || selectedAsset?.plazaName || 'Current Location'" disabled>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Transfer To Location <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="transferForm.toLocationId" name="toLocationId">
+              <option [value]="0">Select Location</option>
+              <option *ngFor="let loc of locations" [value]="loc.id">{{ loc.name }}</option>
+            </select>
+          </div>
+        </ng-container>
+
         <div class="mb-3">
           <label class="form-label">Reason</label>
           <input type="text" class="form-control" [(ngModel)]="transferForm.reason" placeholder="Reason for transfer">
@@ -1191,7 +1223,9 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="showTransferModal=false">Cancel</button>
-        <button class="btn btn-primary" [disabled]="loading || !transferForm.toLocationId" (click)="submitTransfer()">
+        <button class="btn btn-primary"
+                [disabled]="loading || (transferForm.transferType === 'plaza' && !transferForm.toLocationId) || (transferForm.transferType === 'person' && !transferForm.toUserId)"
+                (click)="submitTransfer()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
           <i *ngIf="!loading" class="fas fa-exchange-alt me-1"></i>Transfer
         </button>

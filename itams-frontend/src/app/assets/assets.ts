@@ -853,7 +853,7 @@ export class Assets implements OnInit {
 
   // Transfer
   openTransferModal() {
-    this.transferForm = { toLocationId: 0, toUserId: undefined, reason: '', notes: '' };
+    this.transferForm = { toLocationId: 0, toUserId: undefined, reason: '', notes: '', transferType: 'person' };
     this.showTransferModal = true;
   }
 
