@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Api, Asset, CreateAsset, Project, Location } from '../services/api';
+import { DecommissionService } from '../decommission/decommission.service';
 
 interface BulkUploadResult {
   totalRows: number;
@@ -187,7 +188,7 @@ export class Assets implements OnInit {
 
   validationErrors: { [key: string]: string } = {};
 
-  constructor(private api: Api, private http: HttpClient) {}
+  constructor(private api: Api, private http: HttpClient, private decommissionSvc: DecommissionService) {}
 
   ngOnInit() {
     this.loadAssets();
@@ -839,6 +840,10 @@ export class Assets implements OnInit {
   showComplianceModal = false;
   complianceForm: any = { checkType: '', result: 'Pass', details: '', remediation: '' };
 
+  // Decommission form
+  showDecommissionModal = false;
+  decommissionForm: any = { assetId: 0, reason: '', disposalMethod: '', notes: '' };
+
   maintenanceTypes = ['Maintenance', 'Upgrade', 'Repair'];
   complianceCheckTypes = ['PatchStatus', 'USBBlocking', 'WarrantyExpiry', 'Security', 'Other'];
 
@@ -991,5 +996,25 @@ export class Assets implements OnInit {
     if (status === 'In Progress') return 'badge bg-primary';
     if (status === 'Cancelled') return 'badge bg-secondary';
     return 'badge bg-warning text-dark';
+  }
+
+  // Decommission
+  openDecommissionModal(asset: any) {
+    this.decommissionForm = { assetId: asset.id, reason: '', disposalMethod: '', notes: '' };
+    this.showDecommissionModal = true;
+    this.clearMessages();
+  }
+
+  submitDecommissionRequest() {
+    if (!this.selectedAsset || !this.decommissionForm.reason || !this.decommissionForm.disposalMethod) return;
+    this.loading = true;
+    this.decommissionSvc.initiateDecommission(this.decommissionForm).subscribe({
+      next: () => {
+        this.success = 'Decommission request submitted successfully. Awaiting approval.';
+        this.showDecommissionModal = false;
+        this.loading = false;
+      },
+      error: (e) => { this.error = e.error?.message || 'Failed to submit request'; this.loading = false; }
+    });
   }
 }

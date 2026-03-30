@@ -9,7 +9,7 @@ import { DecommissionService } from './decommission.service';
   templateUrl: './decommission.html'
 })
 export class Decommission implements OnInit {
-  activeTab: 'eol' | 'pending' | 'all' | 'archive' = 'eol';
+  activeTab: 'pending' | 'all' | 'archive' = 'pending';
 
   eolCandidates: any[] = [];
   pendingRequests: any[] = [];

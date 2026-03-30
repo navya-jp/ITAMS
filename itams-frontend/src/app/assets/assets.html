@@ -729,6 +729,12 @@
               <li class="nav-item"><a class="nav-link py-1 px-2" [class.active]="lifecycleTab===2" (click)="lifecycleTab=2" style="cursor:pointer;">Transfers</a></li>
               <li class="nav-item"><a class="nav-link py-1 px-2" [class.active]="lifecycleTab===3" (click)="lifecycleTab=3" style="cursor:pointer;">Maintenance</a></li>
               <li class="nav-item"><a class="nav-link py-1 px-2" [class.active]="lifecycleTab===4" (click)="lifecycleTab=4" style="cursor:pointer;">Compliance</a></li>
+              <li class="nav-item ms-auto">
+                <button *ngIf="!selectedAsset?.isDecommissioned" class="btn btn-sm btn-outline-danger py-0 px-2" (click)="openDecommissionModal(selectedAsset)">
+                  <i class="fas fa-power-off me-1"></i>Request Decommission
+                </button>
+                <span *ngIf="selectedAsset?.isDecommissioned" class="badge bg-danger">Decommissioned</span>
+              </li>
             </ul>
 
             <!-- Assignment History -->
@@ -1151,7 +1157,7 @@
 </div>
 
 <!-- Modal Backdrop -->
-<div *ngIf="showCreateModal || showEditModal || showViewModal || showBulkUploadModal || showTransferModal || showMaintenanceModal || showMaintenanceUpdateModal || showComplianceModal"
+<div *ngIf="showCreateModal || showEditModal || showViewModal || showBulkUploadModal || showTransferModal || showMaintenanceModal || showMaintenanceUpdateModal || showComplianceModal || showDecommissionModal"
      class="modal-backdrop fade show" (click)="closeModals()"></div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
@@ -1381,6 +1387,56 @@
         <button class="btn btn-primary" [disabled]="loading || !complianceForm.checkType" (click)="submitComplianceCheck()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
           <i *ngIf="!loading" class="fas fa-save me-1"></i>Save Check
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- DECOMMISSION REQUEST MODAL                                                 -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" [class.show]="showDecommissionModal" [style.display]="showDecommissionModal ? 'block' : 'none'" tabindex="-1" style="z-index:1060">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header border-danger">
+        <h5 class="modal-title text-danger"><i class="fas fa-power-off me-2"></i>Request Decommission</h5>
+        <button type="button" class="btn-close" (click)="showDecommissionModal=false"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning small mb-3">
+          <i class="fas fa-exclamation-triangle me-1"></i>
+          This will initiate a decommission approval workflow for <strong>{{selectedAsset?.assetTag}}</strong>.
+          Once approved, the asset will be frozen and archived.
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Reason <span class="text-danger">*</span></label>
+          <textarea class="form-control" [(ngModel)]="decommissionForm.reason" rows="3" placeholder="Why is this asset being decommissioned?"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Disposal Method <span class="text-danger">*</span></label>
+          <select class="form-select" [(ngModel)]="decommissionForm.disposalMethod">
+            <option value="">Select method</option>
+            <option value="Scrap">Scrap</option>
+            <option value="Donate">Donate</option>
+            <option value="Return to Vendor">Return to Vendor</option>
+            <option value="Write-off">Write-off</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Notes</label>
+          <textarea class="form-control" [(ngModel)]="decommissionForm.notes" rows="2" placeholder="Optional notes"></textarea>
+        </div>
+        <div *ngIf="error" class="alert alert-danger small">{{ error }}</div>
+        <div *ngIf="success" class="alert alert-success small">{{ success }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showDecommissionModal=false">Cancel</button>
+        <button class="btn btn-danger"
+                [disabled]="loading || !decommissionForm.reason || !decommissionForm.disposalMethod"
+                (click)="submitDecommissionRequest()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!loading" class="fas fa-power-off me-1"></i>Submit Request
         </button>
       </div>
     </div>
