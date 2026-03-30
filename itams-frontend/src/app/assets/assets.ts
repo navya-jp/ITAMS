@@ -39,7 +39,7 @@ export class Assets implements OnInit {
   success = '';
 
   // Navigation state
-  currentView: 'location-select' | 'category-dashboard' | 'asset-list' = 'location-select';
+  currentView: 'location-select' | 'category-dashboard' | 'asset-list' | null = null;
   selectedLocationType: 'office' | 'site' | null = null;
   selectedCategory: 'hardware' | 'licensing' | 'services' | null = null;
 
@@ -316,7 +316,11 @@ export class Assets implements OnInit {
 
   // ── Data Loading ─────────────────────────────────────────────────────────────
 
+  private _assetsLoaded = false;
+  private _locationsLoaded = false;
+
   loadAssets() {
+    this._assetsLoaded = false;
     this.loading = true;
     this.api.getAssets().subscribe({
       next: (assets) => {
@@ -324,6 +328,8 @@ export class Assets implements OnInit {
         this.filteredAssets = assets;
         this.applyFilters();
         this.loading = false;
+        this._assetsLoaded = true;
+        this.autoSelectLocationType();
       },
       error: () => { this.error = 'Failed to load assets'; this.loading = false; }
     });
@@ -347,9 +353,31 @@ export class Assets implements OnInit {
 
   loadLocations() {
     this.api.getLocations().subscribe({
-      next: (locations) => { this.locations = locations; },
+      next: (locations) => {
+        this.locations = locations;
+        this._locationsLoaded = true;
+        this.autoSelectLocationType();
+      },
       error: (err) => console.error('Error loading locations:', err)
     });
+  }
+
+  // Auto-skip location-select screen if user only has one type of assets
+  private autoSelectLocationType() {
+    if (!this._assetsLoaded || !this._locationsLoaded) return;
+    if (this.currentView !== null) return; // already navigated
+
+    const hasOffice = this.assets.some(a => this.matchesLocationType(a, 'office'));
+    const hasSite = this.assets.some(a => this.matchesLocationType(a, 'site'));
+
+    if (hasOffice && !hasSite) {
+      this.selectLocationType('office');
+    } else if (hasSite && !hasOffice) {
+      this.selectLocationType('site');
+    } else {
+      // both types exist or no assets — show selection screen
+      this.currentView = 'location-select';
+    }
   }
 
   loadServiceTypes() {

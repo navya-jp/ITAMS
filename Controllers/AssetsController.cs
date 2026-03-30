@@ -86,7 +86,7 @@ public class AssetsController : BaseController
     {
         try
         {
-            var assets = await _context.Assets
+            var query = _context.Assets
                 .Include(a => a.Project)
                 .Include(a => a.Location)
                 .Include(a => a.AssignedUser)
@@ -101,9 +101,20 @@ public class AssetsController : BaseController
                 .Include(a => a.PatchStatus)
                 .Include(a => a.USBBlockingStatus)
                 .Include(a => a.Placing)
-                .OrderBy(a => a.AssetId)
-                .ToListAsync();
+                .AsQueryable();
 
+            // Non-superadmin users only see assets from their assigned project
+            var userId = GetCurrentUserId();
+            if (userId.HasValue)
+            {
+                var user = await _context.Users.FindAsync(userId.Value);
+                if (user != null && user.RoleId != 1 && user.ProjectId.HasValue)
+                {
+                    query = query.Where(a => a.ProjectId == user.ProjectId.Value);
+                }
+            }
+
+            var assets = await query.OrderBy(a => a.AssetId).ToListAsync();
             var dtos = assets.Select(MapAssetToDto).ToList();
             return Ok(dtos);
         }

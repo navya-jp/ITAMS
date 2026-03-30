@@ -1,5 +1,12 @@
 <div class="assets-container h-100 d-flex flex-column">
 
+  <!-- Loading state while determining view -->
+  <div *ngIf="currentView === null" class="d-flex align-items-center justify-content-center h-100">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <!-- VIEW 1: Location Type Selection                                        -->
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
