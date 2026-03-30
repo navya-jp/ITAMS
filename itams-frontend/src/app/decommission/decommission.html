@@ -1,0 +1,227 @@
+<div class="container-fluid p-4">
+  <div *ngIf="success" class="alert alert-success alert-dismissible">{{ success }}<button class="btn-close" (click)="success=''"></button></div>
+  <div *ngIf="error" class="alert alert-danger alert-dismissible">{{ error }}<button class="btn-close" (click)="error=''"></button></div>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item"><button class="nav-link" [class.active]="activeTab==='eol'" (click)="activeTab='eol'"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>EOL Candidates <span class="badge bg-warning text-dark ms-1">{{eolCandidates.length}}</span></button></li>
+    <li class="nav-item"><button class="nav-link" [class.active]="activeTab==='pending'" (click)="activeTab='pending'"><i class="fas fa-clock me-2 text-primary"></i>Pending Approvals <span class="badge bg-primary ms-1">{{pendingRequests.length}}</span></button></li>
+    <li class="nav-item"><button class="nav-link" [class.active]="activeTab==='all'" (click)="activeTab='all'"><i class="fas fa-list me-2"></i>All Requests</button></li>
+    <li class="nav-item"><button class="nav-link" [class.active]="activeTab==='archive'" (click)="activeTab='archive'"><i class="fas fa-archive me-2"></i>Archive</button></li>
+  </ul>
+
+  <!-- EOL Candidates -->
+  <div *ngIf="activeTab==='eol'">
+    <div class="card">
+      <div class="card-header" style="background:#f8f9fa;border-left:4px solid #ffc107;">
+        <strong><i class="fas fa-exclamation-triangle me-2 text-warning"></i>End-of-Life Asset Candidates</strong>
+      </div>
+      <div class="card-body p-0">
+        <div *ngIf="eolCandidates.length===0" class="text-center p-4 text-muted">No EOL candidates found</div>
+        <table *ngIf="eolCandidates.length>0" class="table table-hover mb-0">
+          <thead class="table-light"><tr><th>Asset Tag</th><th>Make / Model</th><th>Location</th><th>Status</th><th>EOL Reason</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let a of eolCandidates">
+              <td><small class="fw-semibold">{{a.assetTag}}</small></td>
+              <td><small>{{a.make}} {{a.model}}</small></td>
+              <td><small class="text-muted">{{a.location}}</small></td>
+              <td><span class="badge bg-secondary">{{a.currentStatus}}</span></td>
+              <td><small class="text-danger">{{a.eolReason}}</small></td>
+              <td>
+                <button *ngIf="!a.hasPendingRequest" class="btn btn-sm btn-outline-danger" (click)="openInitiate(a)">
+                  <i class="fas fa-power-off me-1"></i>Decommission
+                </button>
+                <span *ngIf="a.hasPendingRequest" class="badge bg-warning text-dark">Pending</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Approvals -->
+  <div *ngIf="activeTab==='pending'">
+    <div class="card">
+      <div class="card-header" style="background:#f8f9fa;border-left:4px solid #0d6efd;">
+        <strong><i class="fas fa-clock me-2 text-primary"></i>Pending Approvals</strong>
+      </div>
+      <div class="card-body p-0">
+        <div *ngIf="pendingRequests.length===0" class="text-center p-4 text-muted">No pending approvals</div>
+        <table *ngIf="pendingRequests.length>0" class="table table-hover mb-0">
+          <thead class="table-light"><tr><th>Asset</th><th>Reason</th><th>Disposal</th><th>Requested By</th><th>Date</th><th>Level</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of pendingRequests">
+              <td><small class="fw-semibold">{{r.assetTag}}</small><br><small class="text-muted">{{r.assetMake}} {{r.assetModel}}</small></td>
+              <td><small>{{r.reason}}</small></td>
+              <td><span class="badge bg-secondary">{{r.disposalMethod}}</span></td>
+              <td><small>{{r.requestedByName}}</small></td>
+              <td><small>{{r.requestedAt | date:'dd MMM yyyy'}}</small></td>
+              <td><span class="badge bg-info">L{{r.currentLevel}}</span></td>
+              <td>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-success py-0" (click)="openApprove(r)"><i class="fas fa-check"></i></button>
+                  <button class="btn btn-sm btn-danger py-0" (click)="openReject(r)"><i class="fas fa-times"></i></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- All Requests -->
+  <div *ngIf="activeTab==='all'">
+    <div class="card mb-3">
+      <div class="card-body py-2">
+        <div class="d-flex gap-2 align-items-center">
+          <select class="form-select form-select-sm w-auto" [(ngModel)]="filterStatus" (change)="loadAll()">
+            <option value="">All Statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+          <small class="text-muted ms-auto">{{allRequests.length}} request(s)</small>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body p-0">
+        <div *ngIf="allRequests.length===0" class="text-center p-4 text-muted">No requests found</div>
+        <table *ngIf="allRequests.length>0" class="table table-hover mb-0">
+          <thead class="table-light"><tr><th>Asset</th><th>Reason</th><th>Disposal</th><th>Status</th><th>Requested</th><th>Completed</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of allRequests">
+              <td><small class="fw-semibold">{{r.assetTag}}</small><br><small class="text-muted">{{r.assetMake}} {{r.assetModel}}</small></td>
+              <td><small>{{r.reason}}</small></td>
+              <td><small>{{r.disposalMethod}}</small></td>
+              <td><span class="badge" [class]="'bg-'+getStatusClass(r.status)">{{r.status}}</span></td>
+              <td><small>{{r.requestedAt | date:'dd MMM yyyy'}}</small></td>
+              <td><small>{{r.completedAt ? (r.completedAt | date:'dd MMM yyyy') : '—'}}</small></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Archive -->
+  <div *ngIf="activeTab==='archive'">
+    <div class="card">
+      <div class="card-header" style="background:#f8f9fa;border-left:4px solid #6c757d;">
+        <strong><i class="fas fa-archive me-2 text-secondary"></i>Decommissioned Asset Archive</strong>
+      </div>
+      <div class="card-body p-0">
+        <div *ngIf="archives.length===0" class="text-center p-4 text-muted">No archived assets</div>
+        <div *ngFor="let a of archives" class="border-bottom p-3">
+          <div class="d-flex justify-content-between align-items-start" (click)="selectedArchive = selectedArchive?.id===a.id ? null : a" style="cursor:pointer;">
+            <div>
+              <strong>{{a.assetTag}}</strong>
+              <span class="badge bg-secondary ms-2">{{a.disposalMethod}}</span>
+              <div class="text-muted small">{{a.decommissionReason}}</div>
+            </div>
+            <small class="text-muted">{{a.archivedAt | date:'dd MMM yyyy'}} by {{a.archivedByName}}</small>
+          </div>
+          <!-- Expanded detail -->
+          <div *ngIf="selectedArchive?.id===a.id" class="mt-3 p-3 bg-light rounded">
+            <div class="row g-2 mb-3">
+              <ng-container *ngFor="let kv of parseSnapshot(a.assetSnapshot) | keyvalue">
+                <div class="col-md-3"><small class="text-muted">{{kv.key}}</small><div class="small fw-semibold">{{kv.value || '—'}}</div></div>
+              </ng-container>
+            </div>
+            <div *ngIf="parseChain(a.approvalChainSnapshot).length > 0">
+              <small class="text-muted fw-semibold">Approval Chain</small>
+              <div *ngFor="let h of parseChain(a.approvalChainSnapshot)" class="d-flex gap-2 align-items-center mt-1">
+                <span class="badge" [class]="h.action==='APPROVED' ? 'bg-success' : 'bg-danger'">{{h.action}}</span>
+                <small>L{{h.level}} — {{h.approverName}} — {{h.actionAt | date:'dd MMM yyyy HH:mm'}}</small>
+                <small *ngIf="h.comments" class="text-muted">"{{h.comments}}"</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INITIATE MODAL -->
+<div *ngIf="showInitiateModal" class="modal fade show d-block" tabindex="-1" style="z-index:1060">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-power-off me-2 text-danger"></i>Initiate Decommission</h5>
+        <button class="btn-close" (click)="showInitiateModal=false"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning small"><i class="fas fa-exclamation-triangle me-1"></i>This will start the decommission approval workflow for <strong>{{selectedAsset?.assetTag}}</strong>.</div>
+        <div class="mb-3">
+          <label class="form-label">Reason <span class="text-danger">*</span></label>
+          <textarea class="form-control" [(ngModel)]="initiateForm.reason" rows="3" placeholder="Why is this asset being decommissioned?"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Disposal Method <span class="text-danger">*</span></label>
+          <select class="form-select" [(ngModel)]="initiateForm.disposalMethod">
+            <option value="">Select method</option>
+            <option *ngFor="let m of disposalMethods" [value]="m">{{m}}</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Notes</label>
+          <textarea class="form-control" [(ngModel)]="initiateForm.notes" rows="2" placeholder="Optional notes"></textarea>
+        </div>
+        <div *ngIf="error" class="alert alert-danger small">{{error}}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showInitiateModal=false">Cancel</button>
+        <button class="btn btn-danger" [disabled]="loading || !initiateForm.reason || !initiateForm.disposalMethod" (click)="submitInitiate()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!loading" class="fas fa-power-off me-1"></i>Initiate Decommission
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APPROVE/REJECT MODAL -->
+<div *ngIf="showApproveModal" class="modal fade show d-block" tabindex="-1" style="z-index:1060">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" [class.bg-success]="modalAction==='approve'" [class.bg-danger]="modalAction==='reject'" [class.text-white]="true">
+        <h5 class="modal-title">
+          <i [class]="modalAction==='approve' ? 'fas fa-check me-2' : 'fas fa-times me-2'"></i>
+          {{modalAction==='approve' ? 'Approve' : 'Reject'}} Decommission
+        </h5>
+        <button class="btn-close btn-close-white" (click)="showApproveModal=false"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3 p-3 bg-light rounded">
+          <div><strong>{{selectedRequest?.assetTag}}</strong> — {{selectedRequest?.assetMake}} {{selectedRequest?.assetModel}}</div>
+          <div class="text-muted small mt-1">Reason: {{selectedRequest?.reason}}</div>
+          <div class="text-muted small">Disposal: {{selectedRequest?.disposalMethod}}</div>
+          <div class="text-muted small">Level: {{selectedRequest?.currentLevel}}</div>
+        </div>
+        <div *ngIf="modalAction==='approve'" class="mb-3">
+          <label class="form-label">Comments</label>
+          <textarea class="form-control" [(ngModel)]="approveComments" rows="2" placeholder="Optional comments"></textarea>
+        </div>
+        <div *ngIf="modalAction==='reject'" class="mb-3">
+          <label class="form-label">Rejection Reason <span class="text-danger">*</span></label>
+          <textarea class="form-control" [(ngModel)]="rejectReason" rows="2" placeholder="Why are you rejecting this request?"></textarea>
+        </div>
+        <div *ngIf="error" class="alert alert-danger small">{{error}}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showApproveModal=false">Cancel</button>
+        <button *ngIf="modalAction==='approve'" class="btn btn-success" [disabled]="loading" (click)="submitApproveReject()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>Approve
+        </button>
+        <button *ngIf="modalAction==='reject'" class="btn btn-danger" [disabled]="loading || !rejectReason" (click)="submitApproveReject()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>Reject
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showInitiateModal || showApproveModal" class="modal-backdrop fade show"></div>

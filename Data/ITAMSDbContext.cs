@@ -29,6 +29,7 @@ public class ITAMSDbContext : DbContext
     public DbSet<MaintenanceRequest> MaintenanceRequests { get; set; }
     public DbSet<ComplianceCheck> ComplianceChecks { get; set; }
     public DbSet<SystemAlert> SystemAlerts { get; set; }
+    public DbSet<DecommissionArchive> DecommissionArchives { get; set; }
     public DbSet<AuditEntry> AuditEntries { get; set; }
     public DbSet<LoginAudit> LoginAudits { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
@@ -363,6 +364,13 @@ public class ITAMSDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.Asset).WithMany().HasForeignKey(e => e.AssetId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // DecommissionArchive configuration
+        modelBuilder.Entity<DecommissionArchive>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Asset).WithMany().HasForeignKey(e => e.AssetId).OnDelete(DeleteBehavior.Restrict);
         });
 
         // AuditEntry entity configuration

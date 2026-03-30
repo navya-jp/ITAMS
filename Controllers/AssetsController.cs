@@ -315,6 +315,9 @@ public class AssetsController : BaseController
                 return NotFound(new { message = "Asset not found" });
             }
 
+            if (asset.IsDecommissioned)
+                return BadRequest(new { message = "Cannot modify a decommissioned asset. It is frozen for audit purposes." });
+
             if (!string.IsNullOrEmpty(updateDto.AssetTag))
                 asset.AssetTag = updateDto.AssetTag;
             if (updateDto.LocationId.HasValue)

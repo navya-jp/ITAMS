@@ -140,6 +140,11 @@ public class Asset
     public DateTime? UpdatedAt { get; set; }
     
     public int? UpdatedBy { get; set; }
+
+    // Decommission fields
+    public bool IsDecommissioned { get; set; } = false;
+    public DateTime? DecommissionedAt { get; set; }
+    public int? DecommissionedBy { get; set; }
     
     // Navigation properties
     public virtual Project Project { get; set; } = null!;
