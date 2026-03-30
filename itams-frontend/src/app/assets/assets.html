@@ -196,7 +196,7 @@
                 <td>{{ asset.assetType }}</td>
                 <td>{{ asset.make }}</td>
                 <td>{{ asset.model }}</td>
-                <td>{{ asset.assignedUserText || 'N/A' }}</td>
+                <td>{{ asset.assignedUserText || 'General' }}</td>
                 <td>
                   <span class="badge"
                         [class.bg-success]="asset.status === 'In Use'"
@@ -678,7 +678,7 @@
           <div class="col-md-6"><label class="form-label text-muted">IP Address</label><p>{{ selectedAsset.ipAddress || 'N/A' }}</p></div>
         </div>
         <div *ngIf="viewTab===3" class="row g-3">
-          <div class="col-md-6"><label class="form-label text-muted">Assigned User</label><p>{{ selectedAsset.assignedUserText || 'N/A' }}</p></div>
+          <div class="col-md-6"><label class="form-label text-muted">Assigned User</label><p>{{ selectedAsset.assignedUserText || 'General' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">User Role</label><p>{{ selectedAsset.userRole || 'N/A' }}</p></div>
           <div class="col-md-6"><label class="form-label text-muted">Status</label>
             <p><span class="badge" [class.bg-success]="selectedAsset.status==='In Use'" [class.bg-info]="selectedAsset.status==='Spare'" [class.bg-warning]="selectedAsset.status==='Repair'" [class.bg-secondary]="selectedAsset.status==='Decommissioned'">{{ selectedAsset.status }}</span></p>
@@ -769,7 +769,7 @@
                     <tr *ngFor="let t of lifecycle.transferHistory">
                       <td class="small">{{ t.transferDate | date:'dd MMM yy' }}</td>
                       <td class="small">{{ t.fromLocationName }}</td>
-                      <td class="small">{{ t.toLocationName }}</td>
+                      <td class="small">{{ t.toLocationName || t.toUserName || 'General' }}</td>
                       <td class="small">{{ t.reason || '—' }}</td>
                       <td class="small">{{ t.requestedByName || '—' }}</td>
                     </tr>
@@ -1189,9 +1189,13 @@
           </div>
           <div class="mb-3">
             <label class="form-label">Transfer To User <span class="text-danger">*</span></label>
-            <select class="form-select" [(ngModel)]="transferForm.toUserId" name="toUserId">
+            <input type="text" class="form-control mb-1" placeholder="Search user by name..."
+                   [(ngModel)]="transferUserSearch" (input)="filterTransferUsers()">
+            <select class="form-select" [(ngModel)]="transferForm.toUserId" name="toUserId" size="5">
               <option [value]="undefined">General (Unassigned)</option>
-              <option *ngFor="let u of projectUsers" [value]="u.id">{{ u.firstName }} {{ u.lastName }}</option>
+              <option *ngFor="let u of filteredTransferUsers" [value]="u.id">
+                {{ u.firstName }} {{ u.lastName }} — {{ u.username }}
+              </option>
             </select>
           </div>
         </ng-container>
@@ -1224,7 +1228,7 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="showTransferModal=false">Cancel</button>
         <button class="btn btn-primary"
-                [disabled]="loading || (transferForm.transferType === 'plaza' && !transferForm.toLocationId) || (transferForm.transferType === 'person' && !transferForm.toUserId)"
+                [disabled]="loading || (transferForm.transferType === 'plaza' && !transferForm.toLocationId)"
                 (click)="submitTransfer()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
           <i *ngIf="!loading" class="fas fa-exchange-alt me-1"></i>Transfer

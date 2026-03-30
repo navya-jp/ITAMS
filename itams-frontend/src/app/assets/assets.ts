@@ -32,6 +32,7 @@ export class Assets implements OnInit {
   projects: Project[] = [];
   locations: Location[] = [];
   projectUsers: any[] = [];
+  allUsers: any[] = [];
   loading = false;
   error = '';
   success = '';
@@ -362,9 +363,11 @@ export class Assets implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           this.projectUsers = response.data;
+          this.allUsers = response.data;
+          this.filteredTransferUsers = response.data;
         }
       },
-      error: () => { this.projectUsers = []; }
+      error: () => { this.projectUsers = []; this.allUsers = []; }
     });
   }
 
@@ -817,7 +820,9 @@ export class Assets implements OnInit {
 
   // Transfer form
   showTransferModal = false;
-  transferForm: any = { toLocationId: 0, toUserId: undefined, reason: '', notes: '' };
+  transferForm: any = { toLocationId: 0, toUserId: undefined, reason: '', notes: '', transferType: 'person' };
+  transferUserSearch = '';
+  filteredTransferUsers: any[] = [];
 
   // Maintenance form
   showMaintenanceModal = false;
@@ -854,13 +859,31 @@ export class Assets implements OnInit {
   // Transfer
   openTransferModal() {
     this.transferForm = { toLocationId: 0, toUserId: undefined, reason: '', notes: '', transferType: 'person' };
+    this.transferUserSearch = '';
+    this.filteredTransferUsers = [...this.allUsers];
     this.showTransferModal = true;
   }
 
+  filterTransferUsers() {
+    const term = this.transferUserSearch.toLowerCase();
+    this.filteredTransferUsers = this.allUsers.filter(u =>
+      `${u.firstName} ${u.lastName}`.toLowerCase().includes(term) ||
+      u.username.toLowerCase().includes(term)
+    );
+  }
+
   submitTransfer() {
-    if (!this.selectedAsset || !this.transferForm.toLocationId) return;
+    if (!this.selectedAsset) return;
+    if (this.transferForm.transferType === 'plaza' && !this.transferForm.toLocationId) return;
     this.loading = true;
-    this.api.transferAsset(this.selectedAsset.id, this.transferForm).subscribe({
+    const payload = {
+      transferType: this.transferForm.transferType,
+      toLocationId: this.transferForm.transferType === 'plaza' ? this.transferForm.toLocationId : null,
+      toUserId: this.transferForm.transferType === 'person' ? this.transferForm.toUserId : null,
+      reason: this.transferForm.reason,
+      notes: this.transferForm.notes
+    };
+    this.api.transferAsset(this.selectedAsset.id, payload).subscribe({
       next: () => {
         this.success = 'Asset transferred successfully';
         this.showTransferModal = false;

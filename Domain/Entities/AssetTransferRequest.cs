@@ -8,7 +8,7 @@ public class AssetTransferRequest
     public int AssetId { get; set; }
 
     public int FromLocationId { get; set; }
-    public int ToLocationId { get; set; }
+    public int? ToLocationId { get; set; }
 
     public int? FromUserId { get; set; }
     public int? ToUserId { get; set; }
@@ -30,7 +30,7 @@ public class AssetTransferRequest
     // Navigation
     public virtual Asset Asset { get; set; } = null!;
     public virtual Location FromLocation { get; set; } = null!;
-    public virtual Location ToLocation { get; set; } = null!;
+    public virtual Location? ToLocation { get; set; }
     public virtual User? FromUser { get; set; }
     public virtual User? ToUser { get; set; }
 }

@@ -339,7 +339,7 @@ public class ITAMSDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.Asset).WithMany().HasForeignKey(e => e.AssetId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.FromLocation).WithMany().HasForeignKey(e => e.FromLocationId).OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(e => e.ToLocation).WithMany().HasForeignKey(e => e.ToLocationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.ToLocation).WithMany().HasForeignKey(e => e.ToLocationId).OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(e => e.FromUser).WithMany().HasForeignKey(e => e.FromUserId).OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(e => e.ToUser).WithMany().HasForeignKey(e => e.ToUserId).OnDelete(DeleteBehavior.SetNull);
         });

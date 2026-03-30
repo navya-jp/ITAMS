@@ -551,7 +551,7 @@ export class Api {
     return this.http.get<any>(`${this.baseUrl}/assets/${assetId}/lifecycle`, this.getAuthHeaders());
   }
 
-  transferAsset(assetId: number, data: { toLocationId: number; toUserId?: number; reason?: string; notes?: string }): Observable<any> {
+  transferAsset(assetId: number, data: { toLocationId?: number; toUserId?: number; transferType?: string; reason?: string; notes?: string }): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/assets/${assetId}/lifecycle/transfer`, data, this.getAuthHeaders());
   }
 

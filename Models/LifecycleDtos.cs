@@ -27,7 +27,7 @@ public class TransferRequestDto
     public int AssetId { get; set; }
     public int FromLocationId { get; set; }
     public string? FromLocationName { get; set; }
-    public int ToLocationId { get; set; }
+    public int? ToLocationId { get; set; }
     public string? ToLocationName { get; set; }
     public int? FromUserId { get; set; }
     public string? FromUserName { get; set; }
@@ -42,7 +42,8 @@ public class TransferRequestDto
 
 public class CreateTransferDto
 {
-    public int ToLocationId { get; set; }
+    public string? TransferType { get; set; } = "person";
+    public int? ToLocationId { get; set; }
     public int? ToUserId { get; set; }
     public string? Reason { get; set; }
     public string? Notes { get; set; }
@@ -134,3 +135,4 @@ public class AssetLifecycleSummaryDto
     public int OpenMaintenanceCount { get; set; }
     public int FailedComplianceCount { get; set; }
 }
+

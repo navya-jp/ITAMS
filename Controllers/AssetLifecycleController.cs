@@ -116,8 +116,8 @@ public class AssetLifecycleController : BaseController
                 .FirstOrDefaultAsync(a => a.Id == assetId);
             if (asset == null) return NotFound(new { message = "Asset not found" });
 
-            var toLocation = await _context.Locations.FindAsync(dto.ToLocationId);
-            if (toLocation == null) return BadRequest(new { message = "Target location not found" });
+            var toLocation = dto.ToLocationId.HasValue && dto.ToLocationId.Value > 0 ? await _context.Locations.FindAsync(dto.ToLocationId.Value) : asset.Location;
+            if (dto.TransferType == "plaza" && (toLocation == null || toLocation == asset.Location)) return BadRequest(new { message = "Target location not found" });
 
             var userId = GetCurrentUserId() ?? 1;
             var currentUser = await _context.Users.FindAsync(userId);
@@ -163,7 +163,7 @@ public class AssetLifecycleController : BaseController
             };
 
             // Update asset
-            asset.LocationId = dto.ToLocationId;
+            asset.LocationId = dto.ToLocationId ?? asset.LocationId;
             if (dto.ToUserId.HasValue) asset.AssignedUserId = dto.ToUserId;
             asset.UpdatedAt = DateTime.UtcNow;
             asset.UpdatedBy = userId;
@@ -419,3 +419,4 @@ public class AssetLifecycleController : BaseController
         }
     }
 }
+
