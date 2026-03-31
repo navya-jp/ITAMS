@@ -550,6 +550,33 @@ public class UsersController : BaseController
 
             if (user.Project == null)
             {
+                // Auditors have no project assignment — return all projects summary
+                if (user.Role?.Name == "Auditor")
+                {
+                    var allProjects = await _context.Projects
+                        .Include(p => p.Locations)
+                        .Where(p => p.IsActive)
+                        .ToListAsync();
+
+                    return Ok(new ApiResponse<object>
+                    {
+                        Success = true,
+                        Data = new
+                        {
+                            id = 0,
+                            name = "All Projects (Auditor Access)",
+                            preferredName = "All Projects",
+                            code = "ALL",
+                            isActive = true,
+                            userRole = "Auditor",
+                            locationCount = allProjects.Sum(p => p.Locations.Count),
+                            projectCount = allProjects.Count,
+                            accessLevel = new { level = "Full System Read Access" }
+                        },
+                        Message = "Auditor has system-wide read access"
+                    });
+                }
+
                 return NotFound(new ApiResponse<object>
                 {
                     Success = false,

@@ -159,8 +159,13 @@ public class AssetsController : BaseController
                 .Include(a => a.USBBlockingStatus)
                 .Include(a => a.Placing);
 
-            // SuperAdmins see all assets
-            if (user.RoleId != 1 && user.ProjectId.HasValue)
+            // SuperAdmins and Auditors see all assets
+            var auditorRoleId = await _context.Roles
+                .Where(r => r.Name == "Auditor")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            if (user.RoleId != 1 && user.RoleId != auditorRoleId && user.ProjectId.HasValue)
             {
                 query = query.Where(a => a.ProjectId == user.ProjectId.Value);
             }
