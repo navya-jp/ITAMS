@@ -186,7 +186,12 @@ public class UsersController : BaseController
                 FirstName = updateUserDto.FirstName,
                 LastName = updateUserDto.LastName,
                 RoleId = updateUserDto.RoleId,
-                IsActive = updateUserDto.IsActive
+                IsActive = updateUserDto.IsActive,
+                ProjectId = updateUserDto.ProjectId,
+                RestrictedRegion = updateUserDto.RestrictedRegion,
+                RestrictedState = updateUserDto.RestrictedState,
+                RestrictedPlaza = updateUserDto.RestrictedPlaza,
+                RestrictedOffice = updateUserDto.RestrictedOffice
             };
 
             var user = await _userService.UpdateUserAsync(id, request);
