@@ -190,6 +190,24 @@ export class Assets implements OnInit {
 
   constructor(private api: Api, private http: HttpClient, private decommissionSvc: DecommissionService) {}
 
+  get isEmployee(): boolean {
+    const user = JSON.parse(localStorage.getItem('current_user') || '{}');
+    return user?.roleName === 'Employee';
+  }
+
+  get canEdit(): boolean {
+    const user = JSON.parse(localStorage.getItem('current_user') || '{}');
+    const role = user?.roleName ?? '';
+    return role === 'Super Admin' || role === 'Admin';
+  }
+
+  get canAdd(): boolean {
+    const user = JSON.parse(localStorage.getItem('current_user') || '{}');
+    const role = user?.roleName ?? '';
+    // Super Admin, Admin, and Employee can add
+    return role === 'Super Admin' || role === 'Admin' || role === 'Employee';
+  }
+
   ngOnInit() {
     this.loadAssets();
     this.loadLocations();

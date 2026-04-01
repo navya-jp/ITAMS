@@ -119,10 +119,10 @@
         <button class="btn btn-outline-secondary btn-sm" (click)="goBack('category-dashboard')">
           <i class="fas fa-arrow-left me-1"></i>Back
         </button>
-        <button class="btn btn-outline-primary btn-sm" (click)="openBulkUploadModal()">
+        <button *ngIf="canAdd" class="btn btn-outline-primary btn-sm" (click)="openBulkUploadModal()">
           <i class="fas fa-file-upload me-1"></i>Bulk Upload
         </button>
-        <button class="btn btn-primary btn-sm" (click)="openCreateModal()">
+        <button *ngIf="canAdd" class="btn btn-primary btn-sm" (click)="openCreateModal()">
           <i class="fas fa-plus me-1"></i>Add Asset
         </button>
       </div>
@@ -216,7 +216,7 @@
                 <td>
                   <div class="btn-group btn-group-sm">
                     <button class="btn btn-outline-info" (click)="openViewModal(asset)" title="View"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button *ngIf="canEdit" class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit"><i class="fas fa-edit"></i></button>
                   </div>
                 </td>
               </tr>
@@ -253,7 +253,7 @@
                 <td>
                   <div class="btn-group btn-group-sm">
                     <button class="btn btn-outline-info" (click)="openViewModal(asset)" title="View"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button *ngIf="canEdit" class="btn btn-outline-secondary" (click)="openEditModal(asset)" title="Edit"><i class="fas fa-edit"></i></button>
                   </div>
                 </td>
               </tr>
@@ -854,7 +854,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
-        <button type="button" class="btn btn-primary" (click)="closeModals(); openEditModal(selectedAsset!)"><i class="fas fa-edit me-1"></i>Edit Asset</button>
+        <button *ngIf="canEdit" type="button" class="btn btn-primary" (click)="closeModals(); openEditModal(selectedAsset!)"><i class="fas fa-edit me-1"></i>Edit Asset</button>
       </div>
     </div>
   </div>
@@ -1449,3 +1449,4 @@
     </div>
   </div>
 </div>
+

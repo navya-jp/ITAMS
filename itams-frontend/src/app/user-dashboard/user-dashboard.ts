@@ -67,26 +67,43 @@ export class UserDashboard implements OnInit {
   }
 
   loadMyProjects() {
-    // Load user's assigned project
     this.api.getMyProject().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const projectData = response.data as any;
-          // Map the API response to the format expected by the template
-          this.myProjects = [{
-            name: projectData.preferredName || projectData.name,
-            code: projectData.code,
-            role: projectData.userRole || 'User',
-            progress: 0, // TODO: Calculate actual progress when assets are implemented
-            status: projectData.isActive ? 'Active' : 'Inactive',
-            dueDate: 'N/A', // TODO: Add due date when project milestones are implemented
-            locationCount: projectData.locationCount || 0,
-            accessLevel: projectData.accessLevel?.level || 'Full Project Access',
-            spvName: projectData.spvName,
-            states: projectData.states,
-            description: projectData.description
-          }];
-          this.stats.totalProjects = 1;
+          const data = response.data as any;
+
+          // Auditor gets all projects
+          if (data.isAuditor && data.projects) {
+            this.stats.totalProjects = data.projects.length;
+            // Show first project as preview on dashboard
+            const first = data.projects[0];
+            this.myProjects = [{
+              name: 'All Projects (Auditor)',
+              code: 'ALL',
+              role: 'Auditor',
+              progress: 0,
+              status: 'Active',
+              dueDate: 'N/A',
+              locationCount: data.projects.reduce((s: number, p: any) => s + (p.locationCount || 0), 0),
+              accessLevel: { level: 'Full System Read Access' }
+            }];
+          } else {
+            const projectData = data;
+            this.myProjects = [{
+              name: projectData.preferredName || projectData.name,
+              code: projectData.code,
+              role: projectData.userRole || 'User',
+              progress: 0,
+              status: projectData.isActive ? 'Active' : 'Inactive',
+              dueDate: 'N/A',
+              locationCount: projectData.locationCount || 0,
+              accessLevel: projectData.accessLevel?.level || 'Full Project Access',
+              spvName: projectData.spvName,
+              states: projectData.states,
+              description: projectData.description
+            }];
+            this.stats.totalProjects = 1;
+          }
         } else {
           this.myProjects = [];
           this.stats.totalProjects = 0;
@@ -96,7 +113,6 @@ export class UserDashboard implements OnInit {
         console.error('Failed to load project:', error);
         this.myProjects = [];
         this.stats.totalProjects = 0;
-        // Don't show error for users without projects
         if (error.status !== 404) {
           this.error = 'Failed to load project information';
         }

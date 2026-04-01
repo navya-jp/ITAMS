@@ -550,7 +550,7 @@ public class UsersController : BaseController
 
             if (user.Project == null)
             {
-                // Auditors have no project assignment — return all projects summary
+                // Auditors have no project assignment — return all projects
                 if (user.Role?.Name == "Auditor")
                 {
                     var allProjects = await _context.Projects
@@ -558,21 +558,26 @@ public class UsersController : BaseController
                         .Where(p => p.IsActive)
                         .ToListAsync();
 
+                    var projectList = allProjects.Select(p => new
+                    {
+                        id = p.Id,
+                        projectId = p.ProjectId,
+                        name = p.Name,
+                        preferredName = p.PreferredName ?? p.Name,
+                        code = p.Code,
+                        description = p.Description,
+                        states = p.States,
+                        isActive = p.IsActive,
+                        userRole = "Auditor",
+                        locationCount = p.Locations.Count,
+                        locations = p.Locations.Select(l => new { l.Id, l.Name }).ToList(),
+                        accessLevel = new { level = "Read Only" }
+                    }).ToList();
+
                     return Ok(new ApiResponse<object>
                     {
                         Success = true,
-                        Data = new
-                        {
-                            id = 0,
-                            name = "All Projects (Auditor Access)",
-                            preferredName = "All Projects",
-                            code = "ALL",
-                            isActive = true,
-                            userRole = "Auditor",
-                            locationCount = allProjects.Sum(p => p.Locations.Count),
-                            projectCount = allProjects.Count,
-                            accessLevel = new { level = "Full System Read Access" }
-                        },
+                        Data = new { isAuditor = true, projects = projectList },
                         Message = "Auditor has system-wide read access"
                     });
                 }
@@ -601,6 +606,7 @@ public class UsersController : BaseController
                 isActive = user.Project.IsActive,
                 createdAt = user.Project.CreatedAt,
                 locationCount = filteredLocations.Count(),
+                locations = filteredLocations.Select(l => new { l.Id, l.Name }).ToList(),
                 userRole = user.Role.Name,
                 accessLevel = new
                 {

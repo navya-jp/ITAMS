@@ -42,6 +42,11 @@ export class Navigation implements OnInit, OnDestroy {
     { path: '/admin/settings', icon: 'fas fa-cog', label: 'Settings', title: 'System Settings' }
   ];
 
+  // Employee sees only Assets (add-only, no edit/delete)
+  employeeNavItems = [
+    { path: '/admin/assets', icon: 'fas fa-server', label: 'Assets', title: 'Asset Management' },
+  ];
+
   userNavItems = [
     { path: '/user/dashboard', icon: 'fas fa-home', label: 'Dashboard', title: 'My Dashboard' },
     { path: '/user/projects', icon: 'fas fa-folder-open', label: 'My Projects', title: 'My Projects' },
@@ -99,16 +104,20 @@ export class Navigation implements OnInit, OnDestroy {
   }
 
   private updatePageTitle() {
-    const navItems = this.isSuperAdmin() ? this.adminNavItems : this.userNavItems;
+    const navItems = this.isAdminOrAbove() ? this.adminNavItems : this.userNavItems;
     const currentItem = navItems.find(item => this.currentRoute.startsWith(item.path));
     this.pageTitle = currentItem ? currentItem.title : 'ITAMS';
   }
 
   get navigationItems() {
-    return this.isSuperAdmin() ? this.adminNavItems : this.userNavItems;
+    return this.isAdminOrAbove() ? this.adminNavItems : this.userNavItems;
   }
 
   isSuperAdmin(): boolean {
+    return this.currentUser?.roleName === 'Super Admin';
+  }
+
+  isAdminOrAbove(): boolean {
     return this.currentUser?.roleName === 'Super Admin';
   }
 

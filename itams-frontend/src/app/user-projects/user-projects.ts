@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Api } from '../services/api';
 import { AuthService } from '../services/auth.service';
 
@@ -49,7 +50,8 @@ export class UserProjects implements OnInit {
 
   constructor(
     private api: Api,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -58,27 +60,39 @@ export class UserProjects implements OnInit {
 
   loadUserProjects() {
     this.loading = true;
-    
-    // Get user's assigned project from API
     this.api.getMyProject().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const project = response.data;
-          this.projects = [{
-            id: project.id,
-            name: project.name,
-            preferredName: project.preferredName,
-            code: project.code,
-            description: project.description || 'No description available',
-            status: project.isActive ? 'Active' : 'Inactive',
-            progress: 0, // TODO: Calculate actual progress
-            role: project.userRole,
-            dueDate: 'N/A', // TODO: Add due date field
-            budget: 0, // TODO: Add budget field
-            spent: 0, // TODO: Add spent field
-            team: [], // TODO: Get team members
-            locations: Array(project.locationCount).fill('Location') // Placeholder
-          }];
+          const data = response.data;
+
+          // Auditor gets all projects
+          if (data.isAuditor && data.projects) {
+            this.projects = data.projects.map((p: any) => ({
+              id: p.id,
+              name: p.preferredName || p.name,
+              code: p.code,
+              description: p.description || 'No description available',
+              status: p.isActive ? 'Active' : 'Inactive',
+              progress: 0,
+              role: 'Auditor',
+              dueDate: 'N/A',
+              locations: p.locations?.map((l: any) => l.name) ?? []
+            }));
+          } else {
+            // Single project for regular users
+            this.projects = [{
+              id: data.id,
+              name: data.name,
+              preferredName: data.preferredName,
+              code: data.code,
+              description: data.description || 'No description available',
+              status: data.isActive ? 'Active' : 'Inactive',
+              progress: 0,
+              role: data.userRole,
+              dueDate: 'N/A',
+              locations: data.locations?.map((l: any) => l.name || l) ?? []
+            }];
+          }
           this.totalItems = this.projects.length;
         } else {
           this.projects = [];
@@ -200,8 +214,8 @@ export class UserProjects implements OnInit {
   }
 
   viewProjectDetails(project: any) {
-    // TODO: Navigate to project details page or open modal
-    console.log('View project details:', project);
+    // Navigate to My Assets — the assets page will show assets for this project
+    this.router.navigate(['/user/assets']);
   }
 
   clearMessages() {

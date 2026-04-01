@@ -23,10 +23,9 @@ export class AuthGuard implements CanActivate {
         if (isAuthenticated) {
           // Check if user is trying to access admin routes
           if (state.url.startsWith('/admin')) {
-            if (this.authService.isSuperAdmin()) {
+            if (this.authService.isAdminOrAbove()) {
               return true;
             } else {
-              // Redirect regular users to user dashboard
               this.router.navigate(['/user/dashboard']);
               return false;
             }
@@ -72,7 +71,7 @@ export class AdminGuard implements CanActivate {
     return this.authService.isAuthenticated$.pipe(
       take(1),
       map(isAuthenticated => {
-        if (isAuthenticated && this.authService.isSuperAdmin()) {
+        if (isAuthenticated && this.authService.isAdminOrAbove()) {
           return true;
         } else if (isAuthenticated) {
           // Authenticated but not admin, redirect to user dashboard

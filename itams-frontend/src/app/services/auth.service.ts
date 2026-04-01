@@ -370,8 +370,12 @@ export class AuthService {
     return this.hasRole('Super Admin');
   }
 
+  isAdminOrAbove(): boolean {
+    return this.hasRole('Super Admin');
+  }
+
   isUser(): boolean {
-    return !this.isSuperAdmin();
+    return !this.isAdminOrAbove();
   }
 
   // Activity tracking
