@@ -65,36 +65,83 @@ public class AutomationEngineService : BackgroundService
         var assets = await context.Assets
             .Include(a => a.Project)
             .Include(a => a.Location)
-            .Where(a => a.WarrantyEndDate != null && a.WarrantyEndDate > today)
+            .Where(a => a.WarrantyEndDate != null && a.WarrantyEndDate >= today)
             .ToListAsync();
 
-        foreach (var asset in assets)
+        // Filter to only assets expiring within 30 days
+        var expiringAssets = assets
+            .Select(a => new { Asset = a, Days = (a.WarrantyEndDate!.Value - today).Days })
+            .Where(x => x.Days <= 30)
+            .ToList();
+
+        if (!expiringAssets.Any()) return;
+
+        // Group by project + warranty end date so same-project same-date assets go in one email
+        var groups = expiringAssets
+            .GroupBy(x => new { ProjectId = x.Asset.ProjectId, EndDate = x.Asset.WarrantyEndDate!.Value.Date })
+            .ToList();
+
+        foreach (var group in groups)
         {
-            var days = (asset.WarrantyEndDate!.Value - today).Days;
-            string? severity = days <= 7 ? "Critical" : days <= 30 ? "High" : null;
-            if (severity == null) continue;
+            var groupAssets = group.ToList();
+            var days = group.Key.EndDate == today ? 0 : (group.Key.EndDate - today).Days;
+            string severity = days <= 7 ? "Critical" : "High";
+            var projectName = groupAssets.First().Asset.Project?.Name ?? "N/A";
+            var endDateStr = group.Key.EndDate.ToString("dd-MMM-yyyy");
 
-            var alertType = "WARRANTY_EXPIRY";
-            var exists = await context.SystemAlerts.AnyAsync(a =>
-                a.AlertType == alertType && a.AssetId == asset.Id &&
-                !a.IsResolved && a.CreatedAt.Date == today);
-            if (exists) continue;
-
-            var title = $"Warranty expiring in {days} day(s): {asset.AssetTag}";
-            var msg = BuildEmailBody(title,
-                $"Asset <b>{asset.AssetTag}</b> ({asset.Make} {asset.Model}) warranty expires on <b>{asset.WarrantyEndDate:dd-MMM-yyyy}</b>.<br>" +
-                $"Project: {asset.Project?.Name ?? "N/A"} | Location: {asset.Location?.Name ?? "N/A"}");
-
-            await CreateAlertAndNotify(context, email, new SystemAlert
+            // Create one SystemAlert per asset (for tracking), but only one email per group
+            var newAlerts = new List<SystemAlert>();
+            foreach (var item in groupAssets)
             {
-                AlertType = alertType,
-                Severity = severity,
-                Title = title,
-                Message = msg,
-                AssetId = asset.Id,
-                EntityType = "Asset",
-                EntityIdentifier = asset.AssetTag
-            }, msg, title);
+                var alertType = "WARRANTY_EXPIRY";
+                var alreadyExists = await context.SystemAlerts.AnyAsync(a =>
+                    a.AlertType == alertType && a.AssetId == item.Asset.Id &&
+                    !a.IsResolved && a.CreatedAt.Date == today);
+                if (alreadyExists) continue;
+
+                var alert = new SystemAlert
+                {
+                    AlertType = alertType,
+                    Severity = severity,
+                    Title = $"Warranty expiring in {days} day(s): {item.Asset.AssetTag}",
+                    Message = $"Warranty expires on {endDateStr}",
+                    AssetId = item.Asset.Id,
+                    EntityType = "Asset",
+                    EntityIdentifier = item.Asset.AssetTag,
+                    CreatedAt = DateTime.UtcNow,
+                    EmailSent = true,
+                    EmailSentAt = DateTime.UtcNow
+                };
+                context.SystemAlerts.Add(alert);
+                newAlerts.Add(alert);
+            }
+
+            if (!newAlerts.Any()) continue; // all already alerted today
+
+            // Build one digest email for the whole group
+            var subject = days == 0
+                ? $"[ITAMS Alert] Warranty EXPIRED today — {newAlerts.Count} asset(s) | {projectName}"
+                : $"[ITAMS Alert] Warranty expiring in {days} day(s) — {newAlerts.Count} asset(s) | {projectName}";
+
+            var rows = string.Join("", groupAssets.Select(x =>
+                $"<tr><td style='padding:6px 12px;border-bottom:1px solid #eee;'>{x.Asset.AssetTag}</td>" +
+                $"<td style='padding:6px 12px;border-bottom:1px solid #eee;'>{x.Asset.Make} {x.Asset.Model}</td>" +
+                $"<td style='padding:6px 12px;border-bottom:1px solid #eee;'>{x.Asset.Location?.Name ?? "N/A"}</td>" +
+                $"<td style='padding:6px 12px;border-bottom:1px solid #eee;'>{endDateStr}</td></tr>"));
+
+            var body = BuildEmailBody(subject,
+                $"<b>Project:</b> {projectName}<br><b>Severity:</b> {severity}<br><br>" +
+                $"<table style='border-collapse:collapse;width:100%;'>" +
+                $"<thead><tr style='background:#f5f5f5;'>" +
+                $"<th style='padding:8px 12px;text-align:left;'>Asset Tag</th>" +
+                $"<th style='padding:8px 12px;text-align:left;'>Make / Model</th>" +
+                $"<th style='padding:8px 12px;text-align:left;'>Location</th>" +
+                $"<th style='padding:8px 12px;text-align:left;'>Warranty End</th>" +
+                $"</tr></thead><tbody>{rows}</tbody></table>");
+
+            await email.SendAlertToRoleAsync("Project Manager", subject, body, context);
+            _logger.LogInformation("Warranty digest email sent for project {Project}: {Count} assets expiring in {Days} days",
+                projectName, newAlerts.Count, days);
         }
     }
 
@@ -286,7 +333,7 @@ public class AutomationEngineService : BackgroundService
 
     private async Task EscalateUnacknowledgedAlertsAsync(ITAMSDbContext context, IEmailService email)
     {
-        var escalationDays = 2; // escalate after 2 days unacknowledged
+        var escalationDays = 2;
         var cutoff = DateTime.UtcNow.AddDays(-escalationDays);
 
         var alerts = await context.SystemAlerts
@@ -296,27 +343,52 @@ public class AutomationEngineService : BackgroundService
                         (a.LastEscalatedAt == null || a.LastEscalatedAt < cutoff))
             .ToListAsync();
 
+        if (!alerts.Any()) return;
+
+        // Group by target role + alert type so one digest per role per type
+        // First bump escalation levels
         foreach (var alert in alerts)
         {
             alert.EscalationLevel++;
             alert.LastEscalatedAt = DateTime.UtcNow;
+        }
 
-            var targetRole = alert.EscalationLevel switch
-            {
-                2 => "Admin",        // Project Admin (Viju Joseph etc.)
-                3 => "Super Admin",  // Super Admin
-                _ => "Project Manager"
-            };
+        // Group by (targetRole, alertType)
+        var groups = alerts.GroupBy(a => new
+        {
+            TargetRole = a.EscalationLevel switch { 2 => "Admin", 3 => "Super Admin", _ => "Project Manager" },
+            a.AlertType
+        });
 
-            var subject = $"[ESCALATED L{alert.EscalationLevel}] {alert.Title}";
+        foreach (var group in groups)
+        {
+            var targetRole = group.Key.TargetRole;
+            var alertType = group.Key.AlertType;
+            var groupList = group.ToList();
+            var level = groupList.First().EscalationLevel;
+
+            var subject = $"[ESCALATED L{level} → {targetRole}] {alertType.Replace("_", " ")} — {groupList.Count} unacknowledged alert(s)";
+
+            var rows = string.Join("", groupList.Select(a =>
+                $"<tr><td style='padding:6px 12px;border-bottom:1px solid #eee;'>{a.EntityIdentifier ?? "N/A"}</td>" +
+                $"<td style='padding:6px 12px;border-bottom:1px solid #eee;'>{a.Severity}</td>" +
+                $"<td style='padding:6px 12px;border-bottom:1px solid #eee;'>{a.CreatedAt:dd-MMM-yyyy HH:mm}</td>" +
+                $"<td style='padding:6px 12px;border-bottom:1px solid #eee;'>{a.Title}</td></tr>"));
+
             var body = BuildEmailBody(subject,
-                $"This alert has been escalated to Level {alert.EscalationLevel} ({targetRole}) because it was not acknowledged within {escalationDays} days.<br><br>" +
-                $"<b>Original Alert:</b> {alert.Title}<br>" +
-                $"<b>Created:</b> {alert.CreatedAt:dd-MMM-yyyy HH:mm}<br>" +
-                $"<b>Severity:</b> {alert.Severity}");
+                $"The following <b>{groupList.Count}</b> alert(s) have been escalated to <b>{targetRole}</b> (Level {level}) " +
+                $"because they were not acknowledged within {escalationDays} days.<br><br>" +
+                $"<table style='border-collapse:collapse;width:100%;'>" +
+                $"<thead><tr style='background:#f5f5f5;'>" +
+                $"<th style='padding:8px 12px;text-align:left;'>Asset/Entity</th>" +
+                $"<th style='padding:8px 12px;text-align:left;'>Severity</th>" +
+                $"<th style='padding:8px 12px;text-align:left;'>Created</th>" +
+                $"<th style='padding:8px 12px;text-align:left;'>Alert</th>" +
+                $"</tr></thead><tbody>{rows}</tbody></table>");
 
             await email.SendAlertToRoleAsync(targetRole, subject, body, context);
-            _logger.LogInformation("Alert {Id} escalated to level {Level}", alert.Id, alert.EscalationLevel);
+            _logger.LogInformation("Escalation digest sent to {Role}: {Count} alerts of type {Type} at level {Level}",
+                targetRole, groupList.Count, alertType, level);
         }
     }
 
