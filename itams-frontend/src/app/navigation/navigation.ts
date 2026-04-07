@@ -50,7 +50,8 @@ export class Navigation implements OnInit, OnDestroy {
   userNavItems = [
     { path: '/user/dashboard', icon: 'fas fa-home', label: 'Dashboard', title: 'My Dashboard' },
     { path: '/user/projects', icon: 'fas fa-folder-open', label: 'My Projects', title: 'My Projects' },
-    { path: '/user/assets', icon: 'fas fa-laptop', label: 'My Assets', title: 'My Assets' }
+    { path: '/user/assets', icon: 'fas fa-laptop', label: 'My Assets', title: 'My Assets' },
+    { path: '/user/alerts', icon: 'fas fa-bell', label: 'Alerts', title: 'Alerts' }
   ];
 
   constructor(

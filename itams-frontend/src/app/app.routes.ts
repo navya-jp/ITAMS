@@ -39,6 +39,7 @@ export const routes: Routes = [
   { path: 'user/dashboard', component: UserDashboard, canActivate: [UserGuard] },
   { path: 'user/projects', component: UserProjects, canActivate: [UserGuard] },
   { path: 'user/assets', component: Assets, canActivate: [UserGuard] },
+  { path: 'user/alerts', component: Alerts, canActivate: [UserGuard] },
   
   // Legacy redirects for backward compatibility
   { path: 'dashboard', redirectTo: '/admin/dashboard', pathMatch: 'full' },

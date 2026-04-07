@@ -60,7 +60,7 @@
           <div class="alerts-dropdown" *ngIf="showAlertsDropdown">
             <div class="dropdown-header d-flex justify-content-between align-items-center">
               <strong>Alerts</strong>
-              <a routerLink="/admin/alerts" class="small text-primary" (click)="closeAlertsDropdown()">View all</a>
+              <a [routerLink]="isSuperAdmin() ? '/admin/alerts' : '/user/alerts'" class="small text-primary" (click)="closeAlertsDropdown()">View all</a>
             </div>
             <div class="dropdown-divider"></div>
             <div *ngIf="recentAlerts.length === 0" class="p-3 text-center text-muted small">
