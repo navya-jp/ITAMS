@@ -42,8 +42,8 @@
       </div>
       
       <div class="header-right d-flex align-items-center gap-3">
-        <!-- Alert Bell -->
-        <div class="alert-bell-wrapper position-relative" *ngIf="isAuthenticated">
+        <!-- Alert Bell — visible to Project Manager (L1), Admin (L2), Super Admin (L3) -->
+        <div class="alert-bell-wrapper position-relative" *ngIf="isAuthenticated && (isSuperAdmin() || currentUser?.roleName === 'Admin' || currentUser?.roleName === 'Project Manager')">
           <button class="btn btn-link p-0 position-relative" (click)="toggleAlertsDropdown()" title="Alerts">
             <i class="fas fa-bell fs-5 text-secondary"></i>
             <span *ngIf="alertSummary.totalUnread > 0"

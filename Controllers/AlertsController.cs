@@ -18,7 +18,7 @@ public class AlertsController : BaseController
         _logger = logger;
     }
 
-    // GET /api/alerts — all unresolved alerts (paginated)
+    // GET /api/alerts — alerts filtered by caller's escalation level
     [HttpGet]
     public async Task<IActionResult> GetAlerts(
         [FromQuery] bool includeResolved = false,
@@ -27,16 +27,29 @@ public class AlertsController : BaseController
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
+        var userId = GetCurrentUserId() ?? 0;
+        var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null) return Unauthorized();
+
+        // Determine max escalation level this role can see
+        int maxLevel = user.Role?.Name switch
+        {
+            "Super Admin" => 3,
+            "Admin" => 2,
+            "Project Manager" => 1,
+            _ => 0
+        };
+
+        if (maxLevel == 0) return Forbid();
+
         var query = _context.SystemAlerts.AsQueryable();
 
-        if (!includeResolved)
-            query = query.Where(a => !a.IsResolved);
+        // Each role sees alerts at their level or below (escalated up to them)
+        query = query.Where(a => a.EscalationLevel <= maxLevel);
 
-        if (!string.IsNullOrEmpty(severity))
-            query = query.Where(a => a.Severity == severity);
-
-        if (!string.IsNullOrEmpty(alertType))
-            query = query.Where(a => a.AlertType == alertType);
+        if (!includeResolved) query = query.Where(a => !a.IsResolved);
+        if (!string.IsNullOrEmpty(severity)) query = query.Where(a => a.Severity == severity);
+        if (!string.IsNullOrEmpty(alertType)) query = query.Where(a => a.AlertType == alertType);
 
         var total = await query.CountAsync();
         var alerts = await query
@@ -68,16 +81,30 @@ public class AlertsController : BaseController
     [HttpGet("unread-count")]
     public async Task<IActionResult> GetUnreadCount()
     {
-        var count = await _context.SystemAlerts
-            .CountAsync(a => !a.IsAcknowledged && !a.IsResolved);
+        var userId = GetCurrentUserId() ?? 0;
+        var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null) return Unauthorized();
+
+        int maxLevel = user.Role?.Name switch
+        {
+            "Super Admin" => 3,
+            "Admin" => 2,
+            "Project Manager" => 1,
+            _ => 0
+        };
+
+        if (maxLevel == 0) return Ok(new AlertSummaryDto());
+
+        var baseQuery = _context.SystemAlerts
+            .Where(a => !a.IsAcknowledged && !a.IsResolved && a.EscalationLevel <= maxLevel);
 
         var summary = new AlertSummaryDto
         {
-            TotalUnread = count,
-            Critical = await _context.SystemAlerts.CountAsync(a => !a.IsAcknowledged && !a.IsResolved && a.Severity == "Critical"),
-            High = await _context.SystemAlerts.CountAsync(a => !a.IsAcknowledged && !a.IsResolved && a.Severity == "High"),
-            Medium = await _context.SystemAlerts.CountAsync(a => !a.IsAcknowledged && !a.IsResolved && a.Severity == "Medium"),
-            Low = await _context.SystemAlerts.CountAsync(a => !a.IsAcknowledged && !a.IsResolved && a.Severity == "Low")
+            TotalUnread = await baseQuery.CountAsync(),
+            Critical = await baseQuery.CountAsync(a => a.Severity == "Critical"),
+            High = await baseQuery.CountAsync(a => a.Severity == "High"),
+            Medium = await baseQuery.CountAsync(a => a.Severity == "Medium"),
+            Low = await baseQuery.CountAsync(a => a.Severity == "Low")
         };
 
         return Ok(summary);

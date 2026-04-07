@@ -50,9 +50,17 @@ export class Navigation implements OnInit, OnDestroy {
   userNavItems = [
     { path: '/user/dashboard', icon: 'fas fa-home', label: 'Dashboard', title: 'My Dashboard' },
     { path: '/user/projects', icon: 'fas fa-folder-open', label: 'My Projects', title: 'My Projects' },
-    { path: '/user/assets', icon: 'fas fa-laptop', label: 'My Assets', title: 'My Assets' },
-    { path: '/user/alerts', icon: 'fas fa-bell', label: 'Alerts', title: 'Alerts' }
+    { path: '/user/assets', icon: 'fas fa-laptop', label: 'My Assets', title: 'My Assets' }
   ];
+
+  get navigationItems() {
+    const items = [...(this.isAdminOrAbove() ? this.adminNavItems : this.userNavItems)];
+    // Add Alerts for Project Manager in user portal
+    if (this.currentUser?.roleName === 'Project Manager') {
+      items.push({ path: '/user/alerts', icon: 'fas fa-bell', label: 'Alerts', title: 'Alerts' });
+    }
+    return items;
+  }
 
   constructor(
     private authService: AuthService,
@@ -88,16 +96,16 @@ export class Navigation implements OnInit, OnDestroy {
     });
     this.subscriptions.push(timeSub);
 
-    // Poll alert count every 5 minutes
+    // Poll alert count every 5 minutes — PM, Admin, Super Admin only
     const alertSub = interval(300000).subscribe(() => {
-      if (this.isAuthenticated) this.loadAlertCount();
+      if (this.isAuthenticated && this.canSeeAlerts()) this.loadAlertCount();
     });
     this.subscriptions.push(alertSub);
 
     // Initial updates
     this.updatePageTitle();
     this.updateTimeDisplays();
-    this.loadAlertCount();
+    if (this.canSeeAlerts()) this.loadAlertCount();
   }
 
   ngOnDestroy() {
@@ -110,16 +118,17 @@ export class Navigation implements OnInit, OnDestroy {
     this.pageTitle = currentItem ? currentItem.title : 'ITAMS';
   }
 
-  get navigationItems() {
-    return this.isAdminOrAbove() ? this.adminNavItems : this.userNavItems;
-  }
-
   isSuperAdmin(): boolean {
     return this.currentUser?.roleName === 'Super Admin';
   }
 
   isAdminOrAbove(): boolean {
     return this.currentUser?.roleName === 'Super Admin';
+  }
+
+  canSeeAlerts(): boolean {
+    const role = this.currentUser?.roleName ?? '';
+    return ['Super Admin', 'Admin', 'Project Manager'].includes(role);
   }
 
   isActiveRoute(path: string): boolean {
