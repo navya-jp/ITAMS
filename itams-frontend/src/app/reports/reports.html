@@ -1,0 +1,242 @@
+<div class="d-flex h-100" style="overflow:hidden;">
+
+  <!-- Left sidebar nav -->
+  <div class="border-end bg-light" style="width:220px;min-width:220px;overflow-y:auto;">
+    <div class="p-3 border-bottom">
+      <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-chart-bar me-2"></i>Reports</h6>
+    </div>
+    <ul class="nav flex-column p-2">
+      <li class="nav-item" *ngFor="let r of reportNav">
+        <button class="nav-link btn btn-link text-start w-100 py-2 px-3 rounded"
+                [class.active]="currentView === r.view"
+                [class.bg-primary]="currentView === r.view"
+                [class.text-white]="currentView === r.view"
+                (click)="navigateTo(r.view)">
+          <i [class]="r.icon + ' me-2'"></i>{{ r.label }}
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Right content -->
+  <div class="flex-grow-1 d-flex flex-column" style="overflow:hidden;">
+
+    <!-- Header bar -->
+    <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-white">
+      <h5 class="mb-0 fw-bold">{{ currentViewLabel }}</h5>
+      <div class="d-flex gap-2 align-items-center">
+        <!-- Days filter for expiry reports -->
+        <div *ngIf="currentView==='warranty'||currentView==='license'||currentView==='contract'" class="d-flex align-items-center gap-2">
+          <label class="small mb-0">Days ahead:</label>
+          <select class="form-select form-select-sm w-auto" [(ngModel)]="daysAhead" (change)="loadReport()">
+            <option [value]="7">7 days</option>
+            <option [value]="30">30 days</option>
+            <option [value]="60">60 days</option>
+            <option [value]="90">90 days</option>
+          </select>
+        </div>
+        <!-- Maintenance status filter -->
+        <div *ngIf="currentView==='maintenance'" class="d-flex align-items-center gap-2">
+          <select class="form-select form-select-sm w-auto" [(ngModel)]="maintenanceStatus" (change)="loadReport()">
+            <option value="">All Status</option>
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <!-- Export button -->
+        <button *ngIf="currentView!=='dashboard'" class="btn btn-sm btn-outline-success" [disabled]="exporting" (click)="exportExcel()">
+          <span *ngIf="exporting" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!exporting" class="fas fa-file-excel me-1"></i>Export Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- Content area -->
+    <div class="flex-grow-1 p-3" style="overflow-y:auto;">
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+        <div class="mt-2 text-muted small">Loading...</div>
+      </div>
+
+      <!-- ── DASHBOARD ── -->
+      <div *ngIf="!loading && currentView==='dashboard' && kpis">
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-primary">{{kpis.totalHardwareAssets}}</div><small class="text-muted">Hardware Assets</small></div></div>
+          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-success">{{kpis.assetsInUse}}</div><small class="text-muted">In Use</small></div></div>
+          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-warning">{{kpis.assetsInRepair}}</div><small class="text-muted">In Repair</small></div></div>
+          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-danger">{{kpis.assetsDecommissioned}}</div><small class="text-muted">Decommissioned</small></div></div>
+          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-info">{{kpis.totalLicenses}}</div><small class="text-muted">Licenses</small></div></div>
+          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-secondary">{{kpis.totalServiceContracts}}</div><small class="text-muted">Service Contracts</small></div></div>
+          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold" [class.text-danger]="kpis.warrantyExpiringIn30Days>0" [class.text-muted]="kpis.warrantyExpiringIn30Days===0">{{kpis.warrantyExpiringIn30Days}}</div><small class="text-muted">Warranty Expiring (30d)</small></div></div>
+          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold" [class.text-danger]="kpis.unacknowledgedAlerts>0" [class.text-muted]="kpis.unacknowledgedAlerts===0">{{kpis.unacknowledgedAlerts}}</div><small class="text-muted">Unacked Alerts</small></div></div>
+        </div>
+        <!-- Charts -->
+        <div class="row g-3">
+          <div class="col-md-6"><div class="card p-3"><h6 class="text-muted small mb-2">Assets by Type</h6><canvas id="chartByType" height="200"></canvas></div></div>
+          <div class="col-md-6"><div class="card p-3"><h6 class="text-muted small mb-2">Assets by Status</h6><canvas id="chartByStatus" height="200"></canvas></div></div>
+          <div class="col-md-6"><div class="card p-3"><h6 class="text-muted small mb-2">Top 10 Locations</h6><canvas id="chartByLocation" height="200"></canvas></div></div>
+          <div class="col-md-6"><div class="card p-3"><h6 class="text-muted small mb-2">Monthly Procurement Trend</h6><canvas id="chartTrend" height="200"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- ── ASSET INVENTORY ── -->
+      <div *ngIf="!loading && currentView==='asset-inventory'">
+        <div class="text-muted small mb-2">{{reportTotal}} assets</div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead class="table-light"><tr><th>Asset ID</th><th>Tag</th><th>Project</th><th>Location</th><th>Type</th><th>Make/Model</th><th>Status</th><th>Assigned</th><th>Warranty End</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let a of reportData">
+                <td><small>{{a.assetId}}</small></td>
+                <td><small class="fw-semibold">{{a.assetTag}}</small></td>
+                <td><small>{{a.project}}</small></td>
+                <td><small>{{a.location}}</small></td>
+                <td><small>{{a.assetType}}</small></td>
+                <td><small>{{a.make}} {{a.model}}</small></td>
+                <td><span class="badge bg-secondary small">{{a.status}}</span></td>
+                <td><small>{{a.assignedUser || 'General'}}</small></td>
+                <td><small>{{a.warrantyEndDate ? (a.warrantyEndDate | date:'dd MMM yyyy') : '—'}}</small></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="reportData.length===0" class="text-center text-muted py-4">No data</div>
+      </div>
+
+      <!-- ── EXPIRY REPORTS (warranty/license/contract) ── -->
+      <div *ngIf="!loading && (currentView==='warranty'||currentView==='license'||currentView==='contract')">
+        <div class="text-muted small mb-2">{{reportData.length}} items expiring within {{daysAhead}} days</div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead class="table-light"><tr><th>Identifier</th><th>Name</th><th>Project/Location</th><th>Expiry Date</th><th>Days Left</th><th>Severity</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let item of reportData">
+                <td><small class="fw-semibold">{{item.identifier}}</small></td>
+                <td><small>{{item.name}}</small></td>
+                <td><small>{{item.project || item.location || '—'}}</small></td>
+                <td><small>{{item.expiryDate | date:'dd MMM yyyy'}}</small></td>
+                <td><small>{{item.daysRemaining}}d</small></td>
+                <td><span class="badge" [class]="'bg-'+getSeverityClass(item.severity)">{{item.severity}}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="reportData.length===0" class="text-center text-muted py-4">No items expiring in this period</div>
+      </div>
+
+      <!-- ── MAINTENANCE ── -->
+      <div *ngIf="!loading && currentView==='maintenance'">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead class="table-light"><tr><th>Asset</th><th>Project</th><th>Type</th><th>Description</th><th>Status</th><th>Days Open</th><th>Cost</th><th>Created</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let m of reportData">
+                <td><small class="fw-semibold">{{m.assetTag}}</small></td>
+                <td><small>{{m.project}}</small></td>
+                <td><small>{{m.requestType}}</small></td>
+                <td><small>{{m.description}}</small></td>
+                <td><span class="badge bg-secondary small">{{m.status}}</span></td>
+                <td><small>{{m.daysOpen}}d</small></td>
+                <td><small>{{m.cost ? ('₹'+m.cost) : '—'}}</small></td>
+                <td><small>{{m.createdAt | date:'dd MMM yyyy'}}</small></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="reportData.length===0" class="text-center text-muted py-4">No maintenance records</div>
+      </div>
+
+      <!-- ── COMPLIANCE ── -->
+      <div *ngIf="!loading && currentView==='compliance'">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead class="table-light"><tr><th>Asset</th><th>Project</th><th>Check Type</th><th>Result</th><th>Status</th><th>Checked At</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let c of reportData">
+                <td><small class="fw-semibold">{{c.assetTag}}</small></td>
+                <td><small>{{c.project}}</small></td>
+                <td><small>{{c.checkType}}</small></td>
+                <td><span class="badge" [class]="'bg-'+getResultClass(c.result)">{{c.result}}</span></td>
+                <td><small>{{c.status}}</small></td>
+                <td><small>{{c.checkedAt | date:'dd MMM yyyy'}}</small></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="reportData.length===0" class="text-center text-muted py-4">No compliance records</div>
+      </div>
+
+      <!-- ── TRANSFERS ── -->
+      <div *ngIf="!loading && currentView==='transfers'">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead class="table-light"><tr><th>Date</th><th>Asset</th><th>From</th><th>To</th><th>Reason</th><th>By</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let t of reportData">
+                <td><small>{{t.transferDate | date:'dd MMM yyyy'}}</small></td>
+                <td><small class="fw-semibold">{{t.assetTag}}</small></td>
+                <td><small>{{t.fromLocation || t.fromUser || '—'}}</small></td>
+                <td><small>{{t.toLocation || t.toUser || 'General'}}</small></td>
+                <td><small>{{t.reason || '—'}}</small></td>
+                <td><small>{{t.requestedBy}}</small></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="reportData.length===0" class="text-center text-muted py-4">No transfer records</div>
+      </div>
+
+      <!-- ── USER ACTIVITY ── -->
+      <div *ngIf="!loading && currentView==='user-activity'">
+        <div *ngIf="reportData.length>0">
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><div class="card text-center p-2"><div class="fw-bold fs-5">{{reportTotal}}</div><small class="text-muted">Total Sessions</small></div></div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead class="table-light"><tr><th>Username</th><th>Role</th><th>Login</th><th>Logout</th><th>Duration</th><th>IP</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let u of reportData">
+                  <td><small class="fw-semibold">{{u.username}}</small></td>
+                  <td><small>{{u.role}}</small></td>
+                  <td><small>{{u.loginTime | date:'dd MMM HH:mm'}}</small></td>
+                  <td><small>{{u.logoutTime ? (u.logoutTime | date:'dd MMM HH:mm') : '—'}}</small></td>
+                  <td><small>{{u.sessionMinutes ? u.sessionMinutes+'m' : '—'}}</small></td>
+                  <td><small>{{u.ipAddress}}</small></td>
+                  <td><small>{{u.sessionStatus}}</small></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div *ngIf="reportData.length===0" class="text-center text-muted py-4">No activity records</div>
+      </div>
+
+      <!-- ── ALERTS ── -->
+      <div *ngIf="!loading && currentView==='alerts'">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead class="table-light"><tr><th>Severity</th><th>Type</th><th>Title</th><th>Entity</th><th>Level</th><th>Created</th><th>Acknowledged</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let a of reportData">
+                <td><span class="badge" [class]="'bg-'+getSeverityClass(a.severity)">{{a.severity}}</span></td>
+                <td><small>{{a.alertType}}</small></td>
+                <td><small>{{a.title}}</small></td>
+                <td><small>{{a.entityIdentifier}}</small></td>
+                <td><span class="badge bg-secondary">L{{a.escalationLevel}}</span></td>
+                <td><small>{{a.createdAt | date:'dd MMM yyyy'}}</small></td>
+                <td><span class="badge" [class]="a.isAcknowledged ? 'bg-success' : 'bg-danger'">{{a.isAcknowledged ? 'Yes' : 'No'}}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="reportData.length===0" class="text-center text-muted py-4">No alerts</div>
+      </div>
+
+    </div>
+  </div>
+</div>

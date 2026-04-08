@@ -13,6 +13,7 @@ import { Settings } from './settings/settings';
 import { Assets } from './assets/assets';
 import { Alerts } from './alerts/alerts';
 import { Decommission } from './decommission/decommission';
+import { Reports } from './reports/reports';
 import { AuthGuard, AdminGuard, UserGuard, LoginGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -33,6 +34,7 @@ export const routes: Routes = [
   { path: 'admin/audit', component: AuditTrail, canActivate: [AdminGuard] },
   { path: 'admin/alerts', component: Alerts, canActivate: [AdminGuard] },
   { path: 'admin/decommission', component: Decommission, canActivate: [AdminGuard] },
+  { path: 'admin/reports', component: Reports, canActivate: [AdminGuard] },
   { path: 'admin/settings', component: Settings, canActivate: [AdminGuard] },
   
   // User routes (Regular Users)

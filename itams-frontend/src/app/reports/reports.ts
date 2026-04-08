@@ -1,0 +1,158 @@
+import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ReportService } from './report.service';
+
+declare var Chart: any;
+
+@Component({
+  selector: 'app-reports',
+  imports: [CommonModule, FormsModule],
+  templateUrl: './reports.html'
+})
+export class Reports implements OnInit, AfterViewInit {
+  currentView: 'dashboard' | 'asset-inventory' | 'warranty' | 'license' | 'contract'
+    | 'maintenance' | 'compliance' | 'transfers' | 'user-activity' | 'alerts' = 'dashboard';
+
+  kpis: any = null;
+  reportData: any[] = [];
+  reportTotal = 0;
+  loading = false;
+  exporting = false;
+
+  // Filters
+  daysAhead = 30;
+  maintenanceStatus = '';
+  page = 1;
+  pageSize = 50;
+
+  charts: any[] = [];
+
+  reportNav = [
+    { view: 'dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard KPIs' },
+    { view: 'asset-inventory', icon: 'fas fa-server', label: 'Asset Inventory' },
+    { view: 'warranty', icon: 'fas fa-shield-alt', label: 'Warranty Expiry' },
+    { view: 'license', icon: 'fas fa-key', label: 'License Expiry' },
+    { view: 'contract', icon: 'fas fa-file-contract', label: 'Contract Expiry' },
+    { view: 'maintenance', icon: 'fas fa-tools', label: 'Maintenance Summary' },
+    { view: 'compliance', icon: 'fas fa-check-circle', label: 'Compliance Status' },
+    { view: 'transfers', icon: 'fas fa-exchange-alt', label: 'Transfer History' },
+    { view: 'user-activity', icon: 'fas fa-user-clock', label: 'User Activity' },
+    { view: 'alerts', icon: 'fas fa-bell', label: 'Alert Summary' }
+  ];
+
+  constructor(private svc: ReportService) {}
+
+  ngOnInit() { this.loadDashboard(); }
+
+  ngAfterViewInit() {
+    if (this.kpis) this.renderCharts();
+  }
+
+  get currentViewLabel(): string {
+    return this.reportNav.find(r => r.view === this.currentView)?.label ?? 'Reports';
+  }
+
+  navigateTo(view: string) {
+    this.currentView = view as any;
+    this.page = 1;
+    this.reportData = [];
+    this.destroyCharts();
+    if (view === 'dashboard') this.loadDashboard();
+    else this.loadReport();
+  }
+
+  loadDashboard() {
+    this.loading = true;
+    this.svc.getDashboardKpis().subscribe({
+      next: (data) => {
+        this.kpis = data;
+        this.loading = false;
+        setTimeout(() => this.renderCharts(), 100);
+      },
+      error: () => { this.loading = false; }
+    });
+  }
+
+  loadReport() {
+    this.loading = true;
+    let obs: any;
+    switch (this.currentView) {
+      case 'asset-inventory': obs = this.svc.getAssetInventory({ pageNumber: this.page, pageSize: this.pageSize }); break;
+      case 'warranty': obs = this.svc.getWarrantyExpiry(this.daysAhead); break;
+      case 'license': obs = this.svc.getLicenseExpiry(this.daysAhead); break;
+      case 'contract': obs = this.svc.getContractExpiry(this.daysAhead); break;
+      case 'maintenance': obs = this.svc.getMaintenanceSummary(this.maintenanceStatus ? { status: this.maintenanceStatus } : {}); break;
+      case 'compliance': obs = this.svc.getComplianceStatus({}); break;
+      case 'transfers': obs = this.svc.getTransferHistory({}); break;
+      case 'user-activity': obs = this.svc.getUserActivity({}); break;
+      case 'alerts': obs = this.svc.getAlertSummary(); break;
+      default: this.loading = false; return;
+    }
+    obs.subscribe({
+      next: (data: any) => {
+        if (data?.items) { this.reportData = data.items; this.reportTotal = data.total; }
+        else if (data?.items === undefined && Array.isArray(data)) { this.reportData = data; this.reportTotal = data.length; }
+        else { this.reportData = data?.items ?? []; this.reportTotal = data?.total ?? 0; }
+        this.loading = false;
+      },
+      error: () => { this.loading = false; }
+    });
+  }
+
+  exportExcel() {
+    this.exporting = true;
+    this.svc.exportExcel(this.currentView, { daysAhead: String(this.daysAhead) }).subscribe({
+      next: (blob) => {
+        this.svc.downloadFile(blob, `${this.currentView}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        this.exporting = false;
+      },
+      error: () => { this.exporting = false; }
+    });
+  }
+
+  getSeverityClass(s: string): string {
+    return { Critical: 'danger', High: 'warning', Medium: 'info', Low: 'secondary' }[s] ?? 'secondary';
+  }
+
+  getResultClass(r: string): string {
+    return r === 'Pass' ? 'success' : r === 'Warning' ? 'warning' : 'danger';
+  }
+
+  // ── Charts ────────────────────────────────────────────────────────────────
+
+  destroyCharts() {
+    this.charts.forEach(c => { try { c.destroy(); } catch {} });
+    this.charts = [];
+  }
+
+  renderCharts() {
+    if (!this.kpis || this.currentView !== 'dashboard') return;
+    this.destroyCharts();
+    setTimeout(() => {
+      this.renderBar('chartByType', this.kpis.assetsByType?.map((x: any) => x.label), this.kpis.assetsByType?.map((x: any) => x.count), 'Assets by Type', '#5E35B1');
+      this.renderDoughnut('chartByStatus', this.kpis.assetsByStatus?.map((x: any) => x.label), this.kpis.assetsByStatus?.map((x: any) => x.count));
+      this.renderBar('chartByLocation', this.kpis.assetsByLocation?.map((x: any) => x.label), this.kpis.assetsByLocation?.map((x: any) => x.count), 'Top Locations', '#1976D2');
+      this.renderLine('chartTrend', this.kpis.monthlyProcurementTrend?.map((x: any) => x.label), this.kpis.monthlyProcurementTrend?.map((x: any) => x.count));
+    }, 50);
+  }
+
+  renderBar(id: string, labels: string[], data: number[], label: string, color: string) {
+    const el = document.getElementById(id) as HTMLCanvasElement;
+    if (!el) return;
+    this.charts.push(new Chart(el, { type: 'bar', data: { labels, datasets: [{ label, data, backgroundColor: color }] }, options: { responsive: true, plugins: { legend: { display: false } } } }));
+  }
+
+  renderDoughnut(id: string, labels: string[], data: number[]) {
+    const el = document.getElementById(id) as HTMLCanvasElement;
+    if (!el) return;
+    const colors = ['#5E35B1','#1976D2','#388E3C','#F57C00','#D32F2F','#0097A7','#7B1FA2'];
+    this.charts.push(new Chart(el, { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors }] }, options: { responsive: true } }));
+  }
+
+  renderLine(id: string, labels: string[], data: number[]) {
+    const el = document.getElementById(id) as HTMLCanvasElement;
+    if (!el) return;
+    this.charts.push(new Chart(el, { type: 'line', data: { labels, datasets: [{ label: 'Procured', data, borderColor: '#5E35B1', tension: 0.3, fill: false }] }, options: { responsive: true } }));
+  }
+}
