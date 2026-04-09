@@ -4,6 +4,7 @@ public class AssetReportFilter
 {
     public int? ProjectId { get; set; }
     public int? LocationId { get; set; }
+    public string? LocationType { get; set; } // "office" or "site"
     public string? AssetType { get; set; }
     public string? Status { get; set; }
     public string? UsageCategory { get; set; }

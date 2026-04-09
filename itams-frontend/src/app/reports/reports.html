@@ -25,10 +25,20 @@
     <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-white">
       <h5 class="mb-0 fw-bold">{{ currentViewLabel }}</h5>
       <div class="d-flex gap-2 align-items-center">
-        <!-- Days filter for expiry reports -->
+        <!-- Asset Inventory filters -->
+        <div *ngIf="currentView==='asset-inventory'" class="d-flex align-items-center gap-2">
+          <select class="form-select form-select-sm" style="min-width:130px;" [(ngModel)]="locationType" (change)="onLocationTypeChange()">
+            <option value="office">Head Office</option>
+            <option value="site">Site</option>
+          </select>
+          <select *ngIf="locationType==='site'" class="form-select form-select-sm" style="min-width:150px;" [(ngModel)]="selectedProjectId" (change)="loadReport()">
+            <option [ngValue]="null">All Projects</option>
+            <option *ngFor="let p of projects" [ngValue]="p.id">{{p.name}}</option>
+          </select>
+        </div>
         <div *ngIf="currentView==='warranty'||currentView==='license'||currentView==='contract'" class="d-flex align-items-center gap-2">
           <label class="small mb-0">Days ahead:</label>
-          <select class="form-select form-select-sm w-auto" [(ngModel)]="daysAhead" (change)="loadReport()">
+          <select class="form-select form-select-sm" style="min-width:110px;" [(ngModel)]="daysAhead" (change)="loadReport()">
             <option [value]="7">7 days</option>
             <option [value]="30">30 days</option>
             <option [value]="60">60 days</option>
@@ -37,7 +47,7 @@
         </div>
         <!-- Maintenance status filter -->
         <div *ngIf="currentView==='maintenance'" class="d-flex align-items-center gap-2">
-          <select class="form-select form-select-sm w-auto" [(ngModel)]="maintenanceStatus" (change)="loadReport()">
+          <select class="form-select form-select-sm" style="min-width:130px;" [(ngModel)]="maintenanceStatus" (change)="loadReport()">
             <option value="">All Status</option>
             <option value="Open">Open</option>
             <option value="In Progress">In Progress</option>
@@ -105,6 +115,15 @@
           </table>
         </div>
         <div *ngIf="reportData.length===0" class="text-center text-muted py-4">No data</div>
+        <!-- Pagination -->
+        <div *ngIf="reportTotal > pageSize" class="d-flex justify-content-between align-items-center mt-3">
+          <small class="text-muted">Showing {{ (page-1)*pageSize+1 }}–{{ page*pageSize > reportTotal ? reportTotal : page*pageSize }} of {{ reportTotal }}</small>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" [disabled]="page===1" (click)="prevPage()">← Prev</button>
+            <span class="btn btn-sm btn-light disabled">Page {{ page }} / {{ totalPages }}</span>
+            <button class="btn btn-sm btn-outline-secondary" [disabled]="page===totalPages" (click)="nextPage()">Next →</button>
+          </div>
+        </div>
       </div>
 
       <!-- ── EXPIRY REPORTS (warranty/license/contract) ── -->

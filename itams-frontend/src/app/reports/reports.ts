@@ -25,6 +25,13 @@ export class Reports implements OnInit, AfterViewInit {
   maintenanceStatus = '';
   page = 1;
   pageSize = 50;
+  locationType = 'office'; // default to Head Office
+  selectedProjectId: number | null = null;
+  projects = [
+    { id: 1, name: 'SBHL' }, { id: 2, name: 'BAEL' }, { id: 3, name: 'BKEL' },
+    { id: 4, name: 'MBEL' }, { id: 5, name: 'PSRDCL' }, { id: 6, name: 'CNTL' },
+    { id: 7, name: 'HREL' }
+  ];
 
   charts: any[] = [];
 
@@ -57,10 +64,23 @@ export class Reports implements OnInit, AfterViewInit {
     this.currentView = view as any;
     this.page = 1;
     this.reportData = [];
+    this.locationType = 'office';
+    this.selectedProjectId = null;
     this.destroyCharts();
     if (view === 'dashboard') this.loadDashboard();
     else this.loadReport();
   }
+
+  onLocationTypeChange() {
+    this.selectedProjectId = null;
+    this.page = 1;
+    this.loadReport();
+  }
+
+  get totalPages(): number { return Math.ceil(this.reportTotal / this.pageSize); }
+
+  prevPage() { if (this.page > 1) { this.page--; this.loadReport(); } }
+  nextPage() { if (this.page < this.totalPages) { this.page++; this.loadReport(); } }
 
   loadDashboard() {
     this.loading = true;
@@ -78,7 +98,11 @@ export class Reports implements OnInit, AfterViewInit {
     this.loading = true;
     let obs: any;
     switch (this.currentView) {
-      case 'asset-inventory': obs = this.svc.getAssetInventory({ pageNumber: this.page, pageSize: this.pageSize }); break;
+      case 'asset-inventory': obs = this.svc.getAssetInventory({
+        pageNumber: this.page, pageSize: this.pageSize,
+        locationType: this.locationType || undefined,
+        projectId: this.selectedProjectId || undefined
+      }); break;
       case 'warranty': obs = this.svc.getWarrantyExpiry(this.daysAhead); break;
       case 'license': obs = this.svc.getLicenseExpiry(this.daysAhead); break;
       case 'contract': obs = this.svc.getContractExpiry(this.daysAhead); break;

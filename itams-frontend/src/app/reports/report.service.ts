@@ -18,7 +18,9 @@ export class ReportService {
   }
 
   getAssetInventory(filter: any = {}): Observable<any> {
-    const params = new URLSearchParams(filter).toString();
+    const clean: any = {};
+    Object.keys(filter).forEach(k => { if (filter[k] !== undefined && filter[k] !== null) clean[k] = filter[k]; });
+    const params = new URLSearchParams(clean).toString();
     return this.http.get<any>(`${this.base}/asset-inventory?${params}`, this.headers());
   }
 

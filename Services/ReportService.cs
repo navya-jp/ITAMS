@@ -115,6 +115,8 @@ public class ReportService : IReportService
         query = await _access.ApplyProjectFilter(query, userId);
 
         if (filter.ProjectId.HasValue) query = query.Where(a => a.ProjectId == filter.ProjectId);
+        else if (filter.LocationType == "office") query = query.Where(a => a.ProjectId == 8);
+        else if (filter.LocationType == "site") query = query.Where(a => a.ProjectId != 8);
         if (filter.LocationId.HasValue) query = query.Where(a => a.LocationId == filter.LocationId);
         if (!string.IsNullOrEmpty(filter.Status)) query = query.Where(a => a.AssetStatus != null && a.AssetStatus.StatusName == filter.Status);
         if (filter.IsDecommissioned.HasValue) query = query.Where(a => a.IsDecommissioned == filter.IsDecommissioned);
