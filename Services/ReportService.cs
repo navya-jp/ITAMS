@@ -400,7 +400,14 @@ public class ReportService : IReportService
         switch (reportType.ToLower())
         {
             case "asset-inventory":
-                var invFilter = new AssetReportFilter();
+                var invFilter = new AssetReportFilter { PageSize = 10000 }; // export all, no pagination
+                if (filter != null)
+                {
+                    if (filter.TryGetValue("locationType", out var lt) && !string.IsNullOrEmpty(lt))
+                        invFilter.LocationType = lt;
+                    if (filter.TryGetValue("projectId", out var pid) && int.TryParse(pid, out var pidVal))
+                        invFilter.ProjectId = pidVal;
+                }
                 var inv = await GetAssetInventoryAsync(invFilter, userId);
                 WriteHeaders(ws, new[] { "Asset ID", "Asset Tag", "Project", "Location", "Type", "Make", "Model", "Serial", "Status", "Assigned User", "Warranty End", "Procurement Cost" }, headerColor);
                 int r = 2;
@@ -432,6 +439,29 @@ public class ReportService : IReportService
                 }
                 break;
 
+            case "user-activity":
+            {
+                var uaFilter = new UserActivityFilter();
+                if (filter != null)
+                {
+                    if (filter.TryGetValue("from", out var fromStr) && DateTime.TryParse(fromStr, out var fromDate))
+                        uaFilter.From = fromDate;
+                    if (filter.TryGetValue("to", out var toStr) && DateTime.TryParse(toStr, out var toDate))
+                        uaFilter.To = toDate.AddDays(1); // include full end day
+                }
+                var ua = await GetUserActivityReportAsync(uaFilter, userId);
+                WriteHeaders(ws, new[] { "Username", "Role", "Login", "Logout", "Duration", "IP", "Status" }, headerColor);
+                int ru = 2;
+                foreach (var item in ua.Items) {
+                    ws.Cells[ru,1].Value=item.Username; ws.Cells[ru,2].Value=item.Role;
+                    ws.Cells[ru,3].Value=item.LoginTime.ToString("dd-MMM-yyyy HH:mm");
+                    ws.Cells[ru,4].Value=item.LogoutTime?.ToString("dd-MMM-yyyy HH:mm") ?? "—";
+                    ws.Cells[ru,5].Value=item.SessionMinutes.HasValue ? $"{item.SessionMinutes}m" : "—";
+                    ws.Cells[ru,6].Value=item.IpAddress;
+                    ws.Cells[ru,7].Value=item.SessionStatus; ru++;
+                }
+                break;
+            }
             case "alerts":
             {
                 var alertItems = await GetAlertSummaryAsync(userId);

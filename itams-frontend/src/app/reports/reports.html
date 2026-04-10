@@ -36,7 +36,7 @@
             <option *ngFor="let p of projects" [ngValue]="p.id">{{p.name}}</option>
           </select>
         </div>
-        <div *ngIf="currentView==='warranty'||currentView==='license'||currentView==='contract'" class="d-flex align-items-center gap-2">
+        <div *ngIf="currentView==='warranty'||currentView==='license'" class="d-flex align-items-center gap-2">
           <label class="small mb-0">Days ahead:</label>
           <select class="form-select form-select-sm" style="min-width:110px;" [(ngModel)]="daysAhead" (change)="loadReport()">
             <option [value]="7">7 days</option>
@@ -54,8 +54,24 @@
             <option value="Completed">Completed</option>
           </select>
         </div>
+        <!-- User Activity date range filter -->
+        <div *ngIf="currentView==='user-activity'" class="d-flex align-items-center gap-2">
+          <select class="form-select form-select-sm" style="width:140px;" [(ngModel)]="userActivityRange" (change)="onUserActivityRangeChange()">
+            <option value="today">Today</option>
+            <option value="week">Last 7 Days</option>
+            <option value="month">Last 30 Days</option>
+            <option value="year">Last Year</option>
+            <option value="custom">Custom Range</option>
+          </select>
+          <ng-container *ngIf="userActivityRange==='custom'">
+            <label class="small mb-0 text-nowrap">From:</label>
+            <input type="date" class="form-control form-control-sm" style="width:140px;" [(ngModel)]="userActivityFrom" (change)="loadReport()">
+            <label class="small mb-0 text-nowrap">To:</label>
+            <input type="date" class="form-control form-control-sm" style="width:140px;" [(ngModel)]="userActivityTo" (change)="loadReport()">
+          </ng-container>
+        </div>
         <!-- Export button -->
-        <button *ngIf="currentView!=='dashboard'" class="btn btn-sm btn-outline-success" [disabled]="exporting" (click)="exportExcel()">
+        <button class="btn btn-sm btn-outline-success" [disabled]="exporting" (click)="exportExcel()">
           <span *ngIf="exporting" class="spinner-border spinner-border-sm me-1"></span>
           <i *ngIf="!exporting" class="fas fa-file-excel me-1"></i>Export Excel
         </button>
@@ -69,28 +85,6 @@
       <div *ngIf="loading" class="text-center py-5">
         <div class="spinner-border text-primary"></div>
         <div class="mt-2 text-muted small">Loading...</div>
-      </div>
-
-      <!-- ── DASHBOARD ── -->
-      <div *ngIf="!loading && currentView==='dashboard' && kpis">
-        <!-- KPI Cards -->
-        <div class="row g-3 mb-4">
-          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-primary">{{kpis.totalHardwareAssets}}</div><small class="text-muted">Hardware Assets</small></div></div>
-          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-success">{{kpis.assetsInUse}}</div><small class="text-muted">In Use</small></div></div>
-          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-warning">{{kpis.assetsInRepair}}</div><small class="text-muted">In Repair</small></div></div>
-          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-danger">{{kpis.assetsDecommissioned}}</div><small class="text-muted">Decommissioned</small></div></div>
-          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-info">{{kpis.totalLicenses}}</div><small class="text-muted">Licenses</small></div></div>
-          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold text-secondary">{{kpis.totalServiceContracts}}</div><small class="text-muted">Service Contracts</small></div></div>
-          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold" [class.text-danger]="kpis.warrantyExpiringIn30Days>0" [class.text-muted]="kpis.warrantyExpiringIn30Days===0">{{kpis.warrantyExpiringIn30Days}}</div><small class="text-muted">Warranty Expiring (30d)</small></div></div>
-          <div class="col-6 col-md-3"><div class="card text-center p-3"><div class="fs-3 fw-bold" [class.text-danger]="kpis.unacknowledgedAlerts>0" [class.text-muted]="kpis.unacknowledgedAlerts===0">{{kpis.unacknowledgedAlerts}}</div><small class="text-muted">Unacked Alerts</small></div></div>
-        </div>
-        <!-- Charts -->
-        <div class="row g-3">
-          <div class="col-md-6"><div class="card p-3"><h6 class="text-muted small mb-2">Assets by Type</h6><canvas id="chartByType" height="200"></canvas></div></div>
-          <div class="col-md-6"><div class="card p-3"><h6 class="text-muted small mb-2">Assets by Status</h6><canvas id="chartByStatus" height="200"></canvas></div></div>
-          <div class="col-md-6"><div class="card p-3"><h6 class="text-muted small mb-2">Top 10 Locations</h6><canvas id="chartByLocation" height="200"></canvas></div></div>
-          <div class="col-md-6"><div class="card p-3"><h6 class="text-muted small mb-2">Monthly Procurement Trend</h6><canvas id="chartTrend" height="200"></canvas></div></div>
-        </div>
       </div>
 
       <!-- ── ASSET INVENTORY ── -->
@@ -126,8 +120,8 @@
         </div>
       </div>
 
-      <!-- ── EXPIRY REPORTS (warranty/license/contract) ── -->
-      <div *ngIf="!loading && (currentView==='warranty'||currentView==='license'||currentView==='contract')">
+      <!-- ── EXPIRY REPORTS (warranty/license) ── -->
+      <div *ngIf="!loading && (currentView==='warranty'||currentView==='license')">
         <div class="text-muted small mb-2">{{reportData.length}} items expiring within {{daysAhead}} days</div>
         <div class="table-responsive">
           <table class="table table-sm table-hover">
@@ -212,9 +206,6 @@
       <!-- ── USER ACTIVITY ── -->
       <div *ngIf="!loading && currentView==='user-activity'">
         <div *ngIf="reportData.length>0">
-          <div class="row g-3 mb-3">
-            <div class="col-md-3"><div class="card text-center p-2"><div class="fw-bold fs-5">{{reportTotal}}</div><small class="text-muted">Total Sessions</small></div></div>
-          </div>
           <div class="table-responsive">
             <table class="table table-sm table-hover">
               <thead class="table-light"><tr><th>Username</th><th>Role</th><th>Login</th><th>Logout</th><th>Duration</th><th>IP</th><th>Status</th></tr></thead>
