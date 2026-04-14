@@ -57,6 +57,11 @@ public class ReportService : IReportService
             .Take(10)
             .ToListAsync();
 
+        var byProject = await _context.Projects
+            .Select(p => new ChartItemDto { Label = p.Code, Count = p.Assets.Count() })
+            .OrderByDescending(x => x.Count)
+            .ToListAsync();
+
         var cutoff12 = today.AddMonths(-12);
         var trend = await _context.Assets
             .Where(a => a.ProcurementDate != null && a.ProcurementDate >= cutoff12)
@@ -88,6 +93,7 @@ public class ReportService : IReportService
             AssetsByType = byType,
             AssetsByStatus = byStatus,
             AssetsByLocation = byLocation,
+            AssetsByProject = byProject,
             MonthlyProcurementTrend = trend
         };
     }

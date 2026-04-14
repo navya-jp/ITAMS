@@ -69,6 +69,7 @@ public class DashboardKpiDto
     public List<ChartItemDto> AssetsByType { get; set; } = new();
     public List<ChartItemDto> AssetsByLocation { get; set; } = new();
     public List<ChartItemDto> AssetsByStatus { get; set; } = new();
+    public List<ChartItemDto> AssetsByProject { get; set; } = new();
     public List<MonthlyTrendDto> MonthlyProcurementTrend { get; set; } = new();
 }
 

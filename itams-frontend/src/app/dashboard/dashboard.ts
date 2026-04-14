@@ -83,10 +83,11 @@ export class Dashboard implements OnInit, AfterViewInit {
       this.kpis.assetsByLocation?.map((x: any) => x.count) ?? [],
       'Assets', '#1976D2');
 
-    // Monthly trend — line
-    this.renderLine('chartTrend',
-      this.kpis.monthlyProcurementTrend?.map((x: any) => x.label) ?? [],
-      this.kpis.monthlyProcurementTrend?.map((x: any) => x.count) ?? []);
+    // Assets by Project
+      this.renderBar('chartByProject',
+        this.kpis.assetsByProject?.map((x: any) => x.label) ?? [],
+        this.kpis.assetsByProject?.map((x: any) => x.count) ?? [],
+        'Assets', '#388E3C');
   }
 
   private renderHBar(id: string, labels: string[], data: number[], label: string) {
@@ -102,9 +103,12 @@ export class Dashboard implements OnInit, AfterViewInit {
   private renderBar(id: string, labels: string[], data: number[], label: string, color: string) {
     const el = document.getElementById(id) as HTMLCanvasElement;
     if (!el) return;
+    // Use multi-color for project chart, single color for others
+    const multiColors = ['#5E35B1','#1976D2','#388E3C','#F57C00','#D32F2F','#0097A7','#7B1FA2','#C62828','#2E7D32','#1565C0'];
+    const bgColor = id === 'chartByProject' ? labels.map((_, i) => multiColors[i % multiColors.length]) : color;
     this.charts.push(new Chart(el, {
       type: 'bar',
-      data: { labels, datasets: [{ label, data, backgroundColor: color }] },
+      data: { labels, datasets: [{ label, data, backgroundColor: bgColor }] },
       options: { responsive: true, plugins: { legend: { display: false } } }
     }));
   }
