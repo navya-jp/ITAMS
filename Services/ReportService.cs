@@ -29,38 +29,30 @@ public class ReportService : IReportService
         var today = DateTimeHelper.Now.Date;
         var in30 = today.AddDays(30);
 
-        var tHW = _context.Assets.CountAsync(a => !a.IsDecommissioned);
-        var tLic = _context.LicensingAssets.CountAsync();
-        var tSvc = _context.ServiceAssets.CountAsync();
-        var inUse = _context.Assets.CountAsync(a => !a.IsDecommissioned && a.AssetStatus != null && a.AssetStatus.StatusName == "In Use");
-        var inRepair = _context.Assets.CountAsync(a => !a.IsDecommissioned && a.AssetStatus != null && a.AssetStatus.StatusName.Contains("Repair"));
-        var decomm = _context.Assets.CountAsync(a => a.IsDecommissioned);
-        var warExp = _context.Assets.CountAsync(a => a.WarrantyEndDate != null && a.WarrantyEndDate >= today && a.WarrantyEndDate <= in30);
-        var licExp = _context.LicensingAssets.CountAsync(l => l.ValidityEndDate >= today && l.ValidityEndDate <= in30);
-        var svcExp = _context.ServiceAssets.CountAsync(s => s.ContractEndDate >= today && s.ContractEndDate <= in30);
-        var openMaint = _context.MaintenanceRequests.CountAsync(m => m.Status == "Open");
-        var failComp = _context.ComplianceChecks.CountAsync(c => c.Result == "Fail" && c.Status == "Open");
-        var unacked = _context.SystemAlerts.CountAsync(a => !a.IsAcknowledged && !a.IsResolved);
-        var activeUsr = _context.Users.CountAsync(u => u.IsActive);
-
-        await Task.WhenAll(tHW, tLic, tSvc, inUse, inRepair, decomm, warExp, licExp, svcExp, openMaint, failComp, unacked, activeUsr);
+        var totalHW = await _context.Assets.CountAsync();
+        var totalLic = await _context.LicensingAssets.CountAsync();
+        var totalSvc = await _context.ServiceAssets.CountAsync();
+        var decomm = await _context.Assets.CountAsync(a => a.IsDecommissioned);
+        var warExp = await _context.Assets.CountAsync(a => a.WarrantyEndDate != null && a.WarrantyEndDate >= today && a.WarrantyEndDate <= in30);
+        var licExp = await _context.LicensingAssets.CountAsync(l => l.ValidityEndDate >= today && l.ValidityEndDate <= in30);
+        var svcExp = await _context.ServiceAssets.CountAsync(s => s.ContractEndDate >= today && s.ContractEndDate <= in30);
+        var openMaint = await _context.MaintenanceRequests.CountAsync(m => m.Status == "Open");
+        var unacked = await _context.SystemAlerts.CountAsync(a => !a.IsAcknowledged && !a.IsResolved);
+        var activeUsr = await _context.Users.CountAsync(u => u.IsActive);
 
         var byType = await _context.Assets
-            .Where(a => !a.IsDecommissioned && a.AssetType != null)
-            .GroupBy(a => a.AssetType!.TypeName)
-            .Select(g => new ChartItemDto { Label = g.Key, Count = g.Count() })
+            .GroupBy(a => a.AssetTypeName)
+            .Select(g => new ChartItemDto { Label = g.Key == null || g.Key == "" ? "Unknown" : g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .Take(10)
             .ToListAsync();
 
-        var byStatus = await _context.Assets
-            .Where(a => a.AssetStatus != null)
-            .GroupBy(a => a.AssetStatus!.StatusName)
-            .Select(g => new ChartItemDto { Label = g.Key, Count = g.Count() })
+        var byStatus = await _context.AssetStatuses
+            .Select(s => new ChartItemDto { Label = s.StatusName, Count = s.Assets.Count() })
             .ToListAsync();
 
-        var byLocation = await _context.Assets
-            .Where(a => !a.IsDecommissioned)
-            .GroupBy(a => a.Location.Name)
-            .Select(g => new ChartItemDto { Label = g.Key, Count = g.Count() })
+        var byLocation = await _context.Locations
+            .Select(l => new ChartItemDto { Label = l.Name, Count = l.Assets.Count() })
             .OrderByDescending(x => x.Count)
             .Take(10)
             .ToListAsync();
@@ -71,8 +63,7 @@ public class ReportService : IReportService
             .GroupBy(a => new { a.ProcurementDate!.Value.Year, a.ProcurementDate.Value.Month })
             .Select(g => new MonthlyTrendDto
             {
-                Year = g.Key.Year,
-                Month = g.Key.Month,
+                Year = g.Key.Year, Month = g.Key.Month,
                 Label = g.Key.Year + "-" + g.Key.Month.ToString("D2"),
                 Count = g.Count()
             })
@@ -81,27 +72,26 @@ public class ReportService : IReportService
 
         return new DashboardKpiDto
         {
-            TotalHardwareAssets = tHW.Result,
-            TotalLicenses = tLic.Result,
-            TotalServiceContracts = tSvc.Result,
-            AssetsInUse = inUse.Result,
-            AssetsInRepair = inRepair.Result,
-            AssetsDecommissioned = decomm.Result,
-            WarrantyExpiringIn30Days = warExp.Result,
-            LicensesExpiringIn30Days = licExp.Result,
-            ContractsExpiringIn30Days = svcExp.Result,
-            OpenMaintenanceRequests = openMaint.Result,
-            FailedComplianceChecks = failComp.Result,
-            UnacknowledgedAlerts = unacked.Result,
-            ActiveUsers = activeUsr.Result,
+            TotalHardwareAssets = totalHW - decomm,
+            TotalLicenses = totalLic,
+            TotalServiceContracts = totalSvc,
+            AssetsInUse = byStatus.FirstOrDefault(s => s.Label == "In Use")?.Count ?? 0,
+            AssetsInRepair = byStatus.Where(s => s.Label.Contains("Repair")).Sum(s => s.Count),
+            AssetsDecommissioned = decomm,
+            WarrantyExpiringIn30Days = warExp,
+            LicensesExpiringIn30Days = licExp,
+            ContractsExpiringIn30Days = svcExp,
+            OpenMaintenanceRequests = openMaint,
+            FailedComplianceChecks = 0,
+            UnacknowledgedAlerts = unacked,
+            ActiveUsers = activeUsr,
             AssetsByType = byType,
             AssetsByStatus = byStatus,
             AssetsByLocation = byLocation,
             MonthlyProcurementTrend = trend
         };
     }
-
-    // ── Asset Inventory ───────────────────────────────────────────────────────
+        // ── Asset Inventory ───────────────────────────────────────────────────────
 
     public async Task<AssetInventoryReport> GetAssetInventoryAsync(AssetReportFilter filter, int userId)
     {

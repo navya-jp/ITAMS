@@ -205,9 +205,13 @@ public class UserService : IUserService
         // Update fields if provided
         if (!string.IsNullOrEmpty(request.Email))
         {
-            if (await _userRepository.EmailExistsAsync(request.Email, id))
+            // Only check uniqueness if email is actually changing
+            if (!string.Equals(user.Email, request.Email, StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("Email already exists");
+                if (await _userRepository.EmailExistsAsync(request.Email, id))
+                {
+                    throw new InvalidOperationException("Email already exists");
+                }
             }
             user.Email = request.Email;
         }

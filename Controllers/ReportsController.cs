@@ -21,9 +21,17 @@ public class ReportsController : BaseController
     [HttpGet("dashboard-kpis")]
     public async Task<IActionResult> GetDashboardKpis()
     {
-        var userId = GetCurrentUserId() ?? 1;
-        var kpis = await _reports.GetDashboardKpisAsync(userId);
-        return Ok(kpis);
+        try
+        {
+            var userId = GetCurrentUserId() ?? 1;
+            var kpis = await _reports.GetDashboardKpisAsync(userId);
+            return Ok(kpis);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading dashboard KPIs");
+            return StatusCode(500, new { message = ex.Message, detail = ex.InnerException?.Message });
+        }
     }
 
     [HttpGet("asset-inventory")]

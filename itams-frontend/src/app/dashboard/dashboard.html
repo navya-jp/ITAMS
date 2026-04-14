@@ -1,107 +1,97 @@
-<div class="row">
-  <!-- Stats Cards -->
-  <div class="col-xl-3 col-md-6 mb-4">
-    <div class="card stats-card">
-      <div class="card-body">
-        <div class="d-flex align-items-center">
-          <div class="flex-grow-1">
-            <div class="stats-number">{{ totalUsers }}</div>
-            <div class="stats-label">Total Users</div>
-          </div>
-          <div class="ms-3">
-            <i class="fas fa-users fa-2x"></i>
-          </div>
-        </div>
+<!-- Top stats row -->
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3">
+    <div class="card stats-card h-100">
+      <div class="card-body d-flex align-items-center">
+        <div class="flex-grow-1"><div class="stats-number">{{ totalUsers }}</div><div class="stats-label">Total Users</div></div>
+        <i class="fas fa-users fa-2x ms-3 text-primary opacity-50"></i>
       </div>
     </div>
   </div>
-
-  <div class="col-xl-3 col-md-6 mb-4">
-    <div class="card stats-card">
-      <div class="card-body">
-        <div class="d-flex align-items-center">
-          <div class="flex-grow-1">
-            <div class="stats-number">{{ activeUsers }}</div>
-            <div class="stats-label">Active Users</div>
-          </div>
-          <div class="ms-3">
-            <i class="fas fa-user-check fa-2x"></i>
-          </div>
-        </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stats-card h-100">
+      <div class="card-body d-flex align-items-center">
+        <div class="flex-grow-1"><div class="stats-number">{{ activeUsers }}</div><div class="stats-label">Active Users</div></div>
+        <i class="fas fa-user-check fa-2x ms-3 text-success opacity-50"></i>
       </div>
     </div>
   </div>
-
-  <div class="col-xl-3 col-md-6 mb-4">
-    <div class="card stats-card">
-      <div class="card-body">
-        <div class="d-flex align-items-center">
-          <div class="flex-grow-1">
-            <div class="stats-number">{{ totalProjects }}</div>
-            <div class="stats-label">Projects</div>
-          </div>
-          <div class="ms-3">
-            <i class="fas fa-folder fa-2x"></i>
-          </div>
-        </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stats-card h-100">
+      <div class="card-body d-flex align-items-center">
+        <div class="flex-grow-1"><div class="stats-number">{{ totalProjects }}</div><div class="stats-label">Projects</div></div>
+        <i class="fas fa-folder fa-2x ms-3 text-warning opacity-50"></i>
       </div>
     </div>
   </div>
-
-  <div class="col-xl-3 col-md-6 mb-4">
-    <div class="card stats-card">
-      <div class="card-body">
-        <div class="d-flex align-items-center">
-          <div class="flex-grow-1">
-            <div class="stats-number">{{ totalLocations }}</div>
-            <div class="stats-label">Locations</div>
-          </div>
-          <div class="ms-3">
-            <i class="fas fa-map-marker-alt fa-2x"></i>
-          </div>
-        </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stats-card h-100">
+      <div class="card-body d-flex align-items-center">
+        <div class="flex-grow-1"><div class="stats-number">{{ totalLocations }}</div><div class="stats-label">Locations</div></div>
+        <i class="fas fa-map-marker-alt fa-2x ms-3 text-info opacity-50"></i>
       </div>
     </div>
   </div>
 </div>
 
-<div class="row">
-  <div class="col-lg-8 mb-4">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="card-title mb-0">Recent Activity</h5>
-      </div>
-      <div class="card-body">
-        <div class="d-flex align-items-center justify-content-center" style="height: 200px;">
-          <div class="text-center text-muted">
-            <i class="fas fa-chart-line fa-3x mb-3"></i>
-            <p>Activity charts will be displayed here</p>
-          </div>
-        </div>
+<!-- Asset KPI row -->
+<div *ngIf="kpis" class="row g-3 mb-3">
+  <div class="col-6 col-md-2"><div class="card text-center p-2"><div class="fw-bold fs-5 text-primary">{{kpis.totalHardwareAssets}}</div><small class="text-muted">Hardware</small></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center p-2"><div class="fw-bold fs-5 text-success">{{kpis.assetsInUse}}</div><small class="text-muted">In Use</small></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center p-2"><div class="fw-bold fs-5 text-warning">{{kpis.assetsInRepair}}</div><small class="text-muted">In Repair</small></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center p-2"><div class="fw-bold fs-5 text-danger">{{kpis.assetsDecommissioned}}</div><small class="text-muted">Decommissioned</small></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center p-2"><div class="fw-bold fs-5" [class.text-danger]="kpis.unacknowledgedAlerts>0" [class.text-muted]="!kpis.unacknowledgedAlerts">{{kpis.unacknowledgedAlerts}}</div><small class="text-muted">Alerts</small></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center p-2"><div class="fw-bold fs-5 text-secondary">{{kpis.openMaintenanceRequests}}</div><small class="text-muted">Maintenance</small></div></div>
+</div>
+<div *ngIf="!kpis" class="d-flex align-items-center gap-2 text-muted mb-3 p-2">
+  <div class="spinner-border spinner-border-sm"></div> Loading asset stats...
+</div>
+
+<!-- Charts row -->
+<div *ngIf="kpis" class="row g-3 mb-3">
+  <div class="col-md-5">
+    <div class="card p-3">
+      <h6 class="text-muted small mb-2"><i class="fas fa-server me-1"></i>Assets by Type</h6>
+      <canvas id="chartByType" height="200"></canvas>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3">
+      <h6 class="text-muted small mb-2"><i class="fas fa-circle me-1"></i>Assets by Status</h6>
+      <div style="height:200px;position:relative;">
+        <canvas id="chartByStatus"></canvas>
       </div>
     </div>
   </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h6 class="text-muted small mb-2"><i class="fas fa-chart-line me-1"></i>Monthly Procurement</h6>
+      <canvas id="chartTrend" height="200"></canvas>
+    </div>
+  </div>
+</div>
 
-  <div class="col-lg-4 mb-4">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="card-title mb-0">Quick Actions</h5>
-      </div>
-      <div class="card-body">
-        <div class="d-grid gap-2">
-          <button class="btn btn-primary" routerLink="/users">
-            <i class="fas fa-user-plus me-2"></i>
-            Add New User
-          </button>
-          <button class="btn btn-outline-primary" routerLink="/projects">
-            <i class="fas fa-folder-plus me-2"></i>
-            Create Project
-          </button>
-          <button class="btn btn-outline-secondary" routerLink="/audit">
-            <i class="fas fa-history me-2"></i>
-            View Audit Trail
-          </button>
-        </div>
+<div *ngIf="kpis" class="row g-3 mb-3">
+  <div class="col-12">
+    <div class="card p-3">
+      <h6 class="text-muted small mb-2"><i class="fas fa-map-marker-alt me-1"></i>Top 10 Locations by Asset Count</h6>
+      <canvas id="chartByLocation" height="100"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card p-3">
+      <h6 class="text-muted small mb-2">Quick Actions</h6>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-sm btn-primary" routerLink="/admin/users"><i class="fas fa-user-plus me-1"></i>Add User</button>
+        <button class="btn btn-sm btn-outline-primary" routerLink="/admin/assets"><i class="fas fa-server me-1"></i>Assets</button>
+        <button class="btn btn-sm btn-outline-warning" routerLink="/admin/alerts"><i class="fas fa-bell me-1"></i>Alerts</button>
+        <button class="btn btn-sm btn-outline-danger" routerLink="/admin/decommission"><i class="fas fa-power-off me-1"></i>Decommission</button>
+        <button class="btn btn-sm btn-outline-info" routerLink="/admin/reports"><i class="fas fa-chart-bar me-1"></i>Reports</button>
+        <button class="btn btn-sm btn-outline-secondary" routerLink="/admin/audit"><i class="fas fa-history me-1"></i>Audit Trail</button>
       </div>
     </div>
   </div>
