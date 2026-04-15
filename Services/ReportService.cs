@@ -52,7 +52,10 @@ public class ReportService : IReportService
             .ToListAsync();
 
         var byLocation = await _context.Locations
-            .Select(l => new ChartItemDto { Label = l.Name, Count = l.Assets.Count() })
+            .Select(l => new ChartItemDto { 
+                Label = l.Name.Replace(" Toll Plaza", "").Replace(" Toll plaza", "").Trim(), 
+                Count = l.Assets.Count() 
+            })
             .OrderByDescending(x => x.Count)
             .Take(10)
             .ToListAsync();
