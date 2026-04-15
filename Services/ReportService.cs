@@ -32,7 +32,10 @@ public class ReportService : IReportService
         var totalHW = await _context.Assets.CountAsync();
         var totalLic = await _context.LicensingAssets.CountAsync();
         var totalSvc = await _context.ServiceAssets.CountAsync();
+        var decommStatusId = await _context.AssetStatuses.Where(s => s.StatusName == "Decommissioned").Select(s => s.Id).FirstOrDefaultAsync();
         var decomm = await _context.Assets.CountAsync(a => a.IsDecommissioned);
+        var decommByStatus = decommStatusId > 0 ? await _context.Assets.CountAsync(a => a.AssetStatusId == decommStatusId) : 0;
+        var totalDecomm = Math.Max(decomm, decommByStatus);
         var warExp = await _context.Assets.CountAsync(a => a.WarrantyEndDate != null && a.WarrantyEndDate >= today && a.WarrantyEndDate <= in30);
         var licExp = await _context.LicensingAssets.CountAsync(l => l.ValidityEndDate >= today && l.ValidityEndDate <= in30);
         var svcExp = await _context.ServiceAssets.CountAsync(s => s.ContractEndDate >= today && s.ContractEndDate <= in30);
@@ -85,7 +88,7 @@ public class ReportService : IReportService
             TotalServiceContracts = totalSvc,
             AssetsInUse = byStatus.FirstOrDefault(s => s.Label == "In Use")?.Count ?? 0,
             AssetsInRepair = byStatus.Where(s => s.Label.Contains("Repair")).Sum(s => s.Count),
-            AssetsDecommissioned = decomm,
+            AssetsDecommissioned = totalDecomm,
             WarrantyExpiringIn30Days = warExp,
             LicensesExpiringIn30Days = licExp,
             ContractsExpiringIn30Days = svcExp,
