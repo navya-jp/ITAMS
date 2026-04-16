@@ -15,4 +15,5 @@ public interface IReportService
     Task<List<AlertReportItem>> GetAlertSummaryAsync(int userId);
     Task<DashboardKpiDto> GetDashboardKpisAsync(int userId);
     Task<byte[]> ExportToExcelAsync(string reportType, Dictionary<string, string>? filter, int userId);
+    Task<byte[]> ExportToPdfAsync(string reportType, Dictionary<string, string>? filter, int userId);
 }

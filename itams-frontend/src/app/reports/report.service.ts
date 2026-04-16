@@ -64,6 +64,10 @@ export class ReportService {
     return this.http.post(`${this.base}/export/excel`, { reportType, filter }, { ...this.headers(), responseType: 'blob' });
   }
 
+  exportPdf(reportType: string, filter: any = {}): Observable<Blob> {
+    return this.http.post(`${this.base}/export/pdf`, { reportType, filter }, { ...this.headers(), responseType: 'blob' });
+  }
+
   downloadFile(blob: Blob, filename: string) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');

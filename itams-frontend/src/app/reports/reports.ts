@@ -19,6 +19,7 @@ export class Reports implements OnInit, AfterViewInit {
   reportTotal = 0;
   loading = false;
   exporting = false;
+  exportingPdf = false;
 
   // Filters
   daysAhead = 30;
@@ -163,6 +164,19 @@ export class Reports implements OnInit, AfterViewInit {
         this.exporting = false;
       },
       error: () => { this.exporting = false; }
+    });
+  }
+
+  exportPdf() {
+    this.exportingPdf = true;
+    const filter: any = { daysAhead: String(this.daysAhead) };
+    if (this.currentView === 'asset-inventory' && this.selectedProjectId) filter.projectId = String(this.selectedProjectId);
+    this.svc.exportPdf(this.currentView, filter).subscribe({
+      next: (blob) => {
+        this.svc.downloadFile(blob, `${this.currentView}_${new Date().toISOString().slice(0,10)}.pdf`);
+        this.exportingPdf = false;
+      },
+      error: () => { this.exportingPdf = false; }
     });
   }
 

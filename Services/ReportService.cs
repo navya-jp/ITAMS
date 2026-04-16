@@ -5,8 +5,16 @@ using ITAMS.Utilities;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
-using System.Drawing;
-
+using System.Drawing;using iText.Kernel.Pdf;
+using iText.Layout;
+using iText.Layout.Element;
+using iText.Layout.Properties;
+using iText.Kernel.Colors;
+using iText.Kernel.Font;
+using iText.IO.Font.Constants;
+using iText.Kernel.Geom;
+using ITextBorder = iText.Layout.Borders.Border;
+using ITextSolidBorder = iText.Layout.Borders.SolidBorder;
 namespace ITAMS.Services;
 
 public class ReportService : IReportService
@@ -397,7 +405,7 @@ public class ReportService : IReportService
         using var package = new ExcelPackage();
         var ws = package.Workbook.Worksheets.Add(reportType);
 
-        var headerColor = Color.FromArgb(59, 31, 107);
+        var headerColor = System.Drawing.Color.FromArgb(59, 31, 107);
 
         switch (reportType.ToLower())
         {
@@ -563,15 +571,191 @@ public class ReportService : IReportService
         return package.GetAsByteArray();
     }
 
-    private static void WriteHeaders(ExcelWorksheet ws, string[] headers, Color bgColor)
+    private static void WriteHeaders(ExcelWorksheet ws, string[] headers, System.Drawing.Color bgColor)
     {
         for (int i = 0; i < headers.Length; i++)
         {
             ws.Cells[1, i + 1].Value = headers[i];
             ws.Cells[1, i + 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
             ws.Cells[1, i + 1].Style.Fill.BackgroundColor.SetColor(bgColor);
-            ws.Cells[1, i + 1].Style.Font.Color.SetColor(Color.White);
+            ws.Cells[1, i + 1].Style.Font.Color.SetColor(System.Drawing.Color.White);
             ws.Cells[1, i + 1].Style.Font.Bold = true;
         }
+    }
+
+    public async Task<byte[]> ExportToPdfAsync(string reportType, Dictionary<string, string>? filter, int userId)
+    {
+        string reportTitle = reportType switch
+        {
+            "asset-inventory" => "Asset Inventory Report",
+            "warranty"        => "Warranty Expiry Report",
+            "license"         => "License Expiry Report",
+            "contract"        => "Contract Expiry Report",
+            "maintenance"     => "Maintenance Summary Report",
+            "compliance"      => "Compliance Status Report",
+            "transfers"       => "Asset Transfer History",
+            "user-activity"   => "User Activity Report",
+            "alerts"          => "Alert Summary Report",
+            _                 => "ITAMS Report"
+        };
+
+        int days = filter != null && filter.TryGetValue("daysAhead", out var dv) ? int.Parse(dv) : 30;
+
+        string[] headers;
+        List<string[]> rows;
+
+        switch (reportType.ToLower())
+        {
+            case "asset-inventory":
+            {
+                var inv = await GetAssetInventoryAsync(new AssetReportFilter { PageSize = 5000 }, userId);
+                headers = new[] { "Asset ID", "Tag", "Project", "Location", "Type", "Make", "Model", "Status", "Warranty End" };
+                rows = inv.Items.Select(a => new[] { a.AssetId, a.AssetTag, a.Project ?? "-", a.Location ?? "-", a.AssetType ?? "-", a.Make, a.Model, a.Status ?? "-", a.WarrantyEndDate?.ToString("dd-MMM-yyyy") ?? "-" }).ToList();
+                break;
+            }
+            case "warranty":
+            {
+                var items = await GetWarrantyExpiryReportAsync(days, userId);
+                headers = new[] { "Asset Tag", "Name", "Project", "Location", "Expiry Date", "Days Left", "Severity" };
+                rows = items.Select(i => new[] { i.Identifier, i.Name, i.Project ?? "-", i.Location ?? "-", i.ExpiryDate?.ToString("dd-MMM-yyyy") ?? "-", i.DaysRemaining.ToString(), i.Severity }).ToList();
+                break;
+            }
+            case "license":
+            {
+                var items = await GetLicenseExpiryReportAsync(days, userId);
+                headers = new[] { "Identifier", "License Name", "Expiry Date", "Days Left", "Severity", "Details" };
+                rows = items.Select(i => new[] { i.Identifier, i.Name, i.ExpiryDate?.ToString("dd-MMM-yyyy") ?? "-", i.DaysRemaining.ToString(), i.Severity, i.Extra ?? "-" }).ToList();
+                break;
+            }
+            case "contract":
+            {
+                var items = await GetContractExpiryReportAsync(days, userId);
+                headers = new[] { "Service ID", "Service Name", "Location", "Expiry Date", "Days Left", "Vendor" };
+                rows = items.Select(i => new[] { i.Identifier, i.Name, i.Location ?? "-", i.ExpiryDate?.ToString("dd-MMM-yyyy") ?? "-", i.DaysRemaining.ToString(), i.Extra ?? "-" }).ToList();
+                break;
+            }
+            case "maintenance":
+            {
+                var items = await GetMaintenanceSummaryAsync(new MaintenanceFilter(), userId);
+                headers = new[] { "Asset Tag", "Project", "Type", "Description", "Status", "Days Open", "Cost" };
+                rows = items.Select(i => new[] { i.AssetTag, i.Project ?? "-", i.RequestType, i.Description, i.Status, i.DaysOpen.ToString(), i.Cost.HasValue ? $"Rs.{i.Cost}" : "-" }).ToList();
+                break;
+            }
+            case "compliance":
+            {
+                var items = await GetComplianceStatusReportAsync(new ComplianceFilter(), userId);
+                headers = new[] { "Asset Tag", "Project", "Check Type", "Result", "Status", "Checked At" };
+                rows = items.Select(i => new[] { i.AssetTag, i.Project ?? "-", i.CheckType, i.Result, i.Status, i.CheckedAt.ToString("dd-MMM-yyyy") }).ToList();
+                break;
+            }
+            case "transfers":
+            {
+                var items = await GetTransferHistoryAsync(new TransferFilter(), userId);
+                headers = new[] { "Date", "Asset Tag", "From", "To", "Reason", "By" };
+                rows = items.Select(i => new[] { i.TransferDate.ToString("dd-MMM-yyyy"), i.AssetTag, i.FromLocation ?? "-", i.ToLocation ?? i.ToUser ?? "General", i.Reason ?? "-", i.RequestedBy ?? "-" }).ToList();
+                break;
+            }
+            case "alerts":
+            {
+                var items = await GetAlertSummaryAsync(userId);
+                headers = new[] { "Severity", "Type", "Title", "Entity", "Level", "Created", "Acknowledged" };
+                rows = items.Select(i => new[] { i.Severity, i.AlertType, i.Title, i.EntityIdentifier ?? "-", $"L{i.EscalationLevel}", i.CreatedAt.ToString("dd-MMM-yyyy"), i.IsAcknowledged ? "Yes" : "No" }).ToList();
+                break;
+            }
+            default:
+                headers = new[] { "No data" };
+                rows = new List<string[]>();
+                break;
+        }
+
+        using var ms = new MemoryStream();
+        var writer  = new PdfWriter(ms);
+        var pdfDoc  = new PdfDocument(writer);
+        var document = new Document(pdfDoc, PageSize.A4.Rotate());
+        document.SetMargins(30, 30, 30, 30);
+
+        var boldFont   = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
+        var normalFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
+
+        var navyColor   = new DeviceRgb(30, 60, 114);
+        var whiteColor  = ColorConstants.WHITE;
+        var altRowColor = new DeviceRgb(240, 245, 255);
+        var borderColor = new DeviceRgb(200, 210, 230);
+        var grayColor   = new DeviceRgb(120, 120, 120);
+
+        // Header table
+        var headerTable = new Table(new float[] { 5f, 3f }).UseAllAvailableWidth().SetMarginBottom(8);
+
+        var titleCell = new Cell().SetBorder(ITextBorder.NO_BORDER).SetVerticalAlignment(VerticalAlignment.MIDDLE);
+        titleCell.Add(new Paragraph("Elsamex Maintenance Services Limited").SetFont(boldFont).SetFontSize(13).SetFontColor(navyColor));
+        titleCell.Add(new Paragraph(reportTitle).SetFont(boldFont).SetFontSize(17).SetFontColor(navyColor).SetMarginTop(3));
+        titleCell.Add(new Paragraph("IT Asset Management System (ITAMS)").SetFont(normalFont).SetFontSize(8).SetFontColor(grayColor));
+        headerTable.AddCell(titleCell);
+
+        var infoCell = new Cell().SetBorder(ITextBorder.NO_BORDER).SetTextAlignment(TextAlignment.RIGHT).SetVerticalAlignment(VerticalAlignment.MIDDLE);
+        infoCell.Add(new Paragraph($"Generated: {DateTimeHelper.Now:dd-MMM-yyyy HH:mm} IST").SetFont(normalFont).SetFontSize(8).SetFontColor(grayColor));
+        infoCell.Add(new Paragraph($"Total Records: {rows.Count}").SetFont(boldFont).SetFontSize(10).SetMarginTop(3));
+        if (reportType is "warranty" or "license" or "contract")
+            infoCell.Add(new Paragraph($"Period: Next {days} days").SetFont(normalFont).SetFontSize(8).SetFontColor(grayColor));
+        headerTable.AddCell(infoCell);
+        document.Add(headerTable);
+
+        document.Add(new Table(1).UseAllAvailableWidth().SetBorderTop(new ITextSolidBorder(navyColor, 2)).SetMarginBottom(10));
+
+        // Data table
+        var table = new Table(Enumerable.Repeat(1f, headers.Length).ToArray()).UseAllAvailableWidth().SetFontSize(7);
+
+        foreach (var h in headers)
+        {
+            table.AddHeaderCell(new Cell()
+                .Add(new Paragraph(h).SetFont(boldFont))
+                .SetBackgroundColor(navyColor).SetFontColor(whiteColor)
+                .SetPadding(5).SetTextAlignment(TextAlignment.CENTER)
+                .SetBorder(new ITextSolidBorder(borderColor, 0.5f)));
+        }
+
+        for (int i = 0; i < rows.Count; i++)
+        {
+            bool isAlt = i % 2 == 1;
+            foreach (var cellVal in rows[i])
+            {
+                var tc = new Cell()
+                    .Add(new Paragraph(cellVal ?? "-").SetFont(normalFont))
+                    .SetPadding(4)
+                    .SetBorder(new ITextSolidBorder(borderColor, 0.3f));
+                if (isAlt) tc.SetBackgroundColor(altRowColor);
+                if (cellVal == "Critical") tc.SetFontColor(new DeviceRgb(180, 0, 0));
+                else if (cellVal == "High") tc.SetFontColor(new DeviceRgb(200, 80, 0));
+                else if (cellVal == "Pass") tc.SetFontColor(new DeviceRgb(0, 130, 0));
+                else if (cellVal == "Fail") tc.SetFontColor(new DeviceRgb(180, 0, 0));
+                table.AddCell(tc);
+            }
+        }
+
+        if (rows.Count == 0)
+        {
+            table.AddCell(new Cell(1, headers.Length)
+                .Add(new Paragraph("No records found.").SetFont(normalFont).SetFontSize(10).SetTextAlignment(TextAlignment.CENTER))
+                .SetPadding(20).SetBorder(new ITextSolidBorder(borderColor, 0.3f)));
+        }
+
+        document.Add(table);
+
+        document.Add(new Table(1).UseAllAvailableWidth().SetBorderTop(new ITextSolidBorder(borderColor, 1)).SetMarginTop(12));
+        document.Add(new Paragraph($"This report is system-generated by ITAMS. For internal use only. Printed on: {DateTimeHelper.Now:dd-MMM-yyyy}")
+            .SetFont(normalFont).SetFontSize(7).SetFontColor(grayColor)
+            .SetTextAlignment(TextAlignment.CENTER).SetMarginTop(4));
+
+        int totalPages = pdfDoc.GetNumberOfPages();
+        for (int p = 1; p <= totalPages; p++)
+        {
+            document.ShowTextAligned(
+                new Paragraph($"Page {p} of {totalPages}").SetFont(normalFont).SetFontSize(7).SetFontColor(grayColor),
+                document.GetRightMargin() + 530f, document.GetBottomMargin() - 10f, p,
+                TextAlignment.RIGHT, VerticalAlignment.BOTTOM, 0);
+        }
+
+        document.Close();
+        return ms.ToArray();
     }
 }

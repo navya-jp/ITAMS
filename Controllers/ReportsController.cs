@@ -114,4 +114,21 @@ public class ReportsController : BaseController
         var fileName = $"{request.ReportType}_{DateTimeHelper.Now:yyyyMMdd_HHmm}.xlsx";
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
     }
+
+    [HttpPost("export/pdf")]
+    public async Task<IActionResult> ExportPdf([FromBody] ExportRequest request)
+    {
+        try
+        {
+            var userId = GetCurrentUserId() ?? 1;
+            var bytes = await _reports.ExportToPdfAsync(request.ReportType, request.Filter, userId);
+            var fileName = $"{request.ReportType}_{DateTimeHelper.Now:yyyyMMdd_HHmm}.pdf";
+            return File(bytes, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting PDF for {ReportType}: {Message}", request.ReportType, ex.Message);
+            return StatusCode(500, new { message = ex.Message, inner = ex.InnerException?.Message, stack = ex.StackTrace?.Split('\n').FirstOrDefault() });
+        }
+    }
 }
