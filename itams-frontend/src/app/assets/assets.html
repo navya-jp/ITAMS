@@ -170,12 +170,6 @@
               <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
             </select>
           </div>
-          <div class="col-md-3">
-            <select class="form-select" [(ngModel)]="filterType" (ngModelChange)="onTypeFilterChange()">
-              <option value="all">All Types</option>
-              <option *ngFor="let t of assetTypes" [value]="t">{{ t }}</option>
-            </select>
-          </div>
           <div class="col-md-2">
             <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
               <i class="fas fa-times me-1"></i>Clear
