@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Update="wwwroot\images\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="EPPlus" Version="7.0.0" />
     <PackageReference Include="itext7" Version="8.0.4" />
     <PackageReference Include="itext7.bouncy-castle-adapter" Version="8.0.4" />

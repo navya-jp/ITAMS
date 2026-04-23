@@ -15,6 +15,7 @@ using iText.IO.Font.Constants;
 using iText.Kernel.Geom;
 using ITextBorder = iText.Layout.Borders.Border;
 using ITextSolidBorder = iText.Layout.Borders.SolidBorder;
+using iText.IO.Image;
 namespace ITAMS.Services;
 
 public class ReportService : IReportService
@@ -608,9 +609,22 @@ public class ReportService : IReportService
         {
             case "asset-inventory":
             {
-                var inv = await GetAssetInventoryAsync(new AssetReportFilter { PageSize = 5000 }, userId);
+                var invItems = await _context.Assets
+                    .Where(a => !a.IsDecommissioned)
+                    .Select(a => new {
+                        a.AssetId, a.AssetTag,
+                        Project = a.Project != null ? a.Project.Name : "-",
+                        Location = a.Location != null ? a.Location.Name : "-",
+                        AssetType = a.AssetType != null ? a.AssetType.TypeName : (a.AssetTypeName ?? "-"),
+                        a.Make, a.Model,
+                        Status = a.AssetStatus != null ? a.AssetStatus.StatusName : "-",
+                        a.WarrantyEndDate
+                    })
+                    .OrderBy(a => a.AssetId)
+                    .Take(1000)
+                    .ToListAsync();
                 headers = new[] { "Asset ID", "Tag", "Project", "Location", "Type", "Make", "Model", "Status", "Warranty End" };
-                rows = inv.Items.Select(a => new[] { a.AssetId, a.AssetTag, a.Project ?? "-", a.Location ?? "-", a.AssetType ?? "-", a.Make, a.Model, a.Status ?? "-", a.WarrantyEndDate?.ToString("dd-MMM-yyyy") ?? "-" }).ToList();
+                rows = invItems.Select(a => new[] { a.AssetId.ToString(), a.AssetTag, a.Project, a.Location, a.AssetType, a.Make ?? "-", a.Model ?? "-", a.Status, a.WarrantyEndDate?.ToString("dd-MMM-yyyy") ?? "-" }).ToList();
                 break;
             }
             case "warranty":
@@ -655,6 +669,28 @@ public class ReportService : IReportService
                 rows = items.Select(i => new[] { i.TransferDate.ToString("dd-MMM-yyyy"), i.AssetTag, i.FromLocation ?? "-", i.ToLocation ?? i.ToUser ?? "General", i.Reason ?? "-", i.RequestedBy ?? "-" }).ToList();
                 break;
             }
+            case "user-activity":
+            {
+                var uaFilter = new UserActivityFilter();
+                if (filter != null)
+                {
+                    if (filter.TryGetValue("from", out var fromStr) && DateTime.TryParse(fromStr, out var fromDate))
+                        uaFilter.From = fromDate;
+                    if (filter.TryGetValue("to", out var toStr) && DateTime.TryParse(toStr, out var toDate))
+                        uaFilter.To = toDate.AddDays(1);
+                }
+                var ua = await GetUserActivityReportAsync(uaFilter, userId);
+                headers = new[] { "Username", "Role", "Login Time", "Logout Time", "Duration (min)", "IP Address", "Status" };
+                rows = ua.Items.Select(i => new[] {
+                    i.Username, i.Role ?? "-",
+                    i.LoginTime.ToString("dd-MMM-yyyy HH:mm"),
+                    i.LogoutTime?.ToString("dd-MMM-yyyy HH:mm") ?? "-",
+                    i.SessionMinutes.HasValue ? i.SessionMinutes.ToString()! : "-",
+                    i.IpAddress ?? "-",
+                    i.SessionStatus ?? "-"
+                }).ToList();
+                break;
+            }
             case "alerts":
             {
                 var items = await GetAlertSummaryAsync(userId);
@@ -676,32 +712,46 @@ public class ReportService : IReportService
 
         var boldFont   = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
         var normalFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
-
-        var navyColor   = new DeviceRgb(30, 60, 114);
+        var blackColor  = ColorConstants.BLACK;
         var whiteColor  = ColorConstants.WHITE;
-        var altRowColor = new DeviceRgb(240, 245, 255);
-        var borderColor = new DeviceRgb(200, 210, 230);
-        var grayColor   = new DeviceRgb(120, 120, 120);
+        var borderColor = new DeviceRgb(180, 180, 180);
+        var grayColor   = new DeviceRgb(100, 100, 100);
 
-        // Header table
-        var headerTable = new Table(new float[] { 5f, 3f }).UseAllAvailableWidth().SetMarginBottom(8);
+        string periodStr = reportType switch
+        {
+            "warranty" or "license" or "contract" => $"Period: Next {days} days",
+            "user-activity" when filter != null && filter.TryGetValue("period", out var p) => $"Period: {p}",
+            "user-activity" when filter != null && filter.TryGetValue("from", out var f) && filter.TryGetValue("to", out var t) => $"Period: {f} to {t}",
+            _ => $"As of: {DateTimeHelper.Now:dd-MMM-yyyy}"
+        };
 
-        var titleCell = new Cell().SetBorder(ITextBorder.NO_BORDER).SetVerticalAlignment(VerticalAlignment.MIDDLE);
-        titleCell.Add(new Paragraph("Elsamex Maintenance Services Limited").SetFont(boldFont).SetFontSize(13).SetFontColor(navyColor));
-        titleCell.Add(new Paragraph(reportTitle).SetFont(boldFont).SetFontSize(17).SetFontColor(navyColor).SetMarginTop(3));
-        titleCell.Add(new Paragraph("IT Asset Management System (ITAMS)").SetFont(normalFont).SetFontSize(8).SetFontColor(grayColor));
+        var headerTable = new Table(new float[] { 3f, 4f, 3f }).UseAllAvailableWidth().SetMarginBottom(6);
+
+        var logoCell = new Cell().SetBorder(ITextBorder.NO_BORDER).SetVerticalAlignment(VerticalAlignment.MIDDLE);
+        var logoPath = System.IO.Path.Combine(AppContext.BaseDirectory, "wwwroot", "images", "elsamex-logo.png");
+        if (!System.IO.File.Exists(logoPath)) logoPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "elsamex-logo.png");
+        if (System.IO.File.Exists(logoPath)) {
+            var imgData = ImageDataFactory.Create(logoPath);
+            var img = new iText.Layout.Element.Image(imgData).SetWidth(90);
+            logoCell.Add(img);
+        } else {
+            logoCell.Add(new Paragraph("ELSAMEX").SetFont(boldFont).SetFontSize(14).SetFontColor(new DeviceRgb(128, 0, 0)));
+        }
+        logoCell.Add(new Paragraph(periodStr).SetFont(normalFont).SetFontSize(7).SetFontColor(grayColor).SetMarginTop(3));
+        headerTable.AddCell(logoCell);
+
+        var titleCell = new Cell().SetBorder(ITextBorder.NO_BORDER).SetTextAlignment(TextAlignment.CENTER).SetVerticalAlignment(VerticalAlignment.MIDDLE);
+        titleCell.Add(new Paragraph(reportTitle).SetFont(boldFont).SetFontSize(16).SetFontColor(blackColor));
+        titleCell.Add(new Paragraph("IT Asset Management System").SetFont(normalFont).SetFontSize(8).SetFontColor(grayColor).SetTextAlignment(TextAlignment.CENTER));
         headerTable.AddCell(titleCell);
 
         var infoCell = new Cell().SetBorder(ITextBorder.NO_BORDER).SetTextAlignment(TextAlignment.RIGHT).SetVerticalAlignment(VerticalAlignment.MIDDLE);
-        infoCell.Add(new Paragraph($"Generated: {DateTimeHelper.Now:dd-MMM-yyyy HH:mm} IST").SetFont(normalFont).SetFontSize(8).SetFontColor(grayColor));
-        infoCell.Add(new Paragraph($"Total Records: {rows.Count}").SetFont(boldFont).SetFontSize(10).SetMarginTop(3));
-        if (reportType is "warranty" or "license" or "contract")
-            infoCell.Add(new Paragraph($"Period: Next {days} days").SetFont(normalFont).SetFontSize(8).SetFontColor(grayColor));
+        infoCell.Add(new Paragraph(DateTimeHelper.Now.ToString("dd-MMM-yyyy")).SetFont(boldFont).SetFontSize(11).SetFontColor(blackColor));
+        infoCell.Add(new Paragraph(DateTimeHelper.Now.ToString("HH:mm") + " IST").SetFont(normalFont).SetFontSize(9).SetFontColor(grayColor));
+        infoCell.Add(new Paragraph($"Records: {rows.Count}").SetFont(normalFont).SetFontSize(8).SetFontColor(grayColor).SetMarginTop(4));
         headerTable.AddCell(infoCell);
         document.Add(headerTable);
-
-        document.Add(new Table(1).UseAllAvailableWidth().SetBorderTop(new ITextSolidBorder(navyColor, 2)).SetMarginBottom(10));
-
+        document.Add(new Table(1).UseAllAvailableWidth().SetBorderTop(new ITextSolidBorder(blackColor, 1.5f)).SetMarginBottom(8));
         // Data table
         var table = new Table(Enumerable.Repeat(1f, headers.Length).ToArray()).UseAllAvailableWidth().SetFontSize(7);
 
@@ -709,7 +759,7 @@ public class ReportService : IReportService
         {
             table.AddHeaderCell(new Cell()
                 .Add(new Paragraph(h).SetFont(boldFont))
-                .SetBackgroundColor(navyColor).SetFontColor(whiteColor)
+                .SetBackgroundColor(new DeviceRgb(50,50,50)).SetFontColor(whiteColor)
                 .SetPadding(5).SetTextAlignment(TextAlignment.CENTER)
                 .SetBorder(new ITextSolidBorder(borderColor, 0.5f)));
         }
@@ -723,7 +773,7 @@ public class ReportService : IReportService
                     .Add(new Paragraph(cellVal ?? "-").SetFont(normalFont))
                     .SetPadding(4)
                     .SetBorder(new ITextSolidBorder(borderColor, 0.3f));
-                if (isAlt) tc.SetBackgroundColor(altRowColor);
+                if (isAlt) tc.SetBackgroundColor(new DeviceRgb(245,245,245));
                 if (cellVal == "Critical") tc.SetFontColor(new DeviceRgb(180, 0, 0));
                 else if (cellVal == "High") tc.SetFontColor(new DeviceRgb(200, 80, 0));
                 else if (cellVal == "Pass") tc.SetFontColor(new DeviceRgb(0, 130, 0));

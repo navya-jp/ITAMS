@@ -1,6 +1,6 @@
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { Api, ApiResponse, User } from '../services/api';
 import { ReportService } from '../reports/report.service';
 
@@ -8,7 +8,7 @@ declare var Chart: any;
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
