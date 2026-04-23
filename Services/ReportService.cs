@@ -31,7 +31,7 @@ public class ReportService : IReportService
         _logger = logger;
     }
 
-    // ── Dashboard KPIs ────────────────────────────────────────────────────────
+    // â”€â”€ Dashboard KPIs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<DashboardKpiDto> GetDashboardKpisAsync(int userId)
     {
@@ -112,7 +112,7 @@ public class ReportService : IReportService
             MonthlyProcurementTrend = trend
         };
     }
-        // ── Asset Inventory ───────────────────────────────────────────────────────
+        // â”€â”€ Asset Inventory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<AssetInventoryReport> GetAssetInventoryAsync(AssetReportFilter filter, int userId)
     {
@@ -171,7 +171,7 @@ public class ReportService : IReportService
         };
     }
 
-    // ── Expiry Reports ────────────────────────────────────────────────────────
+    // â”€â”€ Expiry Reports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<List<ExpiryReportItem>> GetWarrantyExpiryReportAsync(int daysAhead, int userId)
     {
@@ -240,7 +240,7 @@ public class ReportService : IReportService
         }).ToList();
     }
 
-    // ── Maintenance ───────────────────────────────────────────────────────────
+    // â”€â”€ Maintenance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<List<MaintenanceReportItem>> GetMaintenanceSummaryAsync(MaintenanceFilter filter, int userId)
     {
@@ -278,7 +278,7 @@ public class ReportService : IReportService
         }).ToList();
     }
 
-    // ── Compliance ────────────────────────────────────────────────────────────
+    // â”€â”€ Compliance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<List<ComplianceReportItem>> GetComplianceStatusReportAsync(ComplianceFilter filter, int userId)
     {
@@ -304,7 +304,7 @@ public class ReportService : IReportService
         }).ToList();
     }
 
-    // ── Transfers ─────────────────────────────────────────────────────────────
+    // â”€â”€ Transfers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<List<TransferReportItem>> GetTransferHistoryAsync(TransferFilter filter, int userId)
     {
@@ -336,7 +336,7 @@ public class ReportService : IReportService
         }).ToList();
     }
 
-    // ── User Activity ─────────────────────────────────────────────────────────
+    // â”€â”€ User Activity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<UserActivityReport> GetUserActivityReportAsync(UserActivityFilter filter, int userId)
     {
@@ -375,7 +375,7 @@ public class ReportService : IReportService
         };
     }
 
-    // ── Alert Summary ─────────────────────────────────────────────────────────
+    // â”€â”€ Alert Summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<List<AlertReportItem>> GetAlertSummaryAsync(int userId)
     {
@@ -398,7 +398,7 @@ public class ReportService : IReportService
         }).ToList();
     }
 
-    // ── Excel Export ──────────────────────────────────────────────────────────
+    // â”€â”€ Excel Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<byte[]> ExportToExcelAsync(string reportType, Dictionary<string, string>? filter, int userId)
     {
@@ -466,8 +466,8 @@ public class ReportService : IReportService
                 foreach (var item in ua.Items) {
                     ws.Cells[ru,1].Value=item.Username; ws.Cells[ru,2].Value=item.Role;
                     ws.Cells[ru,3].Value=item.LoginTime.ToString("dd-MMM-yyyy HH:mm");
-                    ws.Cells[ru,4].Value=item.LogoutTime?.ToString("dd-MMM-yyyy HH:mm") ?? "—";
-                    ws.Cells[ru,5].Value=item.SessionMinutes.HasValue ? $"{item.SessionMinutes}m" : "—";
+                    ws.Cells[ru,4].Value=item.LogoutTime?.ToString("dd-MMM-yyyy HH:mm") ?? "â€”";
+                    ws.Cells[ru,5].Value=item.SessionMinutes.HasValue ? $"{item.SessionMinutes}m" : "â€”";
                     ws.Cells[ru,6].Value=item.IpAddress;
                     ws.Cells[ru,7].Value=item.SessionStatus; ru++;
                 }
@@ -725,15 +725,11 @@ public class ReportService : IReportService
         var headerTable = new Table(new float[] { 3f, 4f, 3f }).UseAllAvailableWidth().SetMarginBottom(6);
 
         var logoCell = new Cell().SetBorder(ITextBorder.NO_BORDER).SetVerticalAlignment(VerticalAlignment.MIDDLE);
-        var logoPath = System.IO.Path.Combine(AppContext.BaseDirectory, "wwwroot", "images", "elsamex-logo.png");
-        if (!System.IO.File.Exists(logoPath)) logoPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "elsamex-logo.png");
-        if (System.IO.File.Exists(logoPath)) {
-            var imgData = ImageDataFactory.Create(logoPath);
-            var img = new iText.Layout.Element.Image(imgData).SetWidth(90);
-            logoCell.Add(img);
-        } else {
-            logoCell.Add(new Paragraph("ELSAMEX").SetFont(boldFont).SetFontSize(14).SetFontColor(new DeviceRgb(128, 0, 0)));
-        }
+        // Embedded logo - always available regardless of deployment
+        var logoBytes = System.Convert.FromBase64String(LogoData.ElsamexLogoBase64);
+        var imgData = iText.IO.Image.ImageDataFactory.Create(logoBytes);
+        var img = new iText.Layout.Element.Image(imgData).SetWidth(90);
+        logoCell.Add(img);
         logoCell.Add(new Paragraph(periodStr).SetFont(normalFont).SetFontSize(7).SetFontColor(grayColor).SetMarginTop(3));
         headerTable.AddCell(logoCell);
 
