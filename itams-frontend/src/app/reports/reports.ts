@@ -170,18 +170,23 @@ export class Reports implements OnInit, AfterViewInit {
   exportPdf() {
     this.exportingPdf = true;
     const filter: any = { daysAhead: String(this.daysAhead) };
-    if (this.currentView === 'asset-inventory' && this.selectedProjectId) filter.projectId = String(this.selectedProjectId);
+    if (this.currentView === 'asset-inventory') {
+      filter.locationType = this.locationType;
+      if (this.selectedProjectId) filter.projectId = String(this.selectedProjectId);
+    }
     if (this.currentView === 'user-activity') {
       filter.from = this.userActivityFrom;
       filter.to = this.userActivityTo;
-      filter.period = 'Custom Range';
     }
     this.svc.exportPdf(this.currentView, filter).subscribe({
       next: (blob) => {
         this.svc.downloadFile(blob, `${this.currentView}_${new Date().toISOString().slice(0,10)}.pdf`);
         this.exportingPdf = false;
       },
-      error: () => { this.exportingPdf = false; }
+      error: (err) => {
+        console.error('PDF export error:', err);
+        this.exportingPdf = false;
+      }
     });
   }
 

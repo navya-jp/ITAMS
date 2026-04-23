@@ -121,6 +121,7 @@ public class ReportsController : BaseController
         try
         {
             var userId = GetCurrentUserId() ?? 1;
+            _logger.LogInformation("PDF export request: type={Type}, filter={Filter}", request.ReportType, System.Text.Json.JsonSerializer.Serialize(request.Filter));
             var bytes = await _reports.ExportToPdfAsync(request.ReportType, request.Filter, userId);
             var fileName = $"{request.ReportType}_{DateTimeHelper.Now:yyyyMMdd_HHmm}.pdf";
             return File(bytes, "application/pdf", fileName);
