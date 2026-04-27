@@ -343,7 +343,7 @@ public class ReportService : IReportService
         var query = _context.LoginAudits
             .Include(la => la.User).ThenInclude(u => u.Role)
             .Include(la => la.SessionStatus)
-            .Where(la => la.LoginTime >= filter.From && la.LoginTime <= filter.To)
+            .Where(la => la.LoginTime >= filter.From && la.LoginTime < filter.To.Date.AddDays(1))
             .AsQueryable();
 
         if (filter.UserId.HasValue) query = query.Where(la => la.UserId == filter.UserId);
@@ -756,9 +756,7 @@ public class ReportService : IReportService
         headerTable.AddCell(titleCell);
 
         var infoCell = new Cell().SetBorder(ITextBorder.NO_BORDER).SetTextAlignment(TextAlignment.RIGHT).SetVerticalAlignment(VerticalAlignment.MIDDLE);
-        infoCell.Add(new Paragraph(DateTimeHelper.Now.ToString("dd-MMM-yyyy")).SetFont(boldFont).SetFontSize(11).SetFontColor(blackColor));
-        infoCell.Add(new Paragraph(DateTimeHelper.Now.ToString("HH:mm") + " IST").SetFont(normalFont).SetFontSize(9).SetFontColor(grayColor));
-        infoCell.Add(new Paragraph($"Records: {rows.Count}").SetFont(normalFont).SetFontSize(8).SetFontColor(grayColor).SetMarginTop(4));
+        infoCell.Add(new Paragraph($"Records: {rows.Count}").SetFont(normalFont).SetFontSize(9).SetFontColor(grayColor));
         headerTable.AddCell(infoCell);
         document.Add(headerTable);
         document.Add(new Table(1).UseAllAvailableWidth().SetBorderTop(new ITextSolidBorder(blackColor, 1.5f)).SetMarginBottom(8));
@@ -800,6 +798,27 @@ public class ReportService : IReportService
         }
 
         document.Add(table);
+
+        // Add footer on every page BEFORE closing
+        var footerFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
+        var footerGray = new DeviceRgb(130, 130, 130);
+        int totalPages = pdfDoc.GetNumberOfPages();
+        string generatedOn = DateTimeHelper.Now.ToString("dd-MMM-yyyy 'at' HH:mm IST");
+        for (int p = 1; p <= totalPages; p++)
+        {
+            var pageSize2 = pdfDoc.GetPage(p).GetPageSize();
+            float footerY = 18f;
+
+            document.ShowTextAligned(
+                new Paragraph($"System generated report on {generatedOn}")
+                    .SetFont(footerFont).SetFontSize(7).SetFontColor(footerGray),
+                30f, footerY, p, TextAlignment.LEFT, VerticalAlignment.BOTTOM, 0);
+
+            document.ShowTextAligned(
+                new Paragraph($"Page {p} of {totalPages}")
+                    .SetFont(footerFont).SetFontSize(7).SetFontColor(footerGray),
+                pageSize2.GetWidth() - 30f, footerY, p, TextAlignment.RIGHT, VerticalAlignment.BOTTOM, 0);
+        }
 
         document.Close();
         return ms.ToArray();
