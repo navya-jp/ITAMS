@@ -1206,6 +1206,32 @@ CREATE TABLE [Vendors] (
 GO
 
 -- ============================================================
+-- UNIQUE CONSTRAINTS (required before foreign keys)
+-- ============================================================
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_Assets_AssetId' AND object_id = OBJECT_ID('Assets'))
+    ALTER TABLE [Assets] ADD CONSTRAINT [UQ_Assets_AssetId] UNIQUE ([AssetId]);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_Locations_LocationId' AND object_id = OBJECT_ID('Locations'))
+    ALTER TABLE [Locations] ADD CONSTRAINT [UQ_Locations_LocationId] UNIQUE ([LocationId]);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_Projects_ProjectId' AND object_id = OBJECT_ID('Projects'))
+    ALTER TABLE [Projects] ADD CONSTRAINT [UQ_Projects_ProjectId] UNIQUE ([ProjectId]);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_Roles_RoleId' AND object_id = OBJECT_ID('Roles'))
+    ALTER TABLE [Roles] ADD CONSTRAINT [UQ_Roles_RoleId] UNIQUE ([RoleId]);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_Permissions_PermissionId' AND object_id = OBJECT_ID('Permissions'))
+    ALTER TABLE [Permissions] ADD CONSTRAINT [UQ_Permissions_PermissionId] UNIQUE ([PermissionId]);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_RbacRoles_RbacRoleId' AND object_id = OBJECT_ID('RbacRoles'))
+    ALTER TABLE [RbacRoles] ADD CONSTRAINT [UQ_RbacRoles_RbacRoleId] UNIQUE ([RbacRoleId]);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_RbacPermissions_RbacPermissionId' AND object_id = OBJECT_ID('RbacPermissions'))
+    ALTER TABLE [RbacPermissions] ADD CONSTRAINT [UQ_RbacPermissions_RbacPermissionId] UNIQUE ([RbacPermissionId]);
+GO
+
+-- ============================================================
 -- FOREIGN KEY CONSTRAINTS
 -- ============================================================
 
