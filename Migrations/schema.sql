@@ -4,9 +4,10 @@
 -- Generated from live database: ITAMS_Shared
 -- Date: 27-Apr-2026
 -- ============================================================
-
-USE ITAMS_Shared;
-GO
+-- NOTE: Run this script while connected to your target database.
+-- Or uncomment and edit the USE statement below:
+-- USE ITAMS_neww;
+-- GO
 
 -- ------------------------------------------------------------
 IF OBJECT_ID('[ApprovalHistories]', 'U') IS NULL
