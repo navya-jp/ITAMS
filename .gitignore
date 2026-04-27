@@ -367,3 +367,6 @@ logs/
 *.db-shm
 *.db-wal
 test-api.html
+
+# Kiro IDE files
+.kiro/
