@@ -370,3 +370,7 @@ test-api.html
 
 # Kiro IDE files
 .kiro/
+
+# Logs
+logs/
+*.log
