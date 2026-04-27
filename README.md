@@ -28,111 +28,179 @@ ITAMS/
 │   └── Interfaces/       # Service/repository interfaces
 ├── Data/                 # DbContext and repositories
 ├── Models/               # DTOs (request/response models)
-├── Middleware/           # Custom middleware (auth, activity tracking)
+├── Middleware/           # Custom middleware
 ├── Utilities/            # Helpers (DateTimeHelper, etc.)
 ├── wwwroot/              # Static files (logo, etc.)
-├── Migrations/           # SQL migration scripts + schema.sql
-├── itams-frontend/       # Angular frontend (separate app)
-├── docs/                 # Architecture and reference documentation
+├── Migrations/           # schema.sql + migration history
+├── itams-frontend/       # Angular frontend
+├── docs/                 # Architecture and reference docs
 ├── appsettings.json      # Backend configuration
 └── ITAMS.csproj          # .NET project file
 ```
 
 ---
 
-## 1. Database Setup
+## Step 1 — Database Setup
 
-Run the single schema file on your SQL Server instance:
+### Prerequisites
+- Microsoft SQL Server (2019 or later) or SQL Server Express
 
+### Instructions
+
+**1. Create a new database** in SQL Server Management Studio (SSMS):
 ```sql
-sqlcmd -S <your-server> -U <username> -P <password> -i Migrations/schema.sql
+CREATE DATABASE ITAMS_DB;
+GO
 ```
 
-Or open `Migrations/schema.sql` in SQL Server Management Studio and execute it.
+**2. Open `Migrations/schema.sql`** in SSMS:
+- Go to File → Open → File
+- Select `Migrations/schema.sql`
 
-Update the connection string in `appsettings.json`:
+**3. Make sure the correct database is selected** in the dropdown at the top of SSMS (should show `ITAMS_DB`, not `master`).
 
+**4. Click Execute** — this creates all 56 tables with correct columns, constraints, and foreign keys.
+
+> If you get errors on re-run, the script uses `IF OBJECT_ID ... IS NULL` guards so it is safe to run multiple times.
+
+---
+
+## Step 2 — Backend Setup
+
+### Prerequisites
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+
+### Instructions
+
+**1. Clone the repository:**
+```bash
+git clone https://github.com/navya-jp/ITAMS.git
+cd ITAMS
+```
+
+**2. Update the connection string** in `appsettings.json`:
 ```json
 "ConnectionStrings": {
-  "SharedSqlServer": "Server=<your-server>;Database=ITAMS_Shared;User Id=<user>;Password=<password>;TrustServerCertificate=true"
+  "SharedSqlServer": "Server=<your-server>;Database=ITAMS_DB;User Id=<user>;Password=<password>;TrustServerCertificate=true"
 }
 ```
+Replace `<your-server>`, `<user>`, and `<password>` with your SQL Server details.
 
----
+For Windows Authentication (no username/password):
+```json
+"SharedSqlServer": "Server=<your-server>;Database=ITAMS_DB;Trusted_Connection=True;TrustServerCertificate=true"
+```
 
-## 2. Backend Setup
-
-**Prerequisites:** .NET 10 SDK
-
+**3. Run the backend:**
 ```bash
-# Restore packages
-dotnet restore
-
-# Run in development
 dotnet run
+```
 
-# Publish for production
+The API will start on `http://localhost:5066`.
+
+**4. To publish for production:**
+```bash
 dotnet publish -c Release -o ./publish
 ```
-
-The API runs on `http://localhost:5000` by default (configurable in `Properties/launchSettings.json`).
-
-**Key configuration in `appsettings.json`:**
-- `ConnectionStrings.SharedSqlServer` — SQL Server connection string
-- `Email.*` — SMTP settings for alert emails
-- JWT settings for authentication
+Deploy the `publish/` folder to IIS or any .NET-compatible host.
 
 ---
 
-## 3. Frontend Setup
+## Step 3 — Frontend Setup
 
-**Prerequisites:** Node.js 18+, Angular CLI 20
+### Prerequisites
+- [Node.js 18+](https://nodejs.org/)
+- Angular CLI: `npm install -g @angular/cli`
 
+### Instructions
+
+**1. Navigate to the frontend folder:**
 ```bash
 cd itams-frontend
-
-# Install dependencies
-npm install
-
-# Run development server (proxies API calls to backend)
-ng serve
-# App available at http://localhost:4200
-
-# Build for production
-ng build --configuration production
-# Output in itams-frontend/dist/itams-frontend/
 ```
 
-The dev server proxies `/api/*` requests to the backend via `proxy.conf.json`.
+**2. Install dependencies:**
+```bash
+npm install
+```
 
-For production, deploy the `dist/` output to any static web server (Nginx, IIS, Apache) and configure it to proxy `/api/*` to the backend server.
+**3. Run in development mode** (proxies API calls to backend automatically):
+```bash
+ng serve
+```
+App will be available at `http://localhost:4200`.
+
+> The backend must be running at `http://localhost:5066` for the frontend to work.
+
+**4. Build for production:**
+```bash
+ng build --configuration production
+```
+Output will be in `itams-frontend/dist/itams-frontend/browser/`.
+Deploy this folder to any static web server (Nginx, IIS, Apache).
+
+**5. For production deployment**, configure your web server to:
+- Serve the `dist/` folder as static files
+- Proxy all `/api/*` requests to the backend server URL
+- Redirect all routes to `index.html` (for Angular routing)
 
 ---
 
-## 4. Integration Notes
+## Step 4 — Running Both Together (Development)
 
-- The frontend communicates with the backend exclusively via REST API at `/api/*`
-- Authentication uses JWT — the frontend stores the token and sends it as `Authorization: Bearer <token>` on every request
-- CORS is configured in the backend `Program.cs` — update allowed origins for your deployment URL
-- All timestamps use IST (UTC+5:30)
+You need **two terminals** running simultaneously:
+
+**Terminal 1 — Backend:**
+```bash
+cd ITAMS
+dotnet run
+```
+
+**Terminal 2 — Frontend:**
+```bash
+cd ITAMS/itams-frontend
+ng serve
+```
+
+Then open `http://localhost:4200` in your browser.
 
 ---
 
-## 5. Default Credentials
+## Configuration Reference
+
+### appsettings.json
+
+| Key | Description |
+|-----|-------------|
+| `ConnectionStrings.SharedSqlServer` | SQL Server connection string |
+| `Email.SmtpHost` | SMTP server for alert emails |
+| `Email.SmtpUser` | SMTP username |
+| `Email.SmtpPassword` | SMTP password |
+
+### Frontend API URL
+
+The frontend proxies API calls via `itams-frontend/proxy.conf.json`. In development this points to `http://localhost:5066`. For production, update your web server proxy config to point to your deployed backend URL.
+
+---
+
+## Default Login
+
+After setting up the database, a superadmin user must be seeded manually or via the existing data in `Migrations/20260325_InsertHOUsers.sql`.
 
 | Role | Username | Password |
 |------|----------|----------|
-| Super Admin | `superadmin` | *(set during DB setup)* |
+| Super Admin | `superadmin` | `Admin@123` |
 
 ---
 
 ## Documentation
 
-Full technical documentation is available in the `docs/` folder:
-
-- `docs/APPLICATION_FLOW.md` — end-to-end application flow
-- `docs/DATABASE_STRUCTURE.md` — database tables and relationships
-- `docs/TECHNICAL_ARCHITECTURE.md` — system architecture overview
-- `docs/SESSION_ARCHITECTURE.md` — session and auth design
-- `docs/guides/ACCESS_CONTROL_IMPLEMENTATION.md` — RBAC and access control
-- `Migrations/README.md` — database migration history
+| File | Description |
+|------|-------------|
+| `docs/APPLICATION_FLOW.md` | End-to-end application flow |
+| `docs/DATABASE_STRUCTURE.md` | Database tables and relationships |
+| `docs/TECHNICAL_ARCHITECTURE.md` | System architecture overview |
+| `docs/SESSION_ARCHITECTURE.md` | Session and auth design |
+| `docs/guides/ACCESS_CONTROL_IMPLEMENTATION.md` | RBAC and access control |
+| `Migrations/README.md` | Database migration history |
+| `docs/specs/` | Feature requirements and design specs |
