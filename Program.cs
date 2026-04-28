@@ -33,9 +33,29 @@ builder.Services.AddSwaggerGen();
 // Add Entity Framework
 builder.Services.AddDbContext<ITAMSDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("SharedSqlServer") 
-                          ?? builder.Configuration.GetConnectionString("DefaultConnection");
-    
+    var sharedConnStr = builder.Configuration.GetConnectionString("SharedSqlServer");
+    var localConnStr = builder.Configuration.GetConnectionString("DefaultConnection");
+
+    string connectionString = localConnStr ?? "Data Source=ITAMS.db"; // default fallback
+
+    if (!string.IsNullOrEmpty(sharedConnStr))
+    {
+        // Try to reach the shared server — if reachable, use it; otherwise fall back to local
+        try
+        {
+            var builder2 = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(sharedConnStr);
+            using var testConn = new Microsoft.Data.SqlClient.SqlConnection(sharedConnStr);
+            testConn.Open();
+            testConn.Close();
+            connectionString = sharedConnStr;
+        }
+        catch
+        {
+            // Shared server unreachable — fall back to local
+            connectionString = localConnStr ?? "Data Source=ITAMS.db";
+        }
+    }
+
     if (!string.IsNullOrEmpty(connectionString) && connectionString.Contains("Server="))
     {
         options.UseSqlServer(connectionString);
