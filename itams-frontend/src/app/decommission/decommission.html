@@ -156,7 +156,7 @@
 <div *ngIf="showApproveModal" class="modal fade show d-block" tabindex="-1" style="z-index:1060">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header" [class.bg-success]="modalAction==='approve'" [class.bg-danger]="modalAction==='reject'" [class.text-white]="true">
+      <div class="modal-header" [class.bg-success]="modalAction==='approve'" n[class.bg-danger]="modalAction==='reject'" [class.text-white]="true">
         <h5 class="modal-title">
           <i [class]="modalAction==='approve' ? 'fas fa-check me-2' : 'fas fa-times me-2'"></i>
           {{modalAction==='approve' ? 'Approve' : 'Reject'}} Decommission

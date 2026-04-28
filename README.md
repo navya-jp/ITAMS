@@ -5,6 +5,28 @@ Built for **Elsamex India Pvt. Ltd.**
 
 ---
 
+## Prerequisites — Install These First
+
+On a clean PC, install the following before anything else:
+
+| # | Software | Version | Download |
+|---|----------|---------|----------|
+| 1 | .NET SDK | 10.0+ | https://dotnet.microsoft.com/download |
+| 2 | Node.js | 18 LTS+ | https://nodejs.org |
+| 3 | Angular CLI | 20+ | Run: `npm install -g @angular/cli` |
+| 4 | SQL Server | 2019+ | https://www.microsoft.com/en-us/sql-server/sql-server-downloads |
+| 5 | SSMS | Latest | https://aka.ms/ssmsfullsetup |
+| 6 | Git | Latest | https://git-scm.com |
+
+> SQL Server Express (free edition) is sufficient. SSMS is the GUI tool to manage the database.
+
+After installing Node.js, open a terminal and run:
+```bash
+npm install -g @angular/cli
+```
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
