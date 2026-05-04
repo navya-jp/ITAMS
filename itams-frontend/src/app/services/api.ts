@@ -546,6 +546,17 @@ export class Api {
     return this.http.get<any[]>(`${this.baseUrl}/masterdata/service-types`, this.getAuthHeaders());
   }
 
+  getAssetTypes(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/masterdata/asset-types`, this.getAuthHeaders());
+  }
+
+  getAssetSubTypes(typeId?: number): Observable<any[]> {
+    const url = typeId
+      ? `${this.baseUrl}/masterdata/asset-subtypes?typeId=${typeId}`
+      : `${this.baseUrl}/masterdata/asset-subtypes`;
+    return this.http.get<any[]>(url, this.getAuthHeaders());
+  }
+
   // Asset Lifecycle
   getAssetLifecycle(assetId: number): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/assets/${assetId}/lifecycle`, this.getAuthHeaders());

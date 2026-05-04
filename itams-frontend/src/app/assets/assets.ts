@@ -115,6 +115,13 @@ export class Assets implements OnInit {
   softwareSubTypes = ['Operating System', 'Application Software', 'Antivirus', 'License Key', 'Subscription', 'Other Software'];
   serviceSubTypes = ['AMC', 'Support Contract', 'SLA Agreement', 'Internet Service', 'Cloud Service', 'Other Service'];
 
+  // Dynamic master data from DB
+  allAssetTypes: any[] = [];
+  filteredAssetTypes: any[] = [];
+  allAssetSubTypes: any[] = [];
+  filteredAssetSubTypes: any[] = [];
+  subTypeSelection = '';
+
   // Constants
   usageCategories = [
     { value: 'TMS', label: 'TMS' },
@@ -148,7 +155,6 @@ export class Assets implements OnInit {
   ];
 
   placingOptions = ['Lane Area', 'Booth Area', 'Plaza Area', 'Server Room', 'Control Room', 'Admin Building', 'Tunnel', 'Scrap Area', 'Spare Store'];
-  assetTypes = ['Hardware', 'Software'];
 
   // Services
   serviceAssets: any[] = [];
@@ -213,6 +219,7 @@ export class Assets implements OnInit {
     this.loadLocations();
     this.loadServiceTypes();
     this.loadAllUsers();
+    this.loadAssetTypesFromDB();
   }
 
   selectLocationType(type: 'office' | 'site') {
@@ -223,6 +230,7 @@ export class Assets implements OnInit {
   selectCategory(category: 'hardware' | 'licensing' | 'services') {
     this.selectedCategory = category;
     this.currentView = 'asset-list';
+    this.filterAssetTypesByCategory();
     this.applyFilters();
   }
 
@@ -405,6 +413,68 @@ export class Assets implements OnInit {
     });
   }
 
+  loadAssetTypesFromDB() {
+    this.api.getAssetTypes().subscribe({
+      next: (types) => {
+        this.allAssetTypes = types;
+        this.filterAssetTypesByCategory();
+      },
+      error: () => {}
+    });
+    this.api.getAssetSubTypes().subscribe({
+      next: (subs) => {
+        this.allAssetSubTypes = subs;
+        this.loadSubTypesForCategory();
+      },
+      error: () => {}
+    });
+  }
+
+  loadSubTypesForCategory() {
+    // Find the hardware category types and load their subtypes
+    const hardwareTypes = this.allAssetTypes.filter(t =>
+      !t.typeName?.toLowerCase().includes('software') &&
+      !t.typeName?.toLowerCase().includes('license') &&
+      !t.typeName?.toLowerCase().includes('subscription')
+    );
+    const hardwareTypeIds = hardwareTypes.map((t: any) => t.id);
+    this.filteredAssetSubTypes = this.allAssetSubTypes.filter((s: any) =>
+      hardwareTypeIds.includes(s.typeId)
+    );
+  }
+
+  filterAssetTypesByCategory() {
+    // When in hardware category, only show hardware types (not software/licensing)
+    // Category names in DB: Hardware, Software, Networking, etc.
+    if (this.selectedCategory === 'hardware') {
+      this.filteredAssetTypes = this.allAssetTypes.filter(t =>
+        !t.typeName?.toLowerCase().includes('software') &&
+        !t.typeName?.toLowerCase().includes('license') &&
+        !t.typeName?.toLowerCase().includes('subscription')
+      );
+    } else {
+      this.filteredAssetTypes = this.allAssetTypes;
+    }
+  }
+
+  onAssetTypeChange() {
+    const selected = this.allAssetTypes.find(t => t.typeName === this.createForm.assetType);
+    if (selected) {
+      this.filteredAssetSubTypes = this.allAssetSubTypes.filter(s => s.typeId === selected.id);
+    } else {
+      this.filteredAssetSubTypes = [];
+    }
+    this.createForm.subType = '';
+  }
+
+  onSubTypeSelectionChange() {
+    if (this.subTypeSelection !== 'Other') {
+      this.createForm.subType = this.subTypeSelection;
+    } else {
+      this.createForm.subType = '';
+    }
+  }
+
   loadAllUsers() {
     this.api.getUsers().subscribe({
       next: (response) => {
@@ -424,7 +494,13 @@ export class Assets implements OnInit {
     this.resetCreateForm();
     if (this.selectedCategory === 'licensing') this.selectedAssetType = 'Licensing';
     else if (this.selectedCategory === 'services') this.selectedAssetType = 'Services';
-    else this.selectedAssetType = 'Hardware';
+    else {
+      this.selectedAssetType = 'Hardware';
+      this.createForm.assetType = 'Hardware';
+      this.subTypeSelection = '';
+      // Load subtypes for hardware
+      this.loadSubTypesForCategory();
+    }
     this.showCreateModal = true;
     this.currentTab = 1;
     this.maxTab = 1;
