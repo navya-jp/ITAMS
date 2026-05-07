@@ -122,6 +122,12 @@ export class Assets implements OnInit {
   filteredAssetSubTypes: any[] = [];
   subTypeSelection = '';
 
+  // Dynamic properties
+  availableProperties: any[] = [];
+  assetPropertyRows: { propertyId: number; propertyName: string; propertyValue: string }[] = [];
+  newPropertyName = '';
+  showAddPropertyForm = false;
+
   // Constants
   usageCategories = [
     { value: 'TMS', label: 'TMS' },
@@ -473,6 +479,50 @@ export class Assets implements OnInit {
     } else {
       this.createForm.subType = '';
     }
+    // Load properties for selected subtype
+    const subtype = this.subTypeSelection !== 'Other' ? this.subTypeSelection : '';
+    this.loadPropertiesForSubtype(subtype);
+    this.assetPropertyRows = [];
+  }
+
+  loadPropertiesForSubtype(subtype: string) {
+    this.api.getAssetProperties(subtype || undefined).subscribe({
+      next: (props) => { this.availableProperties = props; },
+      error: () => { this.availableProperties = []; }
+    });
+  }
+
+  addPropertyRow() {
+    this.assetPropertyRows.push({ propertyId: 0, propertyName: '', propertyValue: '' });
+  }
+
+  removePropertyRow(index: number) {
+    this.assetPropertyRows.splice(index, 1);
+  }
+
+  onPropertySelect(row: any) {
+    const prop = this.availableProperties.find(p => p.id === +row.propertyId);
+    if (prop) row.propertyName = prop.propertyName;
+  }
+
+  savePropertyValues(assetId: number) {
+    const values = this.assetPropertyRows
+      .filter(r => r.propertyId > 0 && r.propertyValue.trim())
+      .map(r => ({ propertyId: r.propertyId, propertyValue: r.propertyValue }));
+    if (values.length === 0) return;
+    this.api.saveAssetPropertyValues(assetId, values).subscribe({ error: () => {} });
+  }
+
+  addNewCustomProperty() {
+    if (!this.newPropertyName.trim()) return;
+    const subtype = this.subTypeSelection !== 'Other' ? this.subTypeSelection : undefined;
+    this.api.createAssetProperty({ propertyName: this.newPropertyName.trim(), applicableSubtype: subtype, dataType: 'Text' }).subscribe({
+      next: (prop) => {
+        this.availableProperties.push(prop);
+        this.newPropertyName = '';
+        this.showAddPropertyForm = false;
+      }
+    });
   }
 
   loadAllUsers() {
@@ -788,7 +838,16 @@ export class Assets implements OnInit {
     this.loading = true;
     if (!this.createForm.assetTag) this.createForm.assetTag = 'NA';
     this.api.createAsset(this.createForm).subscribe({
-      next: (asset) => { this.assets.push(asset); this.success = 'Hardware asset created successfully'; this.loading = false; this.closeModals(); this.applyFilters(); },
+      next: (asset) => {
+        this.assets.push(asset);
+        if (asset.id && this.assetPropertyRows.length > 0) {
+          this.savePropertyValues(asset.id);
+        }
+        this.success = 'Hardware asset created successfully';
+        this.loading = false;
+        this.closeModals();
+        this.applyFilters();
+      },
       error: (error) => { this.error = error.error?.message || 'Failed to create asset'; this.loading = false; }
     });
   }
@@ -838,6 +897,11 @@ export class Assets implements OnInit {
 
   resetCreateForm() {
     this.selectedAssetType = 'Hardware';
+    this.subTypeSelection = '';
+    this.assetPropertyRows = [];
+    this.availableProperties = [];
+    this.showAddPropertyForm = false;
+    this.newPropertyName = '';
     this.createForm = {
       assetTag: '', projectId: 0, locationId: 0, usageCategory: 'TMS',
       classification: '', region: '', assetType: '', subType: '', make: '', model: '',

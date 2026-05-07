@@ -557,6 +557,25 @@ export class Api {
     return this.http.get<any[]>(url, this.getAuthHeaders());
   }
 
+  getAssetProperties(subtype?: string): Observable<any[]> {
+    const url = subtype
+      ? `${this.baseUrl}/masterdata/asset-properties?subtype=${encodeURIComponent(subtype)}`
+      : `${this.baseUrl}/masterdata/asset-properties`;
+    return this.http.get<any[]>(url, this.getAuthHeaders());
+  }
+
+  createAssetProperty(data: { propertyName: string; applicableSubtype?: string; dataType?: string }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/masterdata/asset-properties`, data, this.getAuthHeaders());
+  }
+
+  getAssetPropertyValues(assetId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/masterdata/asset-property-values/${assetId}`, this.getAuthHeaders());
+  }
+
+  saveAssetPropertyValues(assetId: number, values: { propertyId: number; propertyValue: string }[]): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/masterdata/asset-property-values`, { assetId, values }, this.getAuthHeaders());
+  }
+
   // Asset Lifecycle
   getAssetLifecycle(assetId: number): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/assets/${assetId}/lifecycle`, this.getAuthHeaders());

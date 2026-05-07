@@ -443,6 +443,37 @@
                 <input *ngIf="subTypeSelection === 'Other'" type="text" class="form-control mt-2"
                   [(ngModel)]="createForm.subType" placeholder="Enter custom sub type" />
               </div>
+
+              <!-- Dynamic Properties -->
+              <div class="col-12 mt-2" *ngIf="subTypeSelection">
+                <label class="form-label fw-semibold">Properties</label>
+                <table class="table table-sm table-bordered mb-2" *ngIf="assetPropertyRows.length > 0">
+                  <thead class="table-light">
+                    <tr><th>Property</th><th>Value</th><th style="width:60px"></th></tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of assetPropertyRows; let i = index">
+                      <td>
+                        <select class="form-select form-select-sm" [(ngModel)]="row.propertyId" (change)="onPropertySelect(row)">
+                          <option [value]="0">Select property</option>
+                          <option *ngFor="let p of availableProperties" [value]="p.id">{{ p.propertyName }}</option>
+                        </select>
+                      </td>
+                      <td><input type="text" class="form-control form-control-sm" [(ngModel)]="row.propertyValue" placeholder="Value" /></td>
+                      <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger" (click)="removePropertyRow(i)"><i class="fas fa-times"></i></button></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="addPropertyRow()"><i class="fas fa-plus me-1"></i>Add Property</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="showAddPropertyForm=!showAddPropertyForm"><i class="fas fa-plus-circle me-1"></i>New Custom Property</button>
+                </div>
+                <div *ngIf="showAddPropertyForm" class="d-flex gap-2 mt-2 align-items-center">
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="newPropertyName" placeholder="Property name" style="max-width:220px" />
+                  <button type="button" class="btn btn-sm btn-success" (click)="addNewCustomProperty()">Save</button>
+                  <button type="button" class="btn btn-sm btn-link text-muted p-0" (click)="showAddPropertyForm=false">Cancel</button>
+                </div>
+              </div>
               <div class="col-md-6">
                 <label class="form-label">Make *</label>
                 <input type="text" class="form-control" [(ngModel)]="createForm.make"
