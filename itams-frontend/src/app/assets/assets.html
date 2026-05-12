@@ -426,19 +426,8 @@
                 <label class="form-label">Sub Type</label>
                 <select class="form-select" [(ngModel)]="subTypeSelection" (change)="onSubTypeSelectionChange()">
                   <option value="">Select Sub Type</option>
-                  <option value="Desktop">Desktop</option>
-                  <option value="Laptop">Laptop</option>
-                  <option value="Server">Server</option>
-                  <option value="Switch">Switch</option>
-                  <option value="NVR">NVR</option>
-                  <option value="Camera">Camera</option>
-                  <option value="UPS">UPS</option>
-                  <option value="Printer">Printer</option>
-                  <option value="Monitor">Monitor</option>
-                  <option value="Router">Router</option>
-                  <option value="Firewall">Firewall</option>
-                  <option value="Keyboard">Keyboard</option>
-                  <option value="Other">Other</option>
+                  <option *ngFor="let s of displayedSubtypes" [value]="s.subTypeName">{{ s.subTypeName }}</option>
+                  <option value="Other">Other (type manually)</option>
                 </select>
                 <input *ngIf="subTypeSelection === 'Other'" type="text" class="form-control mt-2"
                   [(ngModel)]="createForm.subType" placeholder="Enter custom sub type" />
@@ -466,12 +455,6 @@
                 </table>
                 <div class="d-flex gap-2">
                   <button type="button" class="btn btn-sm btn-outline-primary" (click)="addPropertyRow()"><i class="fas fa-plus me-1"></i>Add Property</button>
-                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="showAddPropertyForm=!showAddPropertyForm"><i class="fas fa-plus-circle me-1"></i>New Custom Property</button>
-                </div>
-                <div *ngIf="showAddPropertyForm" class="d-flex gap-2 mt-2 align-items-center">
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="newPropertyName" placeholder="Property name" style="max-width:220px" />
-                  <button type="button" class="btn btn-sm btn-success" (click)="addNewCustomProperty()">Save</button>
-                  <button type="button" class="btn btn-sm btn-link text-muted p-0" (click)="showAddPropertyForm=false">Cancel</button>
                 </div>
               </div>
               <div class="col-md-6">

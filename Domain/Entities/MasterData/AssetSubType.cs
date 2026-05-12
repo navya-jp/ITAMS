@@ -24,6 +24,8 @@ public class AssetSubType
     
     public bool IsActive { get; set; } = true;
     
+    public bool IsCustom { get; set; } = false;
+    
     public DateTime CreatedAt { get; set; }
     
     public int CreatedBy { get; set; }

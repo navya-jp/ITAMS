@@ -550,22 +550,38 @@ export class Api {
     return this.http.get<any[]>(`${this.baseUrl}/masterdata/asset-types`, this.getAuthHeaders());
   }
 
-  getAssetSubTypes(typeId?: number): Observable<any[]> {
-    const url = typeId
-      ? `${this.baseUrl}/masterdata/asset-subtypes?typeId=${typeId}`
-      : `${this.baseUrl}/masterdata/asset-subtypes`;
+  getAssetSubTypes(typeId?: number, all?: boolean): Observable<any[]> {
+    let url = `${this.baseUrl}/masterdata/asset-subtypes`;
+    const params: string[] = [];
+    if (typeId) params.push(`typeId=${typeId}`);
+    if (all) params.push(`all=true`);
+    if (params.length) url += '?' + params.join('&');
     return this.http.get<any[]>(url, this.getAuthHeaders());
   }
 
-  getAssetProperties(subtype?: string): Observable<any[]> {
-    const url = subtype
-      ? `${this.baseUrl}/masterdata/asset-properties?subtype=${encodeURIComponent(subtype)}`
-      : `${this.baseUrl}/masterdata/asset-properties`;
+  getAssetProperties(subtype?: string, all?: boolean): Observable<any[]> {
+    let url = `${this.baseUrl}/masterdata/asset-properties`;
+    const params: string[] = [];
+    if (subtype) params.push(`subtype=${encodeURIComponent(subtype)}`);
+    if (all) params.push(`all=true`);
+    if (params.length) url += '?' + params.join('&');
     return this.http.get<any[]>(url, this.getAuthHeaders());
   }
 
   createAssetProperty(data: { propertyName: string; applicableSubtype?: string; dataType?: string }): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/masterdata/asset-properties`, data, this.getAuthHeaders());
+  }
+
+  createAssetSubtype(data: { subTypeName: string; typeId: number }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/masterdata/asset-subtypes`, data, this.getAuthHeaders());
+  }
+
+  toggleAssetSubtype(id: number): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/masterdata/asset-subtypes/${id}/toggle`, {}, this.getAuthHeaders());
+  }
+
+  toggleAssetProperty(id: number): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/masterdata/asset-properties/${id}/toggle`, {}, this.getAuthHeaders());
   }
 
   getAssetPropertyValues(assetId: number): Observable<any[]> {

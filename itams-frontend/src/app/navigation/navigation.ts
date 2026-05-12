@@ -40,6 +40,7 @@ export class Navigation implements OnInit, OnDestroy {
     { path: '/admin/decommission', icon: 'fas fa-power-off', label: 'Decommission', title: 'Asset Decommissioning' },
     { path: '/admin/reports', icon: 'fas fa-chart-bar', label: 'Reports', title: 'Reports & Dashboard' },
     { path: '/admin/audit', icon: 'fas fa-history', label: 'Audit Trail', title: 'Audit Trail' },
+    { path: '/admin/asset-config', icon: 'fas fa-sliders-h', label: 'Asset Config', title: 'Asset Configuration' },
     { path: '/admin/settings', icon: 'fas fa-cog', label: 'Settings', title: 'System Settings' }
   ];
 

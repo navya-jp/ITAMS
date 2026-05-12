@@ -122,6 +122,17 @@ export class Assets implements OnInit {
   filteredAssetSubTypes: any[] = [];
   subTypeSelection = '';
 
+  readonly commonSubtypeNames = ['Desktop','Laptop','Server','Switch','NVR','Camera','UPS','Printer','Monitor','Router','Firewall','Keyboard'];
+
+  get displayedSubtypes(): any[] {
+    if (this.allAssetSubTypes.length > 0) {
+      return this.allAssetSubTypes
+        .filter((s: any) => (s.isActive !== false) && (this.commonSubtypeNames.includes(s.subTypeName) || s.isCustom))
+        .sort((a: any, b: any) => a.subTypeName.localeCompare(b.subTypeName));
+    }
+    return this.commonSubtypeNames.map(name => ({ subTypeName: name, isActive: true }));
+  }
+
   // Dynamic properties
   availableProperties: any[] = [];
   assetPropertyRows: { propertyId: number; propertyName: string; propertyValue: string }[] = [];
@@ -427,6 +438,7 @@ export class Assets implements OnInit {
       },
       error: () => {}
     });
+    // Load active subtypes for the dropdown
     this.api.getAssetSubTypes().subscribe({
       next: (subs) => {
         this.allAssetSubTypes = subs;
