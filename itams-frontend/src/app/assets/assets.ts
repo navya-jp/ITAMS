@@ -122,15 +122,16 @@ export class Assets implements OnInit {
   filteredAssetSubTypes: any[] = [];
   subTypeSelection = '';
 
-  readonly commonSubtypeNames = ['Desktop','Laptop','Server','Switch','NVR','Camera','UPS','Printer','Monitor','Router','Firewall','Keyboard'];
+  readonly commonSubtypeNames = ['Desktop','Laptop','Server','Monitor','Printer','Scanner','UPS','Switch','Router','Firewall','Keyboard','Camera','NVR'];
 
   get displayedSubtypes(): any[] {
-    if (this.allAssetSubTypes.length > 0) {
-      return this.allAssetSubTypes
-        .filter((s: any) => (s.isActive !== false) && (this.commonSubtypeNames.includes(s.subTypeName) || s.isCustom))
-        .sort((a: any, b: any) => a.subTypeName.localeCompare(b.subTypeName));
-    }
-    return this.commonSubtypeNames.map(name => ({ subTypeName: name, isActive: true }));
+    // Fixed base list always shown
+    const base = this.commonSubtypeNames.map(name => ({ subTypeName: name, isActive: true }));
+    // Plus any user-added custom subtypes from DB not already in base list
+    const custom = this.allAssetSubTypes.filter((s: any) =>
+      s.isActive !== false && !this.commonSubtypeNames.includes(s.subTypeName)
+    );
+    return [...base, ...custom].sort((a: any, b: any) => a.subTypeName.localeCompare(b.subTypeName));
   }
 
   // Dynamic properties
@@ -483,6 +484,20 @@ export class Assets implements OnInit {
       this.filteredAssetSubTypes = [];
     }
     this.createForm.subType = '';
+  }
+
+  saveCustomSubtype() {
+    const name = this.createForm.subType?.trim();
+    if (!name || name.length < 2) return;
+    // Don't save if it already exists in the list
+    const exists = this.allAssetSubTypes.some((s: any) => s.subTypeName.toLowerCase() === name.toLowerCase())
+      || this.commonSubtypeNames.some(n => n.toLowerCase() === name.toLowerCase());
+    if (exists) return;
+    // Save to DB so it appears in the dropdown next time
+    this.api.createAssetSubtype({ subTypeName: name, typeId: 1 }).subscribe({
+      next: (saved) => { this.allAssetSubTypes.push(saved); },
+      error: () => {}
+    });
   }
 
   onSubTypeSelectionChange() {

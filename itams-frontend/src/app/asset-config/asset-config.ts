@@ -26,13 +26,16 @@ export class AssetConfig implements OnInit {
   propertySuccess = '';
   propertyError = '';
 
-  commonSubtypes = ['Desktop','Laptop','Server','Switch','NVR','Camera','UPS','Printer','Monitor','Router','Firewall','Keyboard'];
+  commonSubtypes = ['Desktop','Laptop','Server','Monitor','Printer','Scanner','UPS','Switch','Router','Firewall','Keyboard','Camera','NVR'];
 
-  // Show only the 12 common ones + user-added custom ones
+  // Show the fixed base list + any user-added custom ones
   get displayedSubtypes() {
-    return this.subtypes
-      .filter((s: any) => this.commonSubtypes.includes(s.subTypeName) || s.isCustom)
-      .sort((a: any, b: any) => a.subTypeName.localeCompare(b.subTypeName));
+    const base = this.commonSubtypes.map(name => {
+      const found = this.subtypes.find((s: any) => s.subTypeName === name);
+      return found ?? { subTypeName: name, isActive: true, isBase: true };
+    });
+    const custom = this.subtypes.filter((s: any) => !this.commonSubtypes.includes(s.subTypeName));
+    return [...base, ...custom].sort((a: any, b: any) => a.subTypeName.localeCompare(b.subTypeName));
   }
 
   constructor(private api: Api) {}

@@ -427,10 +427,14 @@
                 <select class="form-select" [(ngModel)]="subTypeSelection" (change)="onSubTypeSelectionChange()">
                   <option value="">Select Sub Type</option>
                   <option *ngFor="let s of displayedSubtypes" [value]="s.subTypeName">{{ s.subTypeName }}</option>
-                  <option value="Other">Other (type manually)</option>
+                  <option value="Other">Other</option>
                 </select>
-                <input *ngIf="subTypeSelection === 'Other'" type="text" class="form-control mt-2"
-                  [(ngModel)]="createForm.subType" placeholder="Enter custom sub type" />
+                <div *ngIf="subTypeSelection === 'Other'" class="mt-2">
+                  <input type="text" class="form-control"
+                    [(ngModel)]="createForm.subType" placeholder="Enter new sub type name"
+                    (blur)="saveCustomSubtype()" />
+                  <small class="text-muted">This will be added to the list for future use.</small>
+                </div>
               </div>
 
               <!-- Dynamic Properties -->
